@@ -4,19 +4,18 @@
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js');
 
-// Configuración de Firebase (se actualiza desde el .env en producción)
-// Por ahora usar configuración placeholder
+// Configuración de Firebase - Tribu Impulsa
 const firebaseConfig = {
-  apiKey: "PLACEHOLDER",
+  apiKey: "AIzaSyDWdi5OUpZmGuS_qLtyCSF-EXffSF3heJA",
   authDomain: "tribu-impulsa.firebaseapp.com",
   projectId: "tribu-impulsa",
-  storageBucket: "tribu-impulsa.appspot.com",
-  messagingSenderId: "PLACEHOLDER",
-  appId: "PLACEHOLDER"
+  storageBucket: "tribu-impulsa.firebasestorage.app",
+  messagingSenderId: "348097115578",
+  appId: "1:348097115578:web:115960bb81563050d01983"
 };
 
-// Inicializar Firebase solo si está configurado
-if (firebaseConfig.apiKey !== "PLACEHOLDER") {
+// Inicializar Firebase
+if (firebaseConfig.apiKey) {
   firebase.initializeApp(firebaseConfig);
   const messaging = firebase.messaging();
 

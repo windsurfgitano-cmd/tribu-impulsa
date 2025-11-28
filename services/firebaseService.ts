@@ -4,18 +4,20 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
 
-// Configuración de Firebase desde variables de entorno
+// Configuración de Firebase - Tribu Impulsa
+// Nota: Las API keys de Firebase son seguras para exponer en el frontend
+// La seguridad se maneja con Firebase Security Rules
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyDWdi5OUpZmGuS_qLtyCSF-EXffSF3heJA",
+  authDomain: "tribu-impulsa.firebaseapp.com",
+  projectId: "tribu-impulsa",
+  storageBucket: "tribu-impulsa.firebasestorage.app",
+  messagingSenderId: "348097115578",
+  appId: "1:348097115578:web:115960bb81563050d01983"
 };
 
-// VAPID Key para Web Push
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+// VAPID Key para Web Push (Cloud Messaging)
+const VAPID_KEY = "BIhxjd_diMAgmMBrqvYxISkqe_vEKy3GYqK0tgNQOFlMQ37K_b0UhqmXAFXDjIayCDcAtBmLLktE50Gxn5tFLUE";
 
 // Instancias de Firebase
 let app: FirebaseApp | null = null;

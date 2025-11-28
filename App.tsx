@@ -36,6 +36,7 @@ import {
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
+import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification } from './services/firebaseService';
 
 // Cargar usuarios REALES al iniciar
 forceReloadRealUsers();
@@ -46,8 +47,23 @@ ensureTribeAssignments();
 // Habilitar auto-backup
 enableAutoBackup();
 
+// Inicializar Firebase
+initializeFirebase();
+
+// Escuchar notificaciones en primer plano
+onForegroundMessage((payload: unknown) => {
+  const data = payload as { notification?: { title?: string; body?: string } };
+  if (data.notification) {
+    sendLocalNotification(
+      data.notification.title || 'Tribu Impulsa',
+      data.notification.body || 'Nueva notificación'
+    );
+  }
+});
+
 console.log('🚀 Tribu Impulsa v2.0 - 23 Emprendedores Reales');
 console.log('📊 Integridad de datos:', checkDataIntegrity());
+console.log('🔔 Estado notificaciones:', getNotificationStatus());
 
 const SURVEY_CATEGORY_OPTIONS = [
   "Moda Mujer Ropa  Jeans",
@@ -1745,6 +1761,9 @@ const MyProfileView = () => {
                             </div>
                         </div>
                         
+                        {/* Botón de Notificaciones Push */}
+                        <NotificationButton />
+                        
                         <div className="pt-6 border-t border-[#E4E7EF]">
                             <button 
                                 onClick={() => navigate('/')} 
@@ -1758,6 +1777,57 @@ const MyProfileView = () => {
             </div>
         </div>
     );
+};
+
+// Componente para activar notificaciones push
+const NotificationButton = () => {
+  const [status, setStatus] = useState(getNotificationStatus());
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    setIsLoading(true);
+    const token = await requestNotificationPermission();
+    if (token) {
+      sendLocalNotification('¡Notificaciones activadas!', 'Recibirás alertas de tu tribu');
+    }
+    setStatus(getNotificationStatus());
+    setIsLoading(false);
+  };
+
+  if (!status.supported) {
+    return (
+      <div className="p-4 bg-[#F5F7FB] rounded-xl border border-[#E4E7EF] text-center">
+        <p className="text-sm text-[#7C8193]">Tu navegador no soporta notificaciones</p>
+      </div>
+    );
+  }
+
+  if (status.permission === 'granted' && status.hasToken) {
+    return (
+      <div className="p-4 bg-[#E6FFF3] rounded-xl border border-[#00CA72]/30 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-[#00CA72] flex items-center justify-center text-white">
+          <Bell size={20} />
+        </div>
+        <div>
+          <p className="font-semibold text-[#008A4E] text-sm">Notificaciones activas</p>
+          <p className="text-xs text-[#00CA72]">Recibirás alertas de tu tribu</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleEnableNotifications}
+      disabled={isLoading}
+      className="w-full p-4 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-xl text-white flex items-center justify-center gap-3 hover:opacity-90 transition disabled:opacity-50"
+    >
+      <Bell size={20} />
+      <span className="font-semibold">
+        {isLoading ? 'Activando...' : 'Activar Notificaciones Push'}
+      </span>
+    </button>
+  );
 };
 
 // 5. Full Profile Detail View (Other User)

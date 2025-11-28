@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ============================================
+# CREDENCIALES PRIVADAS - NO SUBIR A GIT
+# ============================================
+/private/
+/credentials/
+*.env
+.env.local
+.env.production
+firebase-admin-key.json
+serviceAccountKey.json
+
+# Archivos de configuración sensibles
+config.secret.js
+config.secret.ts
+*.secret.*

@@ -435,10 +435,67 @@ Rol: SuperAdmin
 - Password: `admin123`
 - Rol: SuperAdmin
 
-**Usuario Demo** (login normal):
-- Cualquier email/password funciona
-- Completa el survey para acceder al dashboard
+**Usuarios Reales** (login normal):
+- Contraseña universal: `TRIBU2026`
+- Emails: Ver CSV de usuarios registrados
 
 ---
 
-*Última actualización: 27-nov-2025*
+## 15. ACTUALIZACIÓN 28-NOV-2025 🚀
+
+### 15.1 Estado Actual del MVP
+
+| Feature | Estado | Descripción |
+| --- | --- | --- |
+| **23 Usuarios Reales** | ✅ | Cargados desde CSV con todos sus datos |
+| **Contraseña Universal** | ✅ | `TRIBU2026` para todos los usuarios registrados |
+| **Cambio de Contraseña** | ✅ | Modal en primer login sugiere cambiar |
+| **Algoritmo Tribal Real** | ✅ | Evita competencia, prioriza afinidades complementarias |
+| **Auto-backup Datos** | ✅ | Cada hora guarda backup en localStorage |
+| **Export/Import Datos** | ✅ | Sistema de persistencia con backup JSON |
+| **Firebase Instalado** | ✅ | Preparado para notificaciones push |
+
+### 15.2 Archivos Nuevos Creados
+
+| Archivo | Descripción |
+| --- | --- |
+| `services/realUsersData.ts` | 23 usuarios reales del CSV |
+| `services/tribeAlgorithm.ts` | Algoritmo de asignación 10+10 real |
+| `services/dataPersistence.ts` | Sistema de backup y restauración |
+| `services/firebaseService.ts` | Integración con Firebase |
+| `public/firebase-messaging-sw.js` | Service Worker para push |
+| `USO.md` | Guía de uso para usuarios y admins |
+| `CREDENCIALES_GUIA.md` | Guía de credenciales y transferencia |
+| `.env.example` | Plantilla de variables de entorno |
+
+### 15.3 Pendientes Técnicos
+
+| Feature | Prioridad | Estado |
+| --- | --- | --- |
+| **Configurar Firebase** | Alta | Crear proyecto y agregar credenciales |
+| **Notificaciones Push** | Alta | Falta conectar con UI |
+| **Backend Remoto** | Media | Actualmente localStorage (mitigado con backup) |
+| **Editar Perfil** | Media | UI existe pero falta conectar con DB |
+| **Asignaciones Manuales** | Baja | Admin poder reasignar manualmente |
+
+### 15.4 Para Transferir a las Fundadoras
+
+1. **Archivos a entregar (por email seguro):**
+   - `.env` con credenciales de Firebase
+   - Acceso a Firebase Console
+   - Acceso a Vercel Dashboard
+   - Acceso a GitHub repo
+
+2. **Documentación incluida:**
+   - `USO.md` - Cómo usar la app
+   - `CREDENCIALES_GUIA.md` - Cómo manejar credenciales
+   - `Planymejoras.md` - Este documento
+
+3. **Capacitación recomendada:**
+   - 30 min: Panel Admin y reportes
+   - 15 min: Cómo hacer backup de datos
+   - 15 min: Cómo actualizar usuarios
+
+---
+
+*Última actualización: 28-nov-2025*

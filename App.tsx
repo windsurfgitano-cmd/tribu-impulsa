@@ -34,10 +34,20 @@ import {
   Report
 } from './services/databaseService';
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
+import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
+import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
 
-// Cargar usuarios REALES al iniciar (forzar recarga para asegurar datos frescos)
+// Cargar usuarios REALES al iniciar
 forceReloadRealUsers();
+
+// Generar asignaciones de tribu si es necesario
+ensureTribeAssignments();
+
+// Habilitar auto-backup
+enableAutoBackup();
+
 console.log('🚀 Tribu Impulsa v2.0 - 23 Emprendedores Reales');
+console.log('📊 Integridad de datos:', checkDataIntegrity());
 
 const SURVEY_CATEGORY_OPTIONS = [
   "Moda Mujer Ropa  Jeans",

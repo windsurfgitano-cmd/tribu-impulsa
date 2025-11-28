@@ -88,14 +88,23 @@ const DUMMY_DATABASE: MatchProfile[] = Array.from({ length: 50 }, (_, index) => 
 
 // Convierte un UserProfile de la DB real a MatchProfile para la UI
 const userToMatchProfile = (user: UserProfile): MatchProfile => {
-  const nameParts = user.name.split(' ');
-  const isFemale = ['a', 'i'].includes(nameParts[0]?.slice(-1).toLowerCase() || '');
   const slug = user.companyName.toLowerCase().replace(/\s+/g, '');
   
-  // Extraer categoría principal
-  const categoryParts = user.category.split('  ');
-  const mainCategory = categoryParts[0] || 'General';
-  const subCategory = categoryParts.slice(1).join(' / ') || 'General';
+  // Usar datos REALES del perfil, no generar placeholders
+  const mainCategory = user.category || 'General';
+  const subCategory = user.affinity || 'General';
+  
+  // Usar avatar real del perfil o generar uno basado en el nombre
+  const avatarUrl = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6161FF&color=fff&size=200&bold=true`;
+  
+  // Usar logo real o generar uno
+  const companyLogoUrl = user.companyLogoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.companyName)}&background=00CA72&color=fff&size=100`;
+  
+  // Usar cover real o generar uno
+  const coverUrl = user.coverUrl || getRandomCover(mainCategory);
+  
+  // Usar bio real del perfil
+  const bio = user.bio || user.businessDescription || `${user.companyName} - Especialistas en ${mainCategory}.`;
   
   return {
     id: user.id,
@@ -103,13 +112,13 @@ const userToMatchProfile = (user: UserProfile): MatchProfile => {
     companyName: user.companyName,
     category: mainCategory,
     subCategory: subCategory,
-    avatarUrl: `https://randomuser.me/api/portraits/${isFemale ? 'women' : 'men'}/${Math.abs(user.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % 70}.jpg`,
-    companyLogoUrl: `https://api.dicebear.com/9.x/shapes/svg?seed=${slug}&backgroundColor=transparent`,
-    coverUrl: getRandomCover(mainCategory),
-    whatsapp: user.phone,
+    avatarUrl,
+    companyLogoUrl,
+    coverUrl,
+    whatsapp: user.whatsapp || user.phone,
     location: user.city + (user.sector ? `, ${user.sector}` : ''),
-    website: user.website || `www.${slug}.cl`,
-    bio: `${user.companyName} - Especialistas en ${subCategory}. Buscamos conectar con negocios de ${user.affinity?.split('  ')[0] || 'diversos rubros'}.`,
+    website: user.website || '',
+    bio,
     tags: [mainCategory.split(' ')[0], subCategory.split(' ')[0], user.city].filter(Boolean).slice(0, 3),
     foundingYear: 2020,
     instagram: user.instagram

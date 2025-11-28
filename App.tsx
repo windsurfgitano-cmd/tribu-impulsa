@@ -33,10 +33,11 @@ import {
   getCategoryDistribution,
   Report
 } from './services/databaseService';
-import { loadSeedUsers } from './services/seedData';
+import { loadRealUsers, validateCredentials, getUserByEmail } from './services/realUsersData';
 
-// Cargar usuarios seed al iniciar
-loadSeedUsers();
+// Cargar usuarios REALES al iniciar
+loadRealUsers();
+console.log('🚀 Tribu Impulsa cargada con usuarios REALES');
 
 const SURVEY_CATEGORY_OPTIONS = [
   "Moda Mujer Ropa  Jeans",
@@ -520,21 +521,43 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     
-    // Simulate login (in production, call API)
+    // Autenticación REAL con usuarios del CSV
     setTimeout(() => {
-      // For demo: any email/password works
-      const session: UserSession = {
-        email,
-        name: email.split('@')[0],
-        isLoggedIn: true
-      };
-      setStoredSession(session);
+      // Verificar credenciales reales
+      const user = validateCredentials(email, password);
       
-      if (hasCompletedSurvey()) navigate('/dashboard');
-      else navigate('/register');
+      if (user) {
+        // Usuario encontrado en base de datos
+        const session: UserSession = {
+          email: user.email,
+          name: user.name,
+          isLoggedIn: true
+        };
+        setStoredSession(session);
+        setCurrentUser(user.id);
+        
+        // Usuario real siempre va al dashboard (ya tiene datos)
+        navigate('/dashboard');
+      } else {
+        // Intentar como usuario nuevo
+        const existingUser = getUserByEmail(email);
+        if (existingUser) {
+          // Email existe pero password incorrecto
+          setError(`Contraseña incorrecta. Tip: usa ${email.split('@')[0]}123`);
+        } else {
+          // Usuario nuevo - crear sesión y enviar a registro
+          const session: UserSession = {
+            email,
+            name: email.split('@')[0],
+            isLoggedIn: true
+          };
+          setStoredSession(session);
+          navigate('/register');
+        }
+      }
       
       setIsLoading(false);
-    }, 800);
+    }, 500);
   };
 
   return (
@@ -600,7 +623,32 @@ const LoginScreen = () => {
           </button>
         </div>
         
-        <p className="mt-6 text-[10px] text-[#B3B8C6] uppercase tracking-widest">Acceso Exclusivo Miembros</p>
+        {/* Usuarios de prueba para testing */}
+        <div className="mt-4 p-3 bg-[#F5F7FB] rounded-xl border border-[#E4E7EF]">
+          <p className="text-[10px] text-[#7C8193] uppercase tracking-wide mb-2 font-semibold">🧪 Probar con usuario real:</p>
+          <div className="space-y-1 text-xs text-left">
+            <button 
+              onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('dafnafinkelstein123'); }}
+              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+            >
+              Dafna (By Turquía) - Joyería
+            </button>
+            <button 
+              onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('doraluz123'); }}
+              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+            >
+              Doraluz (Terraflor) - Paisajismo
+            </button>
+            <button 
+              onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('guille123'); }}
+              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+            >
+              Guillermo (Elevate) - Marketing
+            </button>
+          </div>
+        </div>
+        
+        <p className="mt-4 text-[10px] text-[#B3B8C6] uppercase tracking-widest">23 Emprendedores Reales</p>
       </div>
     </div>
   );

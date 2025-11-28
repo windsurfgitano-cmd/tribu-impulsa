@@ -4,31 +4,40 @@
 export interface UserProfile {
   id: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   // Datos personales
   name: string;
   email: string;
   phone: string;
+  password?: string; // Para auth temporal
   // Emprendimiento
   companyName: string;
   city: string;
   sector?: string; // Comuna si es local
+  bio?: string; // Descripción corta del negocio
+  businessDescription?: string; // Propuesta de valor
   // Redes sociales
   instagram: string;
   facebook?: string;
   tiktok?: string;
   website?: string;
   otherChannel?: string;
+  whatsapp?: string;
   // Clasificación negocio (GIRO/RUBRO primero)
   category: string;      // Giro/Rubro del negocio
   affinity: string;      // Con qué tipo de negocios quiere conectar
-  scope: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
-  // Datos adicionales
+  scope?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
+  // Perfil visual
+  avatarUrl?: string;
+  companyLogoUrl?: string;
+  coverUrl?: string;
+  // Métricas
+  followers?: number;
   revenue?: string;
   // Estado
   status: 'pending' | 'active' | 'suspended';
-  surveyCompleted: boolean;
-  tribeAssigned: boolean;
+  surveyCompleted?: boolean;
+  tribeAssigned?: boolean;
 }
 
 export interface Notification {

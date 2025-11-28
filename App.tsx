@@ -33,11 +33,11 @@ import {
   getCategoryDistribution,
   Report
 } from './services/databaseService';
-import { loadRealUsers, validateCredentials, getUserByEmail } from './services/realUsersData';
+import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 
-// Cargar usuarios REALES al iniciar
-loadRealUsers();
-console.log('🚀 Tribu Impulsa cargada con usuarios REALES');
+// Cargar usuarios REALES al iniciar (forzar recarga para asegurar datos frescos)
+forceReloadRealUsers();
+console.log('🚀 Tribu Impulsa v2.0 - 23 Emprendedores Reales');
 
 const SURVEY_CATEGORY_OPTIONS = [
   "Moda Mujer Ropa  Jeans",
@@ -521,13 +521,12 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     
-    // Autenticación REAL con usuarios del CSV
+    // Autenticación REAL con contraseña universal TRIBU2026
     setTimeout(() => {
-      // Verificar credenciales reales
       const user = validateCredentials(email, password);
       
       if (user) {
-        // Usuario encontrado en base de datos
+        // Usuario encontrado y autenticado
         const session: UserSession = {
           email: user.email,
           name: user.name,
@@ -536,16 +535,20 @@ const LoginScreen = () => {
         setStoredSession(session);
         setCurrentUser(user.id);
         
-        // Usuario real siempre va al dashboard (ya tiene datos)
+        // Guardar flag de primer login para mostrar modal después
+        if ((user as { firstLogin?: boolean }).firstLogin) {
+          localStorage.setItem('show_password_change', 'true');
+        }
+        
+        // Usuario real va directo al dashboard (ya tiene todos sus datos)
         navigate('/dashboard');
       } else {
-        // Intentar como usuario nuevo
+        // Verificar si el email existe
         const existingUser = getUserByEmail(email);
         if (existingUser) {
-          // Email existe pero password incorrecto
-          setError(`Contraseña incorrecta. Tip: usa ${email.split('@')[0]}123`);
+          setError('Contraseña incorrecta. Usa: TRIBU2026');
         } else {
-          // Usuario nuevo - crear sesión y enviar a registro
+          // Usuario nuevo - enviar a registro
           const session: UserSession = {
             email,
             name: email.split('@')[0],
@@ -623,32 +626,32 @@ const LoginScreen = () => {
           </button>
         </div>
         
-        {/* Usuarios de prueba para testing */}
-        <div className="mt-4 p-3 bg-[#F5F7FB] rounded-xl border border-[#E4E7EF]">
-          <p className="text-[10px] text-[#7C8193] uppercase tracking-wide mb-2 font-semibold">🧪 Probar con usuario real:</p>
+        {/* Acceso rápido para usuarios registrados */}
+        <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
+          <p className="text-[10px] text-[#6161FF] uppercase tracking-wide mb-2 font-bold">🔐 Contraseña universal: TRIBU2026</p>
           <div className="space-y-1 text-xs text-left">
             <button 
-              onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('dafnafinkelstein123'); }}
-              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+              onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
+              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
             >
-              Dafna (By Turquía) - Joyería
+              👉 Dafna Finkelstein - <span className="text-[#7C8193]">By Turquía (Joyería)</span>
             </button>
             <button 
-              onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('doraluz123'); }}
-              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+              onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('TRIBU2026'); }}
+              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
             >
-              Doraluz (Terraflor) - Paisajismo
+              👉 Doraluz Galleguillos - <span className="text-[#7C8193]">Terraflor (Paisajismo)</span>
             </button>
             <button 
-              onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('guille123'); }}
-              className="block w-full text-left px-2 py-1 hover:bg-white rounded text-[#6161FF]"
+              onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('TRIBU2026'); }}
+              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
             >
-              Guillermo (Elevate) - Marketing
+              👉 Guillermo García - <span className="text-[#7C8193]">Elevate (Marketing)</span>
             </button>
           </div>
         </div>
         
-        <p className="mt-4 text-[10px] text-[#B3B8C6] uppercase tracking-widest">23 Emprendedores Reales</p>
+        <p className="mt-4 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Emprendedores Verificados</p>
       </div>
     </div>
   );
@@ -2021,6 +2024,79 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   );
 };
 
+// Modal de cambio de contraseña para primer login
+const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: string) => void; onSkip: () => void }) => {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    if (newPassword.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    onComplete(newPassword);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-slideUp">
+        <div className="p-6">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FFCC00] to-[#FFE066] flex items-center justify-center text-3xl shadow-lg">
+            🔐
+          </div>
+          <h2 className="text-xl font-bold text-[#181B34] text-center mb-2">¡Bienvenido/a a Tribu!</h2>
+          <p className="text-[#7C8193] text-center text-sm mb-4">
+            Por seguridad, te recomendamos cambiar tu contraseña
+          </p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1">Nueva contraseña</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1">Confirmar contraseña</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
+                placeholder="Repite tu contraseña"
+              />
+            </div>
+            
+            {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+
+            <button
+              onClick={handleSubmit}
+              className="w-full py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition"
+            >
+              Guardar nueva contraseña
+            </button>
+            <button
+              onClick={onSkip}
+              className="w-full py-2 text-[#7C8193] hover:text-[#181B34] text-sm transition"
+            >
+              Mantener TRIBU2026 por ahora
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // 7. Dashboard (Matches)
 const Dashboard = () => {
   useSurveyGuard();
@@ -2037,20 +2113,45 @@ const Dashboard = () => {
     return !isOnboardingComplete(currentUser.id);
   });
   
+  // Password change modal for first login
+  const [showPasswordChange, setShowPasswordChange] = useState(() => {
+    return localStorage.getItem('show_password_change') === 'true';
+  });
+  
   const handleOnboardingComplete = () => {
     if (currentUser) {
       updateOnboardingProgress(currentUser.id, 'viewedWelcome');
       updateOnboardingProgress(currentUser.id, 'viewedTribeExplainer');
       updateOnboardingProgress(currentUser.id, 'viewedChecklistTutorial');
       updateOnboardingProgress(currentUser.id, 'viewedProfileSetup');
-      // Also send welcome notification
       createReminder(currentUser.id, 'welcome');
     }
     setShowOnboarding(false);
   };
+  
+  const handlePasswordChange = (newPassword: string) => {
+    if (currentUser) {
+      changeUserPassword(currentUser.id, newPassword);
+    }
+    localStorage.removeItem('show_password_change');
+    setShowPasswordChange(false);
+  };
+  
+  const handleSkipPasswordChange = () => {
+    if (currentUser) {
+      markFirstLoginComplete(currentUser.id);
+    }
+    localStorage.removeItem('show_password_change');
+    setShowPasswordChange(false);
+  };
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
+      {/* Password Change Modal (first login) */}
+      {showPasswordChange && !showOnboarding && (
+        <PasswordChangeModal onComplete={handlePasswordChange} onSkip={handleSkipPasswordChange} />
+      )}
+      
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
       

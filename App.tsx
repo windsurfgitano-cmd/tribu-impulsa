@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3 } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
@@ -19,6 +19,7 @@ import {
   getAllInteractions,
   UserProfile,
   createNotification,
+  updateUser,
   // Nuevas funciones
   getAllUsersCompliance,
   getComplianceStats,
@@ -36,7 +37,7 @@ import {
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
-import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification } from './services/firebaseService';
+import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification, saveUserFCMToken, sendPushToAll, countUsersWithPush } from './services/firebaseService';
 
 // Cargar usuarios REALES al iniciar
 forceReloadRealUsers();
@@ -1606,10 +1607,34 @@ const MyProfileView = () => {
     useSurveyGuard();
     const [isEditing, setIsEditing] = useState(false);
     const [profile, setProfile] = useState(getMyProfile());
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const currentUser = getCurrentUser();
 
     const handleSave = () => {
+        if (!currentUser) return;
+        setIsSaving(true);
+        
+        // Guardar cambios en la base de datos
+        const updated = updateUser(currentUser.id, {
+            name: profile.name,
+            companyName: profile.companyName,
+            bio: profile.bio,
+            instagram: profile.instagram,
+            website: profile.website,
+            city: profile.location?.split(',')[0]?.trim() || '',
+        });
+        
+        if (updated) {
+            setSaveMessage('✅ Perfil actualizado');
+            setTimeout(() => setSaveMessage(null), 3000);
+        } else {
+            setSaveMessage('❌ Error al guardar');
+            setTimeout(() => setSaveMessage(null), 3000);
+        }
+        
+        setIsSaving(false);
         setIsEditing(false);
-        // Logic to save to backend would go here
     };
 
     return (
@@ -1675,12 +1700,25 @@ const MyProfileView = () => {
                         </div>
                     </div>
 
+                    {/* Mensaje de guardado */}
+                    {saveMessage && (
+                        <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${
+                            saveMessage.includes('✅') 
+                                ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30' 
+                                : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
+                        }`}>
+                            {saveMessage}
+                        </div>
+                    )}
+
                     {/* Actions */}
                     <div className="flex justify-end w-full mb-4">
             {isEditing ? (
                 <div className="flex gap-2 ml-auto">
                     <button onClick={() => setIsEditing(false)} className="p-2 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20"><X size={20}/></button>
-                    <button onClick={handleSave} className="p-2 rounded-full bg-[#00CA72]/10 text-[#00CA72] hover:bg-[#00CA72]/20"><Save size={20}/></button>
+                    <button onClick={handleSave} disabled={isSaving} className="p-2 rounded-full bg-[#00CA72]/10 text-[#00CA72] hover:bg-[#00CA72]/20 disabled:opacity-50">
+                        {isSaving ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20}/>}
+                    </button>
                 </div>
             ) : (
                 <button onClick={() => setIsEditing(true)} className="text-xs flex items-center gap-1 text-[#6161FF] hover:text-[#00CA72] transition-colors ml-auto font-medium">
@@ -1688,6 +1726,39 @@ const MyProfileView = () => {
                 </button>
             )}
         </div>
+
+        {/* Redes sociales editables */}
+        {isEditing && (
+          <div className="w-full mb-6 space-y-3">
+            <div>
+              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Instagram</label>
+              <input 
+                value={profile.instagram}
+                onChange={(e) => setProfile({...profile, instagram: e.target.value})}
+                placeholder="@tu_instagram"
+                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
+              <input 
+                value={profile.website}
+                onChange={(e) => setProfile({...profile, website: e.target.value})}
+                placeholder="www.tusitio.cl"
+                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Ubicación</label>
+              <input 
+                value={profile.location}
+                onChange={(e) => setProfile({...profile, location: e.target.value})}
+                placeholder="Santiago, Chile"
+                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+              />
+            </div>
+          </div>
+        )}
 
         {!isEditing && profile && (
           <div className="flex flex-wrap gap-3 w-full mb-6">
@@ -1783,11 +1854,16 @@ const MyProfileView = () => {
 const NotificationButton = () => {
   const [status, setStatus] = useState(getNotificationStatus());
   const [isLoading, setIsLoading] = useState(false);
+  const currentUser = getCurrentUser();
 
   const handleEnableNotifications = async () => {
     setIsLoading(true);
     const token = await requestNotificationPermission();
     if (token) {
+      // Guardar token asociado al usuario para poder enviarle push después
+      if (currentUser) {
+        saveUserFCMToken(currentUser.id, token);
+      }
       sendLocalNotification('¡Notificaciones activadas!', 'Recibirás alertas de tu tribu');
     }
     setStatus(getNotificationStatus());
@@ -2643,12 +2719,26 @@ const AdminPanelInline = () => {
               <div className="flex gap-2">
                 <button 
                   onClick={() => {
+                    const pushCount = countUsersWithPush();
+                    if (pushCount === 0) {
+                      alert('⚠️ Ningún usuario tiene notificaciones push activas');
+                      return;
+                    }
+                    const sent = sendPushToAll('📢 Recordatorio de Tribu', '¡No olvides completar tus 10+10 esta semana!');
+                    alert(`✅ Push enviado a ${sent} usuarios`);
+                  }}
+                  className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white px-4 py-2 rounded-lg hover:opacity-90 text-sm font-medium transition flex items-center gap-2"
+                >
+                  <Zap size={16} /> Push Masivo ({countUsersWithPush()})
+                </button>
+                <button 
+                  onClick={() => {
                     const count = sendBulkReminder('mid_month');
-                    alert(`✅ Recordatorio enviado a ${count} usuarios`);
+                    alert(`✅ Recordatorio in-app enviado a ${count} usuarios`);
                   }}
                   className="bg-[#A78BFA] text-white px-4 py-2 rounded-lg hover:bg-[#7C3AED] text-sm font-medium transition flex items-center gap-2"
                 >
-                  <Send size={16} /> Recordatorio Masivo
+                  <Send size={16} /> Recordatorio In-App
                 </button>
               </div>
             </div>

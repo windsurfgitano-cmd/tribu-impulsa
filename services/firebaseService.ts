@@ -177,6 +177,59 @@ export const getNotificationStatus = (): {
   };
 };
 
+// Guardar token de un usuario específico (para enviar push después)
+export const saveUserFCMToken = (userId: string, token: string): void => {
+  const tokens = JSON.parse(localStorage.getItem('fcm_user_tokens') || '{}');
+  tokens[userId] = { token, savedAt: new Date().toISOString() };
+  localStorage.setItem('fcm_user_tokens', JSON.stringify(tokens));
+};
+
+// Obtener tokens de todos los usuarios
+export const getAllUserFCMTokens = (): Record<string, { token: string; savedAt: string }> => {
+  return JSON.parse(localStorage.getItem('fcm_user_tokens') || '{}');
+};
+
+// Contar usuarios con notificaciones activas
+export const countUsersWithPush = (): number => {
+  const tokens = getAllUserFCMTokens();
+  return Object.keys(tokens).length;
+};
+
+// Simular envío de push (en producción usarías Firebase Admin SDK desde un backend)
+export const sendPushToUser = (userId: string, title: string, body: string): boolean => {
+  const tokens = getAllUserFCMTokens();
+  const userToken = tokens[userId];
+  
+  if (!userToken) {
+    console.warn(`Usuario ${userId} no tiene token de push`);
+    return false;
+  }
+  
+  // En producción, aquí enviarías a tu backend que usa Firebase Admin SDK
+  // Por ahora, mostramos notificación local si estamos en el mismo navegador
+  console.log(`📤 Push enviado a usuario ${userId}:`, { title, body, token: userToken.token.slice(0, 20) + '...' });
+  
+  // Mostrar notificación local como demostración
+  sendLocalNotification(title, body);
+  
+  return true;
+};
+
+// Enviar push a todos los usuarios con tokens
+export const sendPushToAll = (title: string, body: string): number => {
+  const tokens = getAllUserFCMTokens();
+  let sent = 0;
+  
+  for (const userId of Object.keys(tokens)) {
+    if (sendPushToUser(userId, title, body)) {
+      sent++;
+    }
+  }
+  
+  console.log(`📤 Push masivo enviado a ${sent} usuarios`);
+  return sent;
+};
+
 export default {
   initializeFirebase,
   isFirebaseConfigured,

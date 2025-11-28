@@ -4,6 +4,23 @@
 
 ---
 
+## 🤖 AZURE OPENAI (GPT-5.1)
+
+```
+Endpoint: [CONFIGURAR EN CONSOLA DEL NAVEGADOR]
+API Key: [CONFIGURAR EN CONSOLA DEL NAVEGADOR]
+Model: gpt-5.1-chat
+```
+
+**Configuración:** Abrir consola del navegador (F12) y ejecutar:
+```javascript
+configureAzureAI('TU_ENDPOINT', 'TU_API_KEY');
+```
+
+**Uso:** Algoritmo de matching inteligente (Fase 5)
+
+---
+
 ## 📁 Estructura de Archivos Privados
 
 ```

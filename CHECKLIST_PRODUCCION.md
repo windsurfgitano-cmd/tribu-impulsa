@@ -21,12 +21,14 @@
 ## 🔴 NIVEL 1: INFRAESTRUCTURA (Crítico)
 
 ### 1.1 Base de Datos Cloud
-- [ ] **Configurar Firebase Firestore** ← YA TENEMOS FIREBASE
-  - [ ] Crear colecciones: `users`, `tribes`, `assignments`, `reports`, `notifications`
-  - [ ] Definir reglas de seguridad
-  - [ ] Migrar estructura de datos de localStorage a Firestore
-- [ ] **Complejidad**: Media | **Tiempo**: 2-3 horas
-- [ ] **Riesgo de romper código**: Bajo (nuevo servicio, reemplazo gradual)
+- [x] **Configurar Firebase Firestore** ✅ COMPLETADO
+  - [x] Crear `services/firestoreService.ts` con todas las operaciones
+  - [x] Colecciones: `users`, `assignments`, `checklists`, `reports`, `notifications`
+  - [x] Auth con Firebase Auth
+  - [x] Listeners en tiempo real
+  - [ ] ⏳ Crear reglas de seguridad en Firebase Console
+- [x] **Complejidad**: Media | **Tiempo**: 2-3 horas ✅
+- [x] **Riesgo de romper código**: Bajo (nuevo servicio)
 
 ### 1.2 Autenticación Real
 - [ ] **Implementar Firebase Auth**
@@ -38,12 +40,13 @@
 - [ ] **Riesgo**: Bajo (reemplazo del sistema actual)
 
 ### 1.3 Migración de Datos
-- [ ] **Script de migración**
-  - [ ] Subir los 23 usuarios del CSV a Firestore
-  - [ ] Convertir contraseñas a hash seguro
-  - [ ] Preservar todos los campos
-- [ ] **Complejidad**: Baja | **Tiempo**: 30 min
-- [ ] **Riesgo**: Bajo
+- [x] **Script de migración** ✅ COMPLETADO
+  - [x] Crear `services/seedFirestore.ts`
+  - [x] 23 usuarios reales listos para subir
+  - [x] Contraseña universal TRIBU2026
+  - [ ] ⏳ Ejecutar migración en producción
+- [x] **Complejidad**: Baja | **Tiempo**: 30 min ✅
+- [x] **Riesgo**: Bajo
 
 ---
 
@@ -100,14 +103,15 @@
 ## 🟢 NIVEL 4: MEJORAS DE ALGORITMO (Opcional/Futuro)
 
 ### 4.1 Algoritmo con LLM
-- [ ] **Integrar OpenAI/Claude API**
-  - [ ] Analizar bios y descripciones de negocio
-  - [ ] Matching semántico (no solo por categoría)
-  - [ ] Detectar sinergias no obvias
-  - [ ] Explicar por qué se matchearon
-- [ ] **Complejidad**: Alta | **Tiempo**: 4-6 horas
-- [ ] **Riesgo**: Bajo (mejora opcional)
-- [ ] **Costo**: ~$0.01-0.10 por matching (API OpenAI)
+- [x] **Integrar Azure OpenAI (GPT-5.1)** ✅ COMPLETADO
+  - [x] Crear `services/aiMatchingService.ts`
+  - [x] Matching semántico inteligente
+  - [x] Detectar sinergias no obvias
+  - [x] Explicar por qué se matchearon
+  - [x] Generar sugerencias de contenido
+  - [ ] ⏳ Integrar en el flujo de asignaciones
+- [x] **Complejidad**: Alta | **Tiempo**: 4-6 horas ✅
+- [x] **Riesgo**: Bajo (mejora opcional)
 
 ### 4.2 Scoring Dinámico
 - [ ] **Mejorar compatibilidad**

@@ -572,13 +572,26 @@ const LoginScreen = () => {
         setStoredSession(session);
         setCurrentUser(user.id);
         
+        // Marcar survey como completado para usuarios reales (ya tienen todos sus datos)
+        const surveyData = {
+          email: user.email,
+          name: user.name,
+          phone: user.phone || '',
+          instagram: user.instagram || '',
+          city: user.city || '',
+          category: user.category || '',
+          affinity: user.affinityChoices?.[0] || user.category || '',
+          scope: 'NACIONAL'
+        };
+        localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
+        
         // Guardar flag de primer login para mostrar modal después
         if ((user as { firstLogin?: boolean }).firstLogin) {
           localStorage.setItem('show_password_change', 'true');
         }
         
-        // Usuario real va directo al dashboard (ya tiene todos sus datos)
-        navigate('/dashboard');
+        // Usuario real pasa por animación del algoritmo (rápida si ya lo vio)
+        navigate('/searching');
       } else {
         // Verificar si el email existe
         const existingUser = getUserByEmail(email);
@@ -1047,16 +1060,33 @@ const SearchingScreen = () => {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('Iniciando Algoritmo Tribal X...');
   
-  const messages = [
+  // Detectar si es primera vez o login posterior
+  const isFirstTime = !localStorage.getItem('algorithm_seen');
+  const totalDuration = isFirstTime ? 10000 : 3000; // 10s primera vez, 3s después
+  
+  const messagesFirst = [
     'Iniciando Algoritmo Tribal X...',
+    'Conectando con la red de emprendedores...',
     'Analizando tu perfil de negocio...',
     'Escaneando el ecosistema emprendedor...',
     'Identificando afinidades potenciales...',
-    'Calculando compatibilidad tribal...',
-    'Generando matches estratégicos...',
-    'Preparando tu tribu 10+10...',
+    'Evaluando compatibilidad empresarial...',
+    'Calculando sinergias estratégicas...',
+    'Generando matches personalizados...',
+    'Optimizando tu tribu 10+10...',
+    'Preparando recomendaciones...',
     '¡Tu tribu está lista! 🎉'
   ];
+  
+  const messagesQuick = [
+    'Actualizando tu tribu...',
+    'Sincronizando datos...',
+    'Verificando conexiones...',
+    '¡Listo! 🎉'
+  ];
+  
+  const messages = isFirstTime ? messagesFirst : messagesQuick;
+  const intervalTime = totalDuration / 50; // 50 pasos para llegar a 100%
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1067,14 +1097,16 @@ const SearchingScreen = () => {
         
         if (next >= 100) {
           clearInterval(interval);
-          setTimeout(() => navigate('/dashboard'), 800);
+          // Marcar que ya vio el algoritmo
+          localStorage.setItem('algorithm_seen', 'true');
+          setTimeout(() => navigate('/dashboard'), 500);
         }
         return Math.min(next, 100);
       });
-    }, 80);
+    }, intervalTime);
     
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [navigate, intervalTime, messages]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#181B34] relative overflow-hidden">
@@ -1612,6 +1644,28 @@ const TribeAssignmentsView = () => {
   );
 };
 
+// Función para comprimir imagen
+const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      const ratio = maxWidth / img.width;
+      canvas.width = maxWidth;
+      canvas.height = img.height * ratio;
+      
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+      resolve(compressedBase64);
+    };
+    
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 // 5. My Profile View (Editable)
 const MyProfileView = () => {
     const navigate = useNavigate();
@@ -1620,7 +1674,41 @@ const MyProfileView = () => {
     const [profile, setProfile] = useState(getMyProfile());
     const [isSaving, setIsSaving] = useState(false);
     const [saveMessage, setSaveMessage] = useState<string | null>(null);
+    const [newTag, setNewTag] = useState('');
+    const [showTagInput, setShowTagInput] = useState(false);
     const currentUser = getCurrentUser();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Manejar upload de foto
+    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      try {
+        setSaveMessage('📷 Procesando imagen...');
+        const compressed = await compressImage(file, 400);
+        setProfile({...profile, avatarUrl: compressed});
+        setSaveMessage('✅ Foto lista para guardar');
+        setTimeout(() => setSaveMessage(null), 2000);
+      } catch {
+        setSaveMessage('❌ Error al procesar imagen');
+        setTimeout(() => setSaveMessage(null), 3000);
+      }
+    };
+
+    // Agregar etiqueta
+    const handleAddTag = () => {
+      if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
+        setProfile({...profile, tags: [...profile.tags, newTag.trim()]});
+        setNewTag('');
+        setShowTagInput(false);
+      }
+    };
+
+    // Eliminar etiqueta
+    const handleRemoveTag = (tagToRemove: string) => {
+      setProfile({...profile, tags: profile.tags.filter(t => t !== tagToRemove)});
+    };
 
     const handleSave = () => {
         if (!currentUser) return;
@@ -1634,6 +1722,7 @@ const MyProfileView = () => {
             instagram: profile.instagram,
             website: profile.website,
             city: profile.location?.split(',')[0]?.trim() || '',
+            avatarUrl: profile.avatarUrl,
         });
         
         if (updated) {
@@ -1670,16 +1759,35 @@ const MyProfileView = () => {
             <div className="px-4 -mt-24 relative z-10">
                 <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
                     
-                    {/* Avatar - Standard Block with Negative Margin */}
+                    {/* Avatar - Con upload de foto */}
                     <div className="relative -mt-20 mb-6 group z-20">
                         <img 
                             src={profile.avatarUrl} 
                             alt={profile.name}
                             className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
                         />
-                        <div className="absolute bottom-0 right-0 bg-[#6161FF] rounded-full p-2 border-4 border-white">
+                        {isEditing ? (
+                          <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity"
+                          >
+                            <div className="text-center">
+                              <Edit2 size={20} className="mx-auto mb-1" />
+                              <span className="text-xs">Cambiar</span>
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="absolute bottom-0 right-0 bg-[#6161FF] rounded-full p-2 border-4 border-white">
                             <Edit2 size={14} className="text-white" />
-                        </div>
+                          </div>
+                        )}
+                        <input 
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
                     </div>
 
                     {/* Main Info - Flows naturally after the avatar */}
@@ -1831,14 +1939,50 @@ const MyProfileView = () => {
                             <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Etiquetas</h3>
                             <div className="flex flex-wrap gap-2">
                                 {profile.tags.map(tag => (
-                                <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
+                                <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors flex items-center gap-2">
                                     #{tag}
+                                    {isEditing && (
+                                      <button 
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className="text-[#FB275D] hover:text-[#FB275D] ml-1"
+                                      >
+                                        <X size={14} />
+                                      </button>
+                                    )}
                                 </span>
                                 ))}
-                                {isEditing && (
-                                    <button className="text-sm border border-dashed border-[#6161FF]/40 px-4 py-2 rounded-lg text-[#6161FF] hover:bg-[#6161FF]/10">
+                                {isEditing && !showTagInput && (
+                                    <button 
+                                      onClick={() => setShowTagInput(true)}
+                                      className="text-sm border border-dashed border-[#6161FF]/40 px-4 py-2 rounded-lg text-[#6161FF] hover:bg-[#6161FF]/10"
+                                    >
                                         + Agregar
                                     </button>
+                                )}
+                                {isEditing && showTagInput && (
+                                  <div className="flex gap-2 items-center">
+                                    <input
+                                      type="text"
+                                      value={newTag}
+                                      onChange={(e) => setNewTag(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                                      placeholder="Nueva etiqueta"
+                                      className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-3 py-2 rounded-lg outline-none focus:border-[#6161FF] w-32"
+                                      autoFocus
+                                    />
+                                    <button 
+                                      onClick={handleAddTag}
+                                      className="text-[#00CA72] hover:text-[#00B366]"
+                                    >
+                                      <CheckCircle size={20} />
+                                    </button>
+                                    <button 
+                                      onClick={() => { setShowTagInput(false); setNewTag(''); }}
+                                      className="text-[#7C8193] hover:text-[#FB275D]"
+                                    >
+                                      <X size={20} />
+                                    </button>
+                                  </div>
                                 )}
                             </div>
                         </div>
@@ -2047,41 +2191,237 @@ const ProfileDetail = () => {
   );
 };
 
-// 6. Activity View
+// 6. Activity View - Sistema de notificaciones tribales
+// 20 tipos de actividades:
+// 1. share_reminder - Recordatorio de compartir
+// 2. report_warning - Alguien te reportó
+// 3. report_received - Recibiste un reporte de alguien
+// 4. thanks_received - Alguien te dio gracias
+// 5. like_received - Alguien te dio like
+// 6. shared_you - Alguien te compartió
+// 7. new_assignment - Nueva asignación tribal
+// 8. month_start - Inicio de mes
+// 9. mid_month - Recordatorio mitad de mes
+// 10. month_end - Fin de mes
+// 11. streak_achieved - Racha lograda
+// 12. compliance_low - Cumplimiento bajo
+// 13. compliance_high - Cumplimiento excelente
+// 14. new_member - Nuevo miembro en la comunidad
+// 15. profile_viewed - Alguien vio tu perfil
+// 16. tribe_updated - Tu tribu fue actualizada
+// 17. welcome - Bienvenida
+// 18. tip - Consejo del día
+// 19. achievement - Logro desbloqueado
+// 20. system - Mensaje del sistema
+
+interface ActivityItem {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  isRead: boolean;
+  icon: string;
+  color: string;
+  actionUrl?: string;
+}
+
+const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: number }> = {
+  share_reminder: { icon: '📤', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 1 },
+  report_warning: { icon: '⚠️', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  report_received: { icon: '📋', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  thanks_received: { icon: '💜', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 2 },
+  like_received: { icon: '❤️', color: 'bg-[#FB275D]/10 text-[#E91E63]', priority: 2 },
+  shared_you: { icon: '🔄', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
+  new_assignment: { icon: '🎯', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 0 },
+  month_start: { icon: '📅', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
+  mid_month: { icon: '⏰', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 1 },
+  month_end: { icon: '🏁', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  streak_achieved: { icon: '🔥', color: 'bg-[#FF6B35]/10 text-[#FF6B35]', priority: 2 },
+  compliance_low: { icon: '📉', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  compliance_high: { icon: '🏆', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 2 },
+  new_member: { icon: '👋', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 3 },
+  profile_viewed: { icon: '👀', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 3 },
+  tribe_updated: { icon: '🔄', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 1 },
+  welcome: { icon: '🎉', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 0 },
+  tip: { icon: '💡', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 3 },
+  achievement: { icon: '🏅', color: 'bg-[#FFD700]/10 text-[#B8860B]', priority: 2 },
+  system: { icon: '📢', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 2 }
+};
+
+const generateSampleActivities = (): ActivityItem[] => {
+  const now = new Date();
+  return [
+    {
+      id: '1',
+      type: 'welcome',
+      title: '¡Bienvenido/a a Tribu Impulsa!',
+      description: 'Tu comunidad de emprendedores te espera. Revisa tu tribu 10+10 y comienza a compartir.',
+      timestamp: 'Hoy',
+      isRead: false,
+      icon: '🎉',
+      color: 'bg-[#00CA72]/10 text-[#00CA72]',
+      actionUrl: '/tribe'
+    },
+    {
+      id: '2',
+      type: 'share_reminder',
+      title: 'Evita que te reporten',
+      description: 'Recuerda compartir contenido de tu tribu. Llevas 3/10 este mes.',
+      timestamp: 'Hace 2h',
+      isRead: false,
+      icon: '📤',
+      color: 'bg-[#FFCC00]/10 text-[#9D6B00]',
+      actionUrl: '/tribe'
+    },
+    {
+      id: '3',
+      type: 'thanks_received',
+      title: '¡Alguien te envió un Gracias!',
+      description: 'María de Dulce Momento agradeció tu compartida.',
+      timestamp: 'Hace 5h',
+      isRead: true,
+      icon: '💜',
+      color: 'bg-[#6161FF]/10 text-[#6161FF]'
+    },
+    {
+      id: '4',
+      type: 'shared_you',
+      title: 'Te compartieron en Instagram',
+      description: 'Roberto de EcoPack compartió tu última publicación.',
+      timestamp: 'Ayer',
+      isRead: true,
+      icon: '🔄',
+      color: 'bg-[#00CA72]/10 text-[#00CA72]'
+    },
+    {
+      id: '5',
+      type: 'new_assignment',
+      title: 'Nueva tribu de Noviembre',
+      description: 'Tu tribu 10+10 ha sido actualizada. ¡Revisa tus nuevas asignaciones!',
+      timestamp: 'Nov 1',
+      isRead: true,
+      icon: '🎯',
+      color: 'bg-[#6161FF]/10 text-[#6161FF]',
+      actionUrl: '/tribe'
+    },
+    {
+      id: '6',
+      type: 'tip',
+      title: 'Consejo del día',
+      description: 'Comparte historias, no solo posts. Las historias tienen más alcance.',
+      timestamp: 'Nov 15',
+      isRead: true,
+      icon: '💡',
+      color: 'bg-[#FFCC00]/10 text-[#9D6B00]'
+    }
+  ];
+};
+
 const ActivityView = () => {
   useSurveyGuard();
-  const activities = getMockActivity();
+  const navigate = useNavigate();
+  const [activities, setActivities] = useState<ActivityItem[]>(() => generateSampleActivities());
+  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  
+  const filteredActivities = filter === 'unread' 
+    ? activities.filter(a => !a.isRead)
+    : activities;
+  
+  const unreadCount = activities.filter(a => !a.isRead).length;
+  
+  const markAsRead = (id: string) => {
+    setActivities(prev => prev.map(a => a.id === id ? { ...a, isRead: true } : a));
+  };
+  
+  const markAllAsRead = () => {
+    setActivities(prev => prev.map(a => ({ ...a, isRead: true })));
+  };
+  
+  const deleteActivity = (id: string) => {
+    setActivities(prev => prev.filter(a => a.id !== id));
+  };
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
-      <header className="px-6 py-6 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-[#181B34] tracking-tight">
-          <Bell className="text-[#6161FF]" /> Actividad Tribal
-        </h1>
+      <header className="px-6 py-4 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="text-xl font-bold flex items-center gap-2 text-[#181B34]">
+            <Bell className="text-[#6161FF]" /> Actividad
+            {unreadCount > 0 && (
+              <span className="bg-[#FB275D] text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
+            )}
+          </h1>
+          {unreadCount > 0 && (
+            <button 
+              onClick={markAllAsRead}
+              className="text-sm text-[#6161FF] hover:underline"
+            >
+              Marcar todo leído
+            </button>
+          )}
+        </div>
+        
+        {/* Filtros */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              filter === 'all' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+            }`}
+          >
+            Todas
+          </button>
+          <button
+            onClick={() => setFilter('unread')}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+              filter === 'unread' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+            }`}
+          >
+            Sin leer ({unreadCount})
+          </button>
+        </div>
       </header>
       
-      <div className="px-4 py-4 space-y-4">
-        {activities.map((item) => (
-          <div key={item.id} className="bg-white p-5 rounded-2xl flex gap-5 items-start group hover:shadow-md transition-all border border-[#E4E7EF]">
-            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-               item.type === 'match' ? 'bg-[#FFCC00]/10 text-[#9D6B00]' :
-               item.type === 'system' ? 'bg-[#6161FF]/10 text-[#6161FF]' :
-               'bg-[#00CA72]/10 text-[#00CA72]'
-            }`}>
-              {item.type === 'match' ? <Sparkles size={20} /> : <Activity size={20} />}
-            </div>
-            <div className="flex-1 pt-1">
-              <div className="flex justify-between items-start mb-1">
-                 <h3 className="font-bold text-[#181B34] text-base">{item.title}</h3>
-                 <span className="text-[10px] text-[#7C8193] uppercase tracking-wide bg-[#F5F7FB] px-2 py-1 rounded">{item.timestamp}</span>
-              </div>
-              <p className="text-sm text-[#7C8193] leading-relaxed">{item.description}</p>
-            </div>
-            {!item.isRead && (
-              <div className="w-2 h-2 bg-[#FB275D] rounded-full mt-3 shadow-[0_0_10px_rgba(251,39,93,0.4)]"></div>
-            )}
+      <div className="px-4 py-4 space-y-3">
+        {filteredActivities.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-3">📭</div>
+            <p className="text-[#7C8193]">No hay actividades {filter === 'unread' ? 'sin leer' : ''}</p>
           </div>
-        ))}
+        ) : (
+          filteredActivities.map((item) => (
+            <div 
+              key={item.id} 
+              className={`bg-white p-4 rounded-2xl flex gap-4 items-start group hover:shadow-md transition-all border ${
+                item.isRead ? 'border-[#E4E7EF]' : 'border-[#6161FF]/30 bg-[#6161FF]/5'
+              }`}
+              onClick={() => {
+                markAsRead(item.id);
+                if (item.actionUrl) navigate(item.actionUrl);
+              }}
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${item.color}`}>
+                {item.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className={`font-semibold text-sm ${item.isRead ? 'text-[#434343]' : 'text-[#181B34]'}`}>
+                    {item.title}
+                  </h3>
+                  <span className="text-[10px] text-[#7C8193] whitespace-nowrap">{item.timestamp}</span>
+                </div>
+                <p className="text-xs text-[#7C8193] leading-relaxed line-clamp-2">{item.description}</p>
+              </div>
+              <button 
+                onClick={(e) => { e.stopPropagation(); deleteActivity(item.id); }}
+                className="opacity-0 group-hover:opacity-100 text-[#7C8193] hover:text-[#FB275D] transition p-1"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -2144,8 +2484,8 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   };
   
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-slideUp">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slideUp my-auto max-h-[90vh] overflow-y-auto">
         {/* Progress */}
         <div className="flex gap-1 p-4">
           {TUTORIAL_STEPS.map((_, i) => (

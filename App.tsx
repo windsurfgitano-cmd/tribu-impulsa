@@ -585,14 +585,8 @@ const LoginScreen = () => {
         if (existingUser) {
           setError('Contraseña incorrecta. Usa: TRIBU2026');
         } else {
-          // Usuario nuevo - enviar a registro
-          const session: UserSession = {
-            email,
-            name: email.split('@')[0],
-            isLoggedIn: true
-          };
-          setStoredSession(session);
-          navigate('/register');
+          // Usuario NO existe - mostrar error y ofrecer registro
+          setError('Usuario no encontrado. ¿Quieres registrarte?');
         }
       }
       
@@ -611,9 +605,11 @@ const LoginScreen = () => {
 
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
         <div className="mb-6 flex justify-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#6161FF] to-[#00CA72] rounded-2xl flex items-center justify-center shadow-lg">
-            <Users className="text-white" size={40} />
-          </div>
+          <img 
+            src="/tribulogo.png" 
+            alt="Tribu Impulsa" 
+            className="w-24 h-24 object-contain"
+          />
         </div>
         <h1 className="text-3xl font-bold mb-2 text-[#181B34]">Tribu Impulsa</h1>
         <p className="text-[#7C8193] mb-8 text-sm">
@@ -822,6 +818,7 @@ const RegisterScreen = () => {
         {step === 1 && (
           <div className="space-y-5 animate-fadeIn">
             <div className="text-center mb-6">
+              <img src="/tribulogo.png" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl font-bold text-[#181B34]">¡Bienvenido/a!</h2>
               <p className="text-[#7C8193] text-sm mt-1">Cuéntanos sobre ti</p>
             </div>
@@ -1178,14 +1175,18 @@ const SurveyScreen = () => {
 
       <div className="max-w-4xl mx-auto relative z-10 space-y-6">
         <button
-          onClick={() => navigate('/register')}
+          onClick={() => {
+            clearStoredSession();
+            navigate('/');
+          }}
           className="inline-flex items-center gap-2 text-[#7C8193] hover:text-[#6161FF] transition-colors text-sm"
         >
-          <ArrowLeft size={18} /> Volver a Registro
+          <ArrowLeft size={18} /> Volver al Inicio
         </button>
 
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
           <header className="mb-8 text-center">
+            <img src="/tribulogo.png" alt="Tribu Impulsa" className="w-20 h-20 mx-auto mb-4 object-contain" />
             <p className="text-xs uppercase tracking-[0.35em] text-[#6161FF] mb-2 font-medium">Tu producto o servicio en manos que impulsan</p>
             <h1 className="text-4xl font-bold text-[#181B34] mb-2">Inscripción</h1>
             <p className="text-[#7C8193]">Responde esta encuesta para activar tu experiencia en Tribu Impulsa.</p>

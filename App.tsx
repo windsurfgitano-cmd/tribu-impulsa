@@ -6,6 +6,7 @@ import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, Arrow
 import { GlassCard } from './components/GlassCard';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
+import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { 
@@ -1063,103 +1064,89 @@ const RegisterScreen = () => {
   );
 };
 
-// 2b. Pantalla de Búsqueda "Algoritmo Tribal X"
+// 2b. Pantalla de Búsqueda "Algoritmo Tribal X" con animación 3D épica
 const SearchingScreen = () => {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
-  const [message, setMessage] = useState('Iniciando Algoritmo Tribal X...');
+  const [useThreeJS, setUseThreeJS] = useState(true);
   
   // Detectar si es primera vez o login posterior
   const isFirstTime = !localStorage.getItem('algorithm_seen');
-  const totalDuration = isFirstTime ? 10000 : 3000; // 10s primera vez, 3s después
-  
-  const messagesFirst = [
-    'Iniciando Algoritmo Tribal X...',
-    'Conectando con la red de emprendedores...',
-    'Analizando tu perfil de negocio...',
-    'Escaneando el ecosistema emprendedor...',
-    'Identificando afinidades potenciales...',
-    'Evaluando compatibilidad empresarial...',
-    'Calculando sinergias estratégicas...',
-    'Generando matches personalizados...',
-    'Optimizando tu tribu 10+10...',
-    'Preparando recomendaciones...',
-    '¡Tu tribu está lista! 🎉'
-  ];
-  
-  const messagesQuick = [
-    'Actualizando tu tribu...',
-    'Sincronizando datos...',
-    'Verificando conexiones...',
-    '¡Listo! 🎉'
-  ];
-  
-  const messages = isFirstTime ? messagesFirst : messagesQuick;
-  const intervalTime = totalDuration / 50; // 50 pasos para llegar a 100%
+  const totalDuration = isFirstTime ? 8000 : 4000; // 8s primera vez, 4s después
 
+  const handleComplete = () => {
+    localStorage.setItem('algorithm_seen', 'true');
+    navigate('/dashboard');
+  };
+
+  // Fallback si Three.js falla
+  useEffect(() => {
+    // Check if WebGL is available
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) setUseThreeJS(false);
+    } catch {
+      setUseThreeJS(false);
+    }
+  }, []);
+
+  // Fallback simple para dispositivos sin WebGL
+  if (!useThreeJS) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#181B34] relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#6161FF]/20 rounded-full blur-[100px] animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#00CA72]/20 rounded-full blur-[100px] animate-pulse" style={{animationDelay: '1s'}}></div>
+        </div>
+        <div className="relative z-10 text-center max-w-md">
+          <div className="mb-8 relative">
+            <div className="w-32 h-32 mx-auto relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+              <div className="absolute inset-2 bg-[#181B34] rounded-full flex items-center justify-center">
+                <Sparkles className="text-white" size={48} />
+              </div>
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Algoritmo Tribal X</h1>
+          <p className="text-[#7C8193] mb-8 animate-pulse">Preparando tu tribu...</p>
+          <FallbackLoader onComplete={handleComplete} duration={totalDuration} />
+        </div>
+      </div>
+    );
+  }
+
+  // Animación 3D épica
+  return <CosmicLoadingAnimation onComplete={handleComplete} duration={totalDuration} />;
+};
+
+// Loader de fallback simple
+const FallbackLoader = ({ onComplete, duration }: { onComplete: () => void; duration: number }) => {
+  const [progress, setProgress] = useState(0);
+  
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
-        const next = prev + 2;
-        const messageIndex = Math.floor((next / 100) * (messages.length - 1));
-        setMessage(messages[Math.min(messageIndex, messages.length - 1)]);
-        
-        if (next >= 100) {
+        if (prev >= 100) {
           clearInterval(interval);
-          // Marcar que ya vio el algoritmo
-          localStorage.setItem('algorithm_seen', 'true');
-          setTimeout(() => navigate('/dashboard'), 500);
+          setTimeout(onComplete, 300);
+          return 100;
         }
-        return Math.min(next, 100);
+        return prev + 2;
       });
-    }, intervalTime);
-    
+    }, duration / 50);
     return () => clearInterval(interval);
-  }, [navigate, intervalTime, messages]);
-
+  }, [duration, onComplete]);
+  
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#181B34] relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#6161FF]/20 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#00CA72]/20 rounded-full blur-[100px] animate-pulse" style={{animationDelay: '1s'}}></div>
+    <>
+      <div className="w-full bg-[#2D3154] rounded-full h-3 mb-4 overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all"
+          style={{width: `${progress}%`}}
+        />
       </div>
-      
-      <div className="relative z-10 text-center max-w-md">
-        {/* Logo animado */}
-        <div className="mb-8 relative">
-          <div className="w-32 h-32 mx-auto relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
-            <div className="absolute inset-2 bg-[#181B34] rounded-full flex items-center justify-center">
-              <Sparkles className="text-white" size={48} />
-            </div>
-          </div>
-        </div>
-        
-        <h1 className="text-3xl font-bold text-white mb-2">Algoritmo Tribal X</h1>
-        <p className="text-[#7C8193] mb-8">{message}</p>
-        
-        {/* Progress bar */}
-        <div className="w-full bg-[#2D3154] rounded-full h-3 mb-4 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-300 ease-out"
-            style={{width: `${progress}%`}}
-          ></div>
-        </div>
-        <p className="text-[#6161FF] font-mono text-lg">{progress}%</p>
-        
-        {/* Floating particles effect */}
-        <div className="mt-12 flex justify-center gap-4">
-          {[...Array(5)].map((_, i) => (
-            <div 
-              key={i}
-              className="w-3 h-3 bg-[#00CA72] rounded-full animate-bounce"
-              style={{animationDelay: `${i * 0.2}s`}}
-            ></div>
-          ))}
-        </div>
-      </div>
-    </div>
+      <p className="text-[#6161FF] font-mono">{progress}%</p>
+    </>
   );
 };
 

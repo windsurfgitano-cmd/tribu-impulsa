@@ -7,8 +7,16 @@ import { UserProfile } from './databaseService';
 // Contraseña universal para todos los usuarios registrados
 export const UNIVERSAL_PASSWORD = 'TRIBU2026';
 
-// Generar avatar basado en nombre
-const getAvatarUrl = (name: string): string => {
+// Generar avatar de Instagram usando unavatar.io (extrae foto real de IG)
+// Si falla, usa fallback con iniciales
+const getAvatarUrl = (name: string, instagram?: string): string => {
+  // Si tiene Instagram, intentar obtener avatar real
+  if (instagram) {
+    const handle = instagram.replace('@', '').trim();
+    // unavatar.io intenta múltiples fuentes incluyendo Instagram
+    return `https://unavatar.io/instagram/${handle}?fallback=https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`;
+  }
+  // Fallback con iniciales
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`;
 };
 
@@ -815,11 +823,13 @@ export const loadRealUsers = (): void => {
     createdAt: new Date().toISOString(),
     password: UNIVERSAL_PASSWORD,
     surveyCompleted: true, // Ya tienen datos, no necesitan encuesta
-    tribeAssigned: true
+    tribeAssigned: true,
+    // Actualizar avatarUrl con foto real de Instagram si existe
+    avatarUrl: getAvatarUrl(user.name, user.instagram)
   }));
   
   localStorage.setItem('tribu_users', JSON.stringify(usersWithIds));
-  console.log(`✅ ${REAL_USERS.length} usuarios REALES cargados con contraseña TRIBU2026`);
+  console.log(`✅ ${REAL_USERS.length} usuarios REALES cargados con avatares de Instagram`);
 };
 
 // Obtener usuario por email

@@ -1,7 +1,7 @@
 // AI Matching Service - Tribu Impulsa
 // Usa Azure OpenAI (GPT-5.1) para matching inteligente de emprendedores
 
-import { getSystemConfig, setSystemConfig } from './firestoreService';
+import { getAzureCredentials } from './productionInit';
 
 // ============================================
 // CONFIGURACIÓN AZURE OPENAI (desde Firestore)
@@ -21,40 +21,18 @@ const getAzureConfig = async (): Promise<AzureConfig> => {
     return azureConfigCache;
   }
 
-  const systemConfig = await getSystemConfig();
+  // Obtener de Firestore (configurado automáticamente en producción)
+  const credentials = await getAzureCredentials();
   
-  if (systemConfig?.azureOpenAI) {
+  if (credentials) {
     azureConfigCache = {
-      endpoint: systemConfig.azureOpenAI.endpoint,
-      key: systemConfig.azureOpenAI.apiKey
+      endpoint: credentials.endpoint,
+      key: credentials.apiKey
     };
     return azureConfigCache;
   }
   
   return { endpoint: '', key: '' };
-};
-
-// Configurar Azure OpenAI en Firestore (solo admins)
-export const configureAzureAI = async (endpoint: string, apiKey: string): Promise<boolean> => {
-  const success = await setSystemConfig({
-    azureOpenAI: {
-      endpoint,
-      apiKey,
-      model: 'gpt-5.1-chat'
-    },
-    features: {
-      aiMatchingEnabled: true,
-      pushNotificationsEnabled: true
-    }
-  });
-  
-  if (success) {
-    // Invalidar cache
-    azureConfigCache = null;
-    console.log('✅ Azure OpenAI configurado en Firestore');
-  }
-  
-  return success;
 };
 
 export const isAzureConfigured = async (): Promise<boolean> => {

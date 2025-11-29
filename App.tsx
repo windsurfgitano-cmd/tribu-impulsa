@@ -38,8 +38,21 @@ import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword,
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
 import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification, saveUserFCMToken, sendPushToAll, countUsersWithPush } from './services/firebaseService';
+import { ensureInitialized } from './services/productionInit';
 
-// Cargar usuarios REALES al iniciar
+// ============================================
+// INICIALIZACIÓN DE PRODUCCIÓN
+// ============================================
+
+// Inicializar Firebase y Firestore automáticamente
+initializeFirebase();
+
+// Inicializar producción (crea usuarios y config en Firestore si no existen)
+ensureInitialized().then(() => {
+  console.log('✅ Producción inicializada');
+}).catch(console.error);
+
+// Cargar usuarios REALES al iniciar (fallback local)
 forceReloadRealUsers();
 
 // Generar asignaciones de tribu si es necesario
@@ -47,9 +60,6 @@ ensureTribeAssignments();
 
 // Habilitar auto-backup
 enableAutoBackup();
-
-// Inicializar Firebase
-initializeFirebase();
 
 // Escuchar notificaciones en primer plano
 onForegroundMessage((payload: unknown) => {

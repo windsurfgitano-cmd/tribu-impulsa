@@ -1599,28 +1599,42 @@ const TribeAssignmentsView = () => {
                   </button>
                 </div>
                 
-                {/* Botones de acción */}
+                {/* Botones de acción - Simplificados según contexto */}
                 <div className="flex flex-wrap gap-2 mt-3 pl-8">
-                  {/* Botón Registrar cumplimiento */}
-                  <button
-                    type="button"
-                    onClick={() => setShowShareModal({ profile, type: isToShare ? 'shared_to' : 'received_from' })}
-                    className="text-[10px] px-3 py-1.5 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] transition flex items-center gap-1"
-                  >
-                    <CheckCircle size={12} /> {actionLabel}
-                  </button>
+                  {/* YO DEBO IMPULSAR: Botón "Yo compartí" + "Avisarle" */}
+                  {isToShare && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
+                        className="text-[10px] px-3 py-1.5 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] transition flex items-center gap-1"
+                      >
+                        <CheckCircle size={12} /> Yo compartí
+                      </button>
+                      <a
+                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
+                      >
+                        <Send size={12} /> Avisarle
+                      </a>
+                    </>
+                  )}
                   
-                  {/* Botón WhatsApp */}
-                  <a
-                    href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
-                  >
-                    <Send size={12} /> {isToShare ? 'Avisarle' : 'Pedir enlace'}
-                  </a>
+                  {/* ME COMPARTEN: Solo botón "Pedir enlace" */}
+                  {!isToShare && (
+                    <a
+                      href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
+                    >
+                      <Send size={12} /> Pedir enlace
+                    </a>
+                  )}
                   
-                  {/* Ver perfil */}
+                  {/* Ver perfil - siempre visible */}
                   <button
                     type="button"
                     onClick={() => navigate(`/profile/${profile.id}`)}
@@ -1629,7 +1643,7 @@ const TribeAssignmentsView = () => {
                     Ver perfil
                   </button>
                   
-                  {/* Reportar incumplimiento */}
+                  {/* Reportar - siempre visible */}
                   <button
                     type="button"
                     onClick={() => {

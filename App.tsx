@@ -2848,9 +2848,35 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
     onComplete(newPassword);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl animate-slideUp">
+  return ReactDOM.createPortal(
+    <div 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 999999,
+      }}
+    >
+      <div 
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '24px',
+          width: '100%',
+          maxWidth: '400px',
+          maxHeight: '85vh',
+          overflowY: 'auto',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
+        className="animate-slideUp"
+      >
         <div className="p-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FFCC00] to-[#FFE066] flex items-center justify-center text-3xl shadow-lg">
             🔐
@@ -2899,7 +2925,8 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -3767,42 +3794,43 @@ const AppLayout = () => {
         </div>
 
         {showNav && (
-          <nav className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-xl border-t border-[#E4E7EF] py-2 px-8 flex justify-around items-center z-40 pb-safe h-[80px] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          <nav className="fixed bottom-0 left-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-2 px-6 flex justify-around items-end z-40 pb-safe h-[72px] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" style={{ backgroundColor: 'rgba(232, 245, 233, 0.95)' }}>
             
             {/* Dashboard Button */}
             <button 
               onClick={() => navigate('/dashboard')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 ${isDashboard ? 'text-[#6161FF] scale-105' : 'text-[#7C8193] hover:text-[#6161FF]'}`}
+              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isDashboard ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Users size={24} strokeWidth={isDashboard ? 2.5 : 2} />
+              <Users size={22} strokeWidth={isDashboard ? 2.5 : 2} />
               <span className="text-[10px] mt-1 font-medium">Inicio</span>
             </button>
             
             {/* Center Action Button – Shortcut to 10+10 checklist */}
-            <div className="relative -top-6">
-                 <button 
-                    onClick={() => navigate('/tribe')}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center border-4 border-white shadow-[0_4px_20px_rgba(0,202,114,0.35)] transition-transform hover:scale-105 ${isTribe ? 'bg-gradient-to-br from-[#00CA72] to-[#4AE698]' : 'bg-gradient-to-br from-[#6161FF] to-[#00CA72]'}`}
-                >
-                    <Share2 size={24} className="text-white" />
-                </button>
-            </div>
+            <button 
+              onClick={() => navigate('/tribe')}
+              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1`}
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 ${isTribe ? 'bg-gradient-to-br from-[#00CA72] to-[#4AE698]' : 'bg-gradient-to-br from-[#6161FF] to-[#00CA72]'}`}>
+                <Share2 size={22} className="text-white" />
+              </div>
+              <span className={`text-[10px] mt-1 font-semibold ${isTribe ? 'text-[#00CA72]' : 'text-[#5D6B74]'}`}>Tribu</span>
+            </button>
 
             {/* Activity Button */}
             <button 
               onClick={() => navigate('/activity')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 ${isActivity ? 'text-[#6161FF] scale-105' : 'text-[#7C8193] hover:text-[#6161FF]'}`}
+              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isActivity ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Bell size={24} strokeWidth={isActivity ? 2.5 : 2} />
+              <Bell size={22} strokeWidth={isActivity ? 2.5 : 2} />
               <span className="text-[10px] mt-1 font-medium">Actividad</span>
             </button>
 
             {/* Profile Button */}
             <button 
               onClick={() => navigate('/my-profile')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 ${isProfile ? 'text-[#6161FF] scale-105' : 'text-[#7C8193] hover:text-[#6161FF]'}`}
+              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isProfile ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Settings size={24} strokeWidth={isProfile ? 2.5 : 2} />
+              <Settings size={22} strokeWidth={isProfile ? 2.5 : 2} />
               <span className="text-[10px] mt-1 font-medium">Perfil</span>
             </button>
           </nav>

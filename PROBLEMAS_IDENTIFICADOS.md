@@ -59,5 +59,22 @@
 3. **Implementar sincronización de reportes a Firebase**
    - Para que admin vea reportes en tiempo real
 
+4. **🔴 LIMPIAR LOGS DE CONSOLA**
+   - Actualmente hay muchos `console.log` útiles para desarrollo
+   - Para producción DEBEN eliminarse o condicionarse con `process.env.NODE_ENV === 'development'`
+   - Archivos afectados:
+     - `App.tsx` (líneas ~47-49)
+     - `realUsersData.ts` (líneas ~822, ~871)
+     - `dataPersistence.ts` (línea ~150)
+     - `firebaseService.ts` (línea ~45)
+     - `productionInit.ts` (líneas ~464, ~469)
+     - `aiMatchingService.ts` (línea ~288)
+   - **NO BORRAR AHORA** - Son útiles para debugging durante desarrollo
+
+5. **Tailwind CDN warning**
+   - `cdn.tailwindcss.com should not be used in production`
+   - Ya está instalado via PostCSS, pero el CDN sigue cargando
+   - Revisar `index.html` para eliminar referencia al CDN
+
 ---
-Última actualización: 29-Nov-2025 12:30
+Última actualización: 29-Nov-2025 12:40

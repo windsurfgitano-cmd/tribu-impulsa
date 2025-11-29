@@ -2,51 +2,62 @@
 
 ## CRÍTICOS (Bloquean uso)
 
-### 1. ❌ Popups/Modales mal posicionados
-- **Onboarding modal**: Aparece muy abajo, requiere scroll
-- **Modal de reportar**: Mismo problema
-- **Causa**: Los modales usan `fixed` pero algo interfiere con el posicionamiento
-- **Solución**: Usar `ReactDOM.createPortal` con estilos inline para TODOS los modales
+### 1. ⚠️ Popups/Modales mal posicionados
+- **Onboarding modal**: Usa portal pero aún puede tener problemas en algunos dispositivos
+- **Modal de reportar**: ✅ ARREGLADO - Usa portal con estilos inline
+- **Causa**: El body tiene scroll que interfiere
+- **Pendiente**: Verificar en dispositivos móviles reales
 
-### 2. ❌ Actividades redirigen al inicio
-- Al hacer click en cualquier actividad, redirige a /dashboard
-- **Causa**: El código tiene `if (item.actionUrl) navigate(item.actionUrl)` pero algo más está navegando
-- **Solución**: Prevenir propagación del evento y validar actionUrl
+### 2. ✅ Actividades redirigen al inicio - ARREGLADO
+- Ahora solo navega si `item.actionUrl` está definido y no está vacío
+- Muestra indicador "Tocar para ir →" solo cuando hay acción
 
-### 3. ❌ Azure OpenAI no configurado
+### 3. ⚠️ Azure OpenAI no configurado
 - Error: "Azure OpenAI no configurado. Usa configureAzureAI()"
-- El análisis de match muestra "Análisis no disponible"
-- **Causa**: Falta configurar las variables de entorno en Vercel/local
-- **Solución**: Mejorar el fallback para que funcione sin LLM
+- **ARREGLADO**: Fallback inteligente genera análisis basado en datos locales
+- **Pendiente**: Configurar variables de entorno en Vercel cuando esté listo
 
-### 4. ❌ Reportes muestran ID técnico
-- Muestra "Perfil #real_user_19" en vez del nombre del emprendimiento
-- **Solución**: Guardar companyName + name en el reporte
+### 4. ✅ Reportes muestran ID técnico - ARREGLADO
+- Ahora guarda y muestra `targetName` (emprendimiento) + `targetOwner` (persona)
+- Agregado botón "Enviar por WhatsApp" con mensaje pre-escrito
 
 ## MEJORAS DE UX
 
-### 5. 🟡 Match Analysis manual
-- Actualmente intenta generar automáticamente al abrir perfil
-- **Mejora**: Agregar botón "Analizar compatibilidad" con animación "Pensando..."
+### 5. ✅ Match Analysis manual - ARREGLADO
+- Ya NO genera automáticamente
+- Muestra botón "Analizar compatibilidad" con animación "Tribu X está pensando..."
+- El análisis se guarda por mes
 
-### 6. 🟡 Botón WhatsApp en reportes
-- Después de reportar, agregar botón "Enviar reporte por WhatsApp"
-- Abre wa.me con mensaje pre-escrito
+### 6. ✅ Botón WhatsApp en reportes - ARREGLADO
+- Cada reporte tiene botón "Enviar por WhatsApp"
+- Mensaje pre-escrito con todos los datos del reporte
 
 ### 7. 🟡 Reportes enviados al admin
 - Actualmente solo se guardan en localStorage
-- **Mejora**: Enviar a Firebase y notificar al admin
+- **Mejora futura**: Enviar a Firebase y notificar al admin
 
 ## ESTADO ACTUAL
 
 | Problema | Estado | Prioridad |
 |----------|--------|-----------|
-| Modales mal posicionados | 🔴 Pendiente | Alta |
-| Actividades redirigen | 🔴 Pendiente | Alta |
-| Azure no configurado | 🟡 Fallback OK | Media |
-| Reportes con ID | 🔴 Pendiente | Alta |
-| Match manual | 🟡 Pendiente | Media |
-| WhatsApp en reportes | 🟡 Pendiente | Media |
+| Modales mal posicionados | ⚠️ Parcial | Alta |
+| Actividades redirigen | ✅ Resuelto | - |
+| Azure no configurado | ✅ Fallback OK | - |
+| Reportes con ID | ✅ Resuelto | - |
+| Match manual | ✅ Resuelto | - |
+| WhatsApp en reportes | ✅ Resuelto | - |
+| Reportes a Firebase | 🟡 Pendiente | Baja |
+
+## PENDIENTE PARA PRODUCCIÓN
+
+1. **Configurar Azure OpenAI en Vercel**
+   - Variables: `VITE_AZURE_OPENAI_ENDPOINT`, `VITE_AZURE_OPENAI_KEY`, `VITE_AZURE_OPENAI_DEPLOYMENT`
+
+2. **Verificar modales en móviles reales**
+   - Testear en iPhone y Android
+
+3. **Implementar sincronización de reportes a Firebase**
+   - Para que admin vea reportes en tiempo real
 
 ---
-Última actualización: 29-Nov-2025
+Última actualización: 29-Nov-2025 12:30

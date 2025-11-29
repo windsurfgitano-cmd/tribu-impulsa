@@ -15,37 +15,67 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
   const [progress, setProgress] = useState(0);
   const [textVisible, setTextVisible] = useState(true);
 
+  // EFECTO 1: Reproducir video
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.play().catch(() => {
+        console.log('Autoplay bloqueado');
+      });
+    }
+  }, []);
+
+  // EFECTO 2: Progreso continuo (independiente de mensajes)
   useEffect(() => {
     const TOTAL_TIME = duration;
+    const startTime = Date.now();
+    
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min(Math.round((elapsed / TOTAL_TIME) * 100), 100);
+      setProgress(newProgress);
+      
+      if (elapsed >= TOTAL_TIME) {
+        clearInterval(progressInterval);
+      }
+    }, 50); // Actualizar cada 50ms para animación suave
 
-    // Mensajes de estado con tiempos
+    return () => clearInterval(progressInterval);
+  }, [duration]);
+
+  // EFECTO 3: Mensajes con fade (independiente del progreso)
+  useEffect(() => {
+    const TOTAL_TIME = duration;
+    const timeouts: NodeJS.Timeout[] = [];
+
+    // Mensajes de estado con tiempos específicos
     const statusMessages = [
-      { time: 0, text: 'Conectando con tu tribu...', progress: 0 },
-      { time: 1200, text: 'Escaneando emprendedores...', progress: 15 },
-      { time: 2400, text: 'Analizando perfiles...', progress: 30 },
-      { time: 3600, text: 'Calculando afinidades...', progress: 50 },
-      { time: 4800, text: 'Formando conexiones...', progress: 70 },
-      { time: 6000, text: 'Optimizando tu tribu...', progress: 85 },
-      { time: 7200, text: '¡Tu tribu está lista!', progress: 100 },
+      { time: 0, text: 'Conectando con tu tribu...' },
+      { time: 1200, text: 'Escaneando emprendedores...' },
+      { time: 2400, text: 'Analizando perfiles...' },
+      { time: 3600, text: 'Calculando afinidades...' },
+      { time: 4800, text: 'Formando conexiones...' },
+      { time: 6000, text: 'Optimizando tu tribu...' },
+      { time: 7200, text: '¡Tu tribu está lista!' },
     ];
 
-    // Programar cada cambio de mensaje con setTimeout
-    const timeouts: NodeJS.Timeout[] = [];
-    
-    statusMessages.forEach((msg, index) => {
-      const timeout = setTimeout(() => {
-        // Fade out texto actual
-        setTextVisible(false);
-        
-        // Después de fade out, cambiar texto y fade in
-        setTimeout(() => {
-          setStatusText(msg.text);
-          setProgress(msg.progress);
-          setTextVisible(true);
-        }, 200);
-      }, msg.time);
-      
-      timeouts.push(timeout);
+    statusMessages.forEach((msg) => {
+      if (msg.time === 0) {
+        // Primer mensaje inmediato
+        setStatusText(msg.text);
+        setTextVisible(true);
+      } else {
+        const timeout = setTimeout(() => {
+          // Fade out
+          setTextVisible(false);
+          // Cambiar texto y fade in
+          setTimeout(() => {
+            setStatusText(msg.text);
+            setTextVisible(true);
+          }, 200);
+        }, msg.time);
+        timeouts.push(timeout);
+      }
     });
 
     // Fade out final
@@ -60,12 +90,6 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
     }, TOTAL_TIME);
     timeouts.push(completeTimeout);
 
-    // Iniciar video
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
-
-    // Cleanup
     return () => {
       timeouts.forEach(t => clearTimeout(t));
     };
@@ -85,8 +109,8 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
         preload="auto"
       />
       
-      {/* Overlay oscuro para legibilidad */}
-      <div className="absolute inset-0 bg-black/30" />
+      {/* Overlay oscuro mate para el video en segundo plano */}
+      <div className="absolute inset-0 bg-black/50" />
       
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">

@@ -39,7 +39,7 @@ import {
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
-import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification, saveUserFCMToken, sendPushToAll, countUsersWithPush } from './services/firebaseService';
+import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification, saveUserFCMToken, sendPushToAll, countUsersWithPush, clearFCMToken } from './services/firebaseService';
 import { ensureInitialized } from './services/productionInit';
 
 // ============================================
@@ -1419,6 +1419,39 @@ const SurveyScreen = () => {
   );
 };
 
+// Tipo para registros de cumplimiento
+interface ShareRecord {
+  id: string;
+  profileId: string;
+  profileName: string;
+  type: 'shared_to' | 'received_from'; // shared_to = yo compartí, received_from = me compartieron
+  contentUrl: string;
+  timestamp: string;
+  userId: string;
+}
+
+// Funciones de almacenamiento de cumplimientos
+const SHARE_RECORDS_KEY = 'tribu_share_records';
+
+const getShareRecords = (): ShareRecord[] => {
+  try {
+    const stored = localStorage.getItem(SHARE_RECORDS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+};
+
+const saveShareRecord = (record: Omit<ShareRecord, 'id' | 'timestamp'>) => {
+  const records = getShareRecords();
+  const newRecord: ShareRecord = {
+    ...record,
+    id: `share_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString()
+  };
+  records.push(newRecord);
+  localStorage.setItem(SHARE_RECORDS_KEY, JSON.stringify(records));
+  return newRecord;
+};
+
 // 4. Tribe Assignments View
 const TribeAssignmentsView = () => {
   useSurveyGuard();
@@ -1433,6 +1466,11 @@ const TribeAssignmentsView = () => {
   const [reportingProfile, setReportingProfile] = useState<MatchProfile | null>(null);
   const [reportNote, setReportNote] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  
+  // Estado para modal de cumplimiento
+  const [showShareModal, setShowShareModal] = useState<{profile: MatchProfile, type: 'shared_to' | 'received_from'} | null>(null);
+  const [shareUrl, setShareUrl] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     persistTribeAssignments(assignments);
@@ -1492,55 +1530,200 @@ const TribeAssignmentsView = () => {
     }, 600);
   };
 
-  const renderList = (title: string, subtitle: string, list: MatchProfile[], key: keyof AssignmentChecklist) => (
-    <div key={title} className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
-      <header className="mb-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] mb-1 font-medium">{title}</p>
-        <h3 className="text-2xl font-bold text-[#181B34] flex items-center gap-2">
-          <Share2 size={18} className="text-[#00CA72]" /> {list.length} cuentas
-        </h3>
-        <p className="text-[#7C8193] text-sm">{subtitle}</p>
-      </header>
-      <div className="space-y-3">
-        {list.map(profile => (
-          <div key={profile.id} className="flex items-start gap-3 p-4 rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] hover:border-[#6161FF]/40 transition">
-            <input
-              type="checkbox"
-              className="mt-1 accent-[#00CA72] w-5 h-5"
-              checked={checklist[key][profile.id] ?? false}
-              onChange={() => handleToggle(key, profile.id)}
-            />
-            <button
-              type="button"
-              onClick={() => navigate(`/profile/${profile.id}`)}
-              className="flex-1 text-left"
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-semibold text-[#181B34]">{profile.companyName}</p>
-                <span className="text-xs text-[#7C8193] bg-[#E4E7EF] px-2 py-0.5 rounded-full">{profile.category}</span>
+  // Función para registrar cumplimiento
+  const handleShareComplete = (profile: MatchProfile, type: 'shared_to' | 'received_from', url: string) => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+    
+    saveShareRecord({
+      profileId: profile.id,
+      profileName: profile.companyName,
+      type,
+      contentUrl: url,
+      userId: currentUser.id
+    });
+    
+    // Marcar como completado en el checklist
+    const key = type === 'shared_to' ? 'toShare' : 'shareWithMe';
+    setChecklist(prev => ({
+      ...prev,
+      [key]: { ...prev[key], [profile.id]: true }
+    }));
+    
+    setToastMessage(type === 'shared_to' 
+      ? `✅ Registrado: compartiste a ${profile.companyName}` 
+      : `✅ Registrado: ${profile.companyName} te compartió`
+    );
+    setTimeout(() => setToastMessage(null), 3000);
+    setShowShareModal(null);
+    setShareUrl('');
+  };
+
+  // Copiar al portapapeles
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setToastMessage('📋 Enlace copiado');
+    setTimeout(() => setToastMessage(null), 2000);
+  };
+
+  const renderList = (title: string, subtitle: string, list: MatchProfile[], key: keyof AssignmentChecklist) => {
+    const isToShare = key === 'toShare';
+    const actionLabel = isToShare ? 'Yo compartí' : 'Me compartieron';
+    const whatsappMessage = isToShare 
+      ? (profile: MatchProfile) => `¡Hola ${profile.name.split(' ')[0]}! 👋 Te acabo de compartir en mis redes. Aquí está el enlace: `
+      : (profile: MatchProfile) => `¡Hola ${profile.name.split(' ')[0]}! 👋 Vi que me compartiste, ¡muchas gracias! ¿Me podrías pasar el enlace? 🙏`;
+    
+    return (
+      <div key={title} className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
+        <header className="mb-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] mb-1 font-medium">{title}</p>
+          <h3 className="text-2xl font-bold text-[#181B34] flex items-center gap-2">
+            <Share2 size={18} className="text-[#00CA72]" /> {list.length} cuentas
+          </h3>
+          <p className="text-[#7C8193] text-sm">{subtitle}</p>
+        </header>
+        <div className="space-y-3">
+          {list.map(profile => {
+            const isCompleted = checklist[key][profile.id] ?? false;
+            return (
+              <div key={profile.id} className={`p-4 rounded-xl border transition ${
+                isCompleted 
+                  ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
+                  : 'bg-[#F5F7FB] border-[#E4E7EF] hover:border-[#6161FF]/40'
+              }`}>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    className="mt-1 accent-[#00CA72] w-5 h-5"
+                    checked={isCompleted}
+                    onChange={() => handleToggle(key, profile.id)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                    className="flex-1 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-[#181B34]">{profile.companyName}</p>
+                      <span className="text-xs text-[#7C8193] bg-white/80 px-2 py-0.5 rounded-full border border-[#E4E7EF]">{profile.category}</span>
+                    </div>
+                    <p className="text-sm text-[#434343]">{profile.name} · {profile.subCategory}</p>
+                    <p className="text-xs text-[#7C8193]">{profile.location}</p>
+                  </button>
+                </div>
+                
+                {/* Botones de acción */}
+                <div className="flex flex-wrap gap-2 mt-3 pl-8">
+                  {/* Botón Registrar cumplimiento */}
+                  <button
+                    type="button"
+                    onClick={() => setShowShareModal({ profile, type: isToShare ? 'shared_to' : 'received_from' })}
+                    className="text-[10px] px-3 py-1.5 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] transition flex items-center gap-1"
+                  >
+                    <CheckCircle size={12} /> {actionLabel}
+                  </button>
+                  
+                  {/* Botón WhatsApp */}
+                  <a
+                    href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
+                  >
+                    <Send size={12} /> {isToShare ? 'Avisarle' : 'Pedir enlace'}
+                  </a>
+                  
+                  {/* Ver perfil */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                    className="text-[10px] px-3 py-1.5 rounded-full border border-[#6161FF]/40 text-[#6161FF] hover:bg-[#6161FF]/10 transition"
+                  >
+                    Ver perfil
+                  </button>
+                  
+                  {/* Reportar incumplimiento */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportingProfile(profile);
+                      setReportNote('');
+                    }}
+                    className="text-[10px] px-3 py-1.5 rounded-full border border-[#FB275D]/40 text-[#FB275D] hover:bg-[#FB275D]/10 transition"
+                  >
+                    Reportar
+                  </button>
+                </div>
               </div>
-              <p className="text-sm text-[#434343]">{profile.name} · {profile.subCategory}</p>
-              <p className="text-xs text-[#7C8193]">{profile.location}</p>
-              <span className="text-[10px] text-[#6161FF] font-medium">Ver perfil y compartir →</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setReportingProfile(profile);
-                setReportNote('');
-              }}
-              className="text-[10px] px-3 py-1.5 rounded-full border border-[#FB275D]/40 text-[#FB275D] hover:bg-[#FB275D]/10 transition"
-            >
-              Reportar
-            </button>
-          </div>
-        ))}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
+      {/* Toast de notificación */}
+      {toastMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#181B34] text-white text-sm py-2 px-6 rounded-xl z-50 animate-fadeIn shadow-lg">
+          {toastMessage}
+        </div>
+      )}
+      
+      {/* Modal de registro de cumplimiento */}
+      {showShareModal && ReactDOM.createPortal(
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4"
+          onClick={() => { setShowShareModal(null); setShareUrl(''); }}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-slideUp"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-[#181B34] mb-2">
+              {showShareModal.type === 'shared_to' ? '📤 Registrar que compartiste' : '📥 Registrar que te compartieron'}
+            </h3>
+            <p className="text-sm text-[#7C8193] mb-4">
+              {showShareModal.type === 'shared_to' 
+                ? `Pega el enlace del post donde compartiste a ${showShareModal.profile.companyName}`
+                : `Pega el enlace donde ${showShareModal.profile.companyName} te compartió`
+              }
+            </p>
+            
+            <input
+              type="url"
+              value={shareUrl}
+              onChange={(e) => setShareUrl(e.target.value)}
+              placeholder="https://instagram.com/p/..."
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF] mb-4"
+              autoFocus
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowShareModal(null); setShareUrl(''); }}
+                className="flex-1 py-3 rounded-xl border border-[#E4E7EF] text-[#7C8193] hover:bg-[#F5F7FB] transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleShareComplete(showShareModal.profile, showShareModal.type, shareUrl)}
+                disabled={!shareUrl.trim()}
+                className="flex-1 py-3 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Guardar
+              </button>
+            </div>
+            
+            <p className="text-[10px] text-[#7C8193] mt-3 text-center">
+              Este registro queda guardado para que el admin pueda verificarlo
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+      
       <header className="px-6 py-6 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -1840,13 +2023,13 @@ const MyProfileView = () => {
                 <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
                 
-                {/* Botón editar banner */}
+                {/* Botón editar banner - Arriba a la derecha del cover */}
                 {isEditing && (
                   <button 
                     onClick={() => bannerInputRef.current?.click()}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all z-20"
+                    className="absolute top-6 right-6 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-20 text-sm"
                   >
-                    <Edit2 size={18} />
+                    <Edit2 size={16} />
                     <span className="font-medium">Cambiar banner</span>
                   </button>
                 )}
@@ -2031,21 +2214,27 @@ const MyProfileView = () => {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-3">
                             <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
-                            <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF]"><MapPin size={20} /></div>
-                            <div className="text-sm">
+                              <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF] shrink-0"><MapPin size={20} /></div>
+                              <div className="text-sm min-w-0">
                                 <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Ubicación</span>
                                 <span className="font-medium text-[#181B34]">{profile.location}</span>
+                              </div>
                             </div>
-                            </div>
-                            <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
-                            <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72]"><Globe size={20} /></div>
-                            <div className="text-sm">
-                                <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Web</span>
-                                <span className="font-medium text-[#181B34] truncate w-20">{profile.website}</span>
-                            </div>
-                            </div>
+                            <a 
+                              href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF] hover:border-[#00CA72] transition-colors"
+                            >
+                              <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72] shrink-0"><Globe size={20} /></div>
+                              <div className="text-sm min-w-0 flex-1">
+                                <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Sitio Web</span>
+                                <span className="font-medium text-[#181B34] block truncate">{profile.website}</span>
+                              </div>
+                              <ArrowRight size={16} className="text-[#7C8193] shrink-0" />
+                            </a>
                         </div>
 
                         <div>
@@ -2124,24 +2313,44 @@ const MyProfileView = () => {
     );
 };
 
-// Componente para activar notificaciones push
+// Componente Toggle de Notificaciones
 const NotificationButton = () => {
   const [status, setStatus] = useState(getNotificationStatus());
   const [isLoading, setIsLoading] = useState(false);
+  const [showToast, setShowToast] = useState<string | null>(null);
   const currentUser = getCurrentUser();
+  
+  const isEnabled = status.permission === 'granted' && status.hasToken;
 
-  const handleEnableNotifications = async () => {
-    setIsLoading(true);
-    const token = await requestNotificationPermission();
-    if (token) {
-      // Guardar token asociado al usuario para poder enviarle push después
+  const handleToggle = async () => {
+    if (isEnabled) {
+      // Desactivar - limpiar token
+      setIsLoading(true);
       if (currentUser) {
-        saveUserFCMToken(currentUser.id, token);
+        clearFCMToken();
+        // También podríamos remover de la DB
       }
-      sendLocalNotification('¡Notificaciones activadas!', 'Recibirás alertas de tu tribu');
+      setShowToast('Notificaciones desactivadas');
+      setTimeout(() => setShowToast(null), 3000);
+      setStatus(getNotificationStatus());
+      setIsLoading(false);
+    } else {
+      // Activar
+      setIsLoading(true);
+      const token = await requestNotificationPermission();
+      if (token) {
+        if (currentUser) {
+          saveUserFCMToken(currentUser.id, token);
+        }
+        sendLocalNotification('¡Notificaciones activadas!', 'Recibirás alertas de tu tribu');
+        setShowToast('¡Notificaciones activadas!');
+      } else {
+        setShowToast('No se pudieron activar las notificaciones');
+      }
+      setTimeout(() => setShowToast(null), 3000);
+      setStatus(getNotificationStatus());
+      setIsLoading(false);
     }
-    setStatus(getNotificationStatus());
-    setIsLoading(false);
   };
 
   if (!status.supported) {
@@ -2152,31 +2361,50 @@ const NotificationButton = () => {
     );
   }
 
-  if (status.permission === 'granted' && status.hasToken) {
-    return (
-      <div className="p-4 bg-[#E6FFF3] rounded-xl border border-[#00CA72]/30 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-[#00CA72] flex items-center justify-center text-white">
-          <Bell size={20} />
-        </div>
-        <div>
-          <p className="font-semibold text-[#008A4E] text-sm">Notificaciones activas</p>
-          <p className="text-xs text-[#00CA72]">Recibirás alertas de tu tribu</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={handleEnableNotifications}
-      disabled={isLoading}
-      className="w-full p-4 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-xl text-white flex items-center justify-center gap-3 hover:opacity-90 transition disabled:opacity-50"
-    >
-      <Bell size={20} />
-      <span className="font-semibold">
-        {isLoading ? 'Activando...' : 'Activar Notificaciones Push'}
-      </span>
-    </button>
+    <div className="relative">
+      {/* Toast notification */}
+      {showToast && (
+        <div className="absolute -top-12 left-0 right-0 bg-[#181B34] text-white text-sm py-2 px-4 rounded-lg text-center animate-fadeIn">
+          {showToast}
+        </div>
+      )}
+      
+      <div className={`p-4 rounded-xl border flex items-center justify-between ${
+        isEnabled 
+          ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
+          : 'bg-[#F5F7FB] border-[#E4E7EF]'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+            isEnabled ? 'bg-[#00CA72] text-white' : 'bg-[#E4E7EF] text-[#7C8193]'
+          }`}>
+            <Bell size={20} />
+          </div>
+          <div>
+            <p className={`font-semibold text-sm ${isEnabled ? 'text-[#008A4E]' : 'text-[#181B34]'}`}>
+              {isEnabled ? 'Notificaciones activas' : 'Notificaciones'}
+            </p>
+            <p className={`text-xs ${isEnabled ? 'text-[#00CA72]' : 'text-[#7C8193]'}`}>
+              {isEnabled ? 'Recibirás alertas de tu tribu' : 'Activa para recibir alertas'}
+            </p>
+          </div>
+        </div>
+        
+        {/* Toggle Switch */}
+        <button
+          onClick={handleToggle}
+          disabled={isLoading}
+          className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
+            isEnabled ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'
+          } ${isLoading ? 'opacity-50' : ''}`}
+        >
+          <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
+            isEnabled ? 'translate-x-6' : 'translate-x-1'
+          }`} />
+        </button>
+      </div>
+    </div>
   );
 };
 

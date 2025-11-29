@@ -1,174 +1,125 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface CosmicLoadingAnimationProps {
   onComplete?: () => void;
   duration?: number;
 }
 
+// Mensajes de carga
+const LOADING_MESSAGES = [
+  'Conectando con tu tribu...',
+  'Escaneando emprendedores...',
+  'Analizando perfiles...',
+  'Calculando afinidades...',
+  'Formando conexiones...',
+  'Optimizando tu tribu...',
+  '¡Tu tribu está lista!'
+];
+
 export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({ 
   onComplete, 
-  duration = 8000 
+  duration = 6000 
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [fadeOut, setFadeOut] = useState(false);
-  const [statusText, setStatusText] = useState('Conectando con tu tribu...');
   const [progress, setProgress] = useState(0);
-  const [textVisible, setTextVisible] = useState(true);
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
 
-  // EFECTO 1: Forzar reproducción del video
+  // Efecto principal - progreso y mensajes
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Configuración para autoplay móvil
-    video.muted = true;
-    video.playsInline = true;
-    video.loop = true;
-    video.autoplay = true;
-    
-    // Función para intentar reproducir
-    const tryPlay = async () => {
-      try {
-        await video.play();
-        console.log('✅ Video reproduciéndose');
-      } catch (err) {
-        console.log('⚠️ Autoplay bloqueado, reintentando...', err);
-        // Reintentar con delay
-        setTimeout(tryPlay, 200);
-      }
-    };
-
-    // Escuchar múltiples eventos para iniciar
-    const events = ['loadeddata', 'canplay', 'canplaythrough'];
-    events.forEach(evt => {
-      video.addEventListener(evt, tryPlay, { once: true });
-    });
-
-    // Forzar carga inmediata
-    video.load();
-    
-    // También intentar reproducir directamente
-    tryPlay();
-
-    return () => {
-      events.forEach(evt => {
-        video.removeEventListener(evt, tryPlay);
-      });
-    };
-  }, []);
-
-  // EFECTO 2: Progreso continuo (independiente de mensajes)
-  useEffect(() => {
-    const TOTAL_TIME = duration;
     const startTime = Date.now();
+    const messageInterval = duration / LOADING_MESSAGES.length;
     
-    const progressInterval = setInterval(() => {
+    // Actualizar progreso cada 30ms
+    const progressTimer = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      const newProgress = Math.min(Math.round((elapsed / TOTAL_TIME) * 100), 100);
+      const newProgress = Math.min(Math.round((elapsed / duration) * 100), 100);
       setProgress(newProgress);
       
-      if (elapsed >= TOTAL_TIME) {
-        clearInterval(progressInterval);
+      // Cambiar mensaje basado en progreso
+      const newMessageIndex = Math.min(
+        Math.floor(elapsed / messageInterval),
+        LOADING_MESSAGES.length - 1
+      );
+      setMessageIndex(newMessageIndex);
+      
+      // Terminar cuando llegue al 100%
+      if (elapsed >= duration) {
+        clearInterval(progressTimer);
       }
-    }, 50); // Actualizar cada 50ms para animación suave
+    }, 30);
 
-    return () => clearInterval(progressInterval);
-  }, [duration]);
-
-  // EFECTO 3: Mensajes con fade (independiente del progreso)
-  useEffect(() => {
-    const TOTAL_TIME = duration;
-    const timeouts: NodeJS.Timeout[] = [];
-
-    // Mensajes de estado con tiempos específicos
-    const statusMessages = [
-      { time: 0, text: 'Conectando con tu tribu...' },
-      { time: 1200, text: 'Escaneando emprendedores...' },
-      { time: 2400, text: 'Analizando perfiles...' },
-      { time: 3600, text: 'Calculando afinidades...' },
-      { time: 4800, text: 'Formando conexiones...' },
-      { time: 6000, text: 'Optimizando tu tribu...' },
-      { time: 7200, text: '¡Tu tribu está lista!' },
-    ];
-
-    statusMessages.forEach((msg) => {
-      if (msg.time === 0) {
-        // Primer mensaje inmediato
-        setStatusText(msg.text);
-        setTextVisible(true);
-      } else {
-        const timeout = setTimeout(() => {
-          // Fade out
-          setTextVisible(false);
-          // Cambiar texto y fade in
-          setTimeout(() => {
-            setStatusText(msg.text);
-            setTextVisible(true);
-          }, 200);
-        }, msg.time);
-        timeouts.push(timeout);
-      }
-    });
-
-    // Fade out final
-    const fadeTimeout = setTimeout(() => {
+    // Fade out antes de completar
+    const fadeTimer = setTimeout(() => {
       setFadeOut(true);
-    }, TOTAL_TIME - 800);
-    timeouts.push(fadeTimeout);
+    }, duration - 500);
 
     // Completar
-    const completeTimeout = setTimeout(() => {
+    const completeTimer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, TOTAL_TIME);
-    timeouts.push(completeTimeout);
+    }, duration);
 
     return () => {
-      timeouts.forEach(t => clearTimeout(t));
+      clearInterval(progressTimer);
+      clearTimeout(fadeTimer);
+      clearTimeout(completeTimer);
     };
   }, [duration, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[99999] overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%)' }}>
-      {/* Video de fondo - sin poster para evitar loop de imagen */}
+    <div className="fixed inset-0 z-[99999] bg-[#0a0a1a]">
+      {/* Video de fondo */}
       <video
-        ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
-        src="/tribuvideo.mp4"
-        muted
-        playsInline
         autoPlay
+        muted
         loop
+        playsInline
         preload="auto"
-      />
+      >
+        <source src="/tribuvideo.mp4" type="video/mp4" />
+      </video>
       
-      {/* Overlay oscuro mate (50% para mejor visibilidad del UI) */}
-      <div className="absolute inset-0 bg-black/50" />
+      {/* Overlay semitransparente */}
+      <div className="absolute inset-0 bg-black/40" />
       
-      {/* UI Overlay - solo texto sobre el video */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 pointer-events-none">
+      {/* Contenido centrado */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {/* Logo/Título */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-white mb-2">
+            <span className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] bg-clip-text text-transparent">
+              Algoritmo Tribal
+            </span>
+          </h1>
+          <p className="text-white/60 text-sm tracking-widest uppercase">
+            Conectando emprendedores
+          </p>
+        </div>
         
-        {/* Progress bar */}
-        <div className="w-72 mb-4">
-          <div className="h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
+        {/* Barra de progreso */}
+        <div className="w-64 mb-6">
+          <div className="h-2 bg-white/20 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-500 ease-out shadow-[0_0_10px_rgba(97,97,255,0.5)]"
+              className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-100 ease-linear"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-white/50 text-xs text-center mt-2">{progress}%</p>
+          <p className="text-white/50 text-xs text-center mt-2 font-mono">
+            {progress}%
+          </p>
         </div>
         
-        {/* Status text con animación */}
-        <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/10">
-          <p className={`text-white text-sm font-medium transition-opacity duration-200 ${textVisible ? 'opacity-100' : 'opacity-0'}`}>
-            {statusText}
+        {/* Mensaje de estado */}
+        <div className="bg-black/50 backdrop-blur-sm px-6 py-3 rounded-full">
+          <p className="text-white text-sm font-medium">
+            {LOADING_MESSAGES[messageIndex]}
           </p>
         </div>
       </div>
       
-      {/* Fade overlay a pantalla clara */}
+      {/* Fade out final */}
       <div 
-        className={`absolute inset-0 bg-[#F5F7FB] pointer-events-none transition-opacity duration-700 ${
+        className={`absolute inset-0 bg-[#F5F7FB] pointer-events-none transition-opacity duration-500 ${
           fadeOut ? 'opacity-100' : 'opacity-0'
         }`}
       />

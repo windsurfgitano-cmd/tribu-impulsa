@@ -4377,11 +4377,11 @@ const AppLayout = () => {
 
         {showNav && (
           <nav 
-            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-3 px-6 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
+            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-1.5 px-4 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
             style={{ 
               backgroundColor: 'rgba(232, 245, 233, 0.98)',
-              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
-              minHeight: '76px',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4px)',
+              height: '56px',
               transform: 'translateZ(0)',
             }}
           >

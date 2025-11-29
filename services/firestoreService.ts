@@ -143,6 +143,87 @@ const COLLECTIONS = {
 };
 
 // ============================================
+// CONFIGURACIÓN DEL SISTEMA (Azure OpenAI, etc.)
+// ============================================
+
+export interface SystemConfig {
+  azureOpenAI: {
+    endpoint: string;
+    apiKey: string;
+    model: string;
+  };
+  features: {
+    aiMatchingEnabled: boolean;
+    pushNotificationsEnabled: boolean;
+  };
+  updatedAt: Timestamp;
+}
+
+// Cache local de config para no hacer muchas lecturas
+let cachedConfig: SystemConfig | null = null;
+let configLastFetch = 0;
+const CONFIG_CACHE_TTL = 60000; // 1 minuto
+
+export const getSystemConfig = async (): Promise<SystemConfig | null> => {
+  try {
+    // Usar cache si es reciente
+    if (cachedConfig && Date.now() - configLastFetch < CONFIG_CACHE_TTL) {
+      return cachedConfig;
+    }
+
+    const docRef = doc(db, COLLECTIONS.CONFIG, 'system');
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      cachedConfig = docSnap.data() as SystemConfig;
+      configLastFetch = Date.now();
+      return cachedConfig;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error obteniendo config:', error);
+    return null;
+  }
+};
+
+export const setSystemConfig = async (config: Partial<SystemConfig>): Promise<boolean> => {
+  try {
+    const docRef = doc(db, COLLECTIONS.CONFIG, 'system');
+    await setDoc(docRef, {
+      ...config,
+      updatedAt: Timestamp.now()
+    }, { merge: true });
+    
+    // Invalidar cache
+    cachedConfig = null;
+    configLastFetch = 0;
+    
+    return true;
+  } catch (error) {
+    console.error('Error guardando config:', error);
+    return false;
+  }
+};
+
+// Inicializar config con valores por defecto si no existe
+export const initializeSystemConfig = async (): Promise<void> => {
+  const existing = await getSystemConfig();
+  if (!existing) {
+    await setSystemConfig({
+      azureOpenAI: {
+        endpoint: '',
+        apiKey: '',
+        model: 'gpt-5.1-chat'
+      },
+      features: {
+        aiMatchingEnabled: false,
+        pushNotificationsEnabled: true
+      }
+    });
+  }
+};
+
+// ============================================
 // AUTENTICACIÓN
 // ============================================
 

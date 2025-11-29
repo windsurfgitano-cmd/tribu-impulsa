@@ -1,34 +1,64 @@
 // AI Matching Service - Tribu Impulsa
 // Usa Azure OpenAI (GPT-5.1) para matching inteligente de emprendedores
 
+import { getSystemConfig, setSystemConfig } from './firestoreService';
+
 // ============================================
-// CONFIGURACIÓN AZURE OPENAI
+// CONFIGURACIÓN AZURE OPENAI (desde Firestore)
 // ============================================
 
-// Las credenciales van en .env (no en código)
-// VITE_AZURE_OPENAI_ENDPOINT=https://kondorcode-resource.cognitiveservices.azure.com/openai/deployments/gpt-5.1-chat/chat/completions?api-version=2024-05-01-preview
-// VITE_AZURE_OPENAI_KEY=tu-key-aqui
+interface AzureConfig {
+  endpoint: string;
+  key: string;
+}
 
-const getAzureConfig = () => {
-  // En desarrollo, usar valores de localStorage si existen
-  const storedEndpoint = localStorage.getItem('azure_openai_endpoint');
-  const storedKey = localStorage.getItem('azure_openai_key');
+// Cache local para evitar muchas lecturas
+let azureConfigCache: AzureConfig | null = null;
+
+const getAzureConfig = async (): Promise<AzureConfig> => {
+  // Usar cache si existe
+  if (azureConfigCache) {
+    return azureConfigCache;
+  }
+
+  const systemConfig = await getSystemConfig();
   
-  return {
-    endpoint: storedEndpoint || '',
-    key: storedKey || ''
-  };
+  if (systemConfig?.azureOpenAI) {
+    azureConfigCache = {
+      endpoint: systemConfig.azureOpenAI.endpoint,
+      key: systemConfig.azureOpenAI.apiKey
+    };
+    return azureConfigCache;
+  }
+  
+  return { endpoint: '', key: '' };
 };
 
-// Función para configurar credenciales (llamar desde consola del navegador)
-export const configureAzureAI = (endpoint: string, key: string) => {
-  localStorage.setItem('azure_openai_endpoint', endpoint);
-  localStorage.setItem('azure_openai_key', key);
-  console.log('✅ Azure OpenAI configurado');
+// Configurar Azure OpenAI en Firestore (solo admins)
+export const configureAzureAI = async (endpoint: string, apiKey: string): Promise<boolean> => {
+  const success = await setSystemConfig({
+    azureOpenAI: {
+      endpoint,
+      apiKey,
+      model: 'gpt-5.1-chat'
+    },
+    features: {
+      aiMatchingEnabled: true,
+      pushNotificationsEnabled: true
+    }
+  });
+  
+  if (success) {
+    // Invalidar cache
+    azureConfigCache = null;
+    console.log('✅ Azure OpenAI configurado en Firestore');
+  }
+  
+  return success;
 };
 
-export const isAzureConfigured = (): boolean => {
-  const config = getAzureConfig();
+export const isAzureConfigured = async (): Promise<boolean> => {
+  const config = await getAzureConfig();
   return !!(config.endpoint && config.key);
 };
 
@@ -126,7 +156,7 @@ TAREA: Selecciona los ${matchCount} mejores matches para ${targetUser.companyNam
 Devuelve SOLO JSON válido, sin markdown ni texto adicional.
 `;
 
-    const config = getAzureConfig();
+    const config = await getAzureConfig();
     if (!config.endpoint || !config.key) {
       throw new Error('Azure OpenAI no configurado. Usa configureAzureAI()');
     }
@@ -246,7 +276,7 @@ Responde en JSON:
 }
 `;
 
-    const config = getAzureConfig();
+    const config = await getAzureConfig();
     if (!config.endpoint || !config.key) {
       throw new Error('Azure OpenAI no configurado. Usa configureAzureAI()');
     }
@@ -308,7 +338,7 @@ Responde en JSON:
 }
 `;
 
-    const config = getAzureConfig();
+    const config = await getAzureConfig();
     if (!config.endpoint || !config.key) {
       throw new Error('Azure OpenAI no configurado. Usa configureAzureAI()');
     }
@@ -358,7 +388,7 @@ Responde en JSON:
  */
 export async function checkAIAvailability(): Promise<boolean> {
   try {
-    const config = getAzureConfig();
+    const config = await getAzureConfig();
     if (!config.endpoint || !config.key) {
       throw new Error('Azure OpenAI no configurado. Usa configureAzureAI()');
     }

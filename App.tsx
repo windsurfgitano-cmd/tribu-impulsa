@@ -2010,11 +2010,11 @@ const MyProfileView = () => {
                 <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
                 
-                {/* Botón editar banner - Arriba a la derecha del cover */}
+                {/* Botón editar banner - Arriba a la derecha del cover (con safe-area para iPhone) */}
                 {isEditing && (
                   <button 
                     onClick={() => bannerInputRef.current?.click()}
-                    className="absolute top-6 right-6 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-20 text-sm"
+                    className="absolute top-14 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-20 text-sm"
                   >
                     <Edit2 size={16} />
                     <span className="font-medium">Cambiar banner</span>
@@ -2028,8 +2028,8 @@ const MyProfileView = () => {
                   className="hidden"
                 />
                 
-                {/* Top Navigation Actions */}
-                <div className="absolute top-6 left-6 z-30 flex items-center gap-4 w-full pr-12">
+                {/* Top Navigation Actions (con safe-area para iPhone) */}
+                <div className="absolute top-14 left-4 z-30 flex items-center gap-4 w-full pr-12">
                     <button 
                         onClick={() => navigate('/dashboard')}
                         className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"

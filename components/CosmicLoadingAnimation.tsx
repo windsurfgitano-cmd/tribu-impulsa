@@ -13,59 +13,62 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
   const [fadeOut, setFadeOut] = useState(false);
   const [statusText, setStatusText] = useState('Conectando con tu tribu...');
   const [progress, setProgress] = useState(0);
+  const [textVisible, setTextVisible] = useState(true);
 
   useEffect(() => {
     const TOTAL_TIME = duration;
-    const startTime = Date.now();
 
-    // Mensajes de estado
+    // Mensajes de estado con tiempos
     const statusMessages = [
       { time: 0, text: 'Conectando con tu tribu...', progress: 0 },
-      { time: 1000, text: 'Escaneando emprendedores...', progress: 15 },
-      { time: 2000, text: 'Analizando perfiles...', progress: 30 },
-      { time: 3500, text: 'Calculando afinidades...', progress: 50 },
-      { time: 5000, text: 'Formando conexiones...', progress: 70 },
-      { time: 6500, text: 'Optimizando tu tribu...', progress: 85 },
-      { time: 7500, text: '¡Tu tribu está lista!', progress: 100 },
+      { time: 1200, text: 'Escaneando emprendedores...', progress: 15 },
+      { time: 2400, text: 'Analizando perfiles...', progress: 30 },
+      { time: 3600, text: 'Calculando afinidades...', progress: 50 },
+      { time: 4800, text: 'Formando conexiones...', progress: 70 },
+      { time: 6000, text: 'Optimizando tu tribu...', progress: 85 },
+      { time: 7200, text: '¡Tu tribu está lista!', progress: 100 },
     ];
 
-    let lastMessageIndex = -1;
+    // Programar cada cambio de mensaje con setTimeout
+    const timeouts: NodeJS.Timeout[] = [];
+    
+    statusMessages.forEach((msg, index) => {
+      const timeout = setTimeout(() => {
+        // Fade out texto actual
+        setTextVisible(false);
+        
+        // Después de fade out, cambiar texto y fade in
+        setTimeout(() => {
+          setStatusText(msg.text);
+          setProgress(msg.progress);
+          setTextVisible(true);
+        }, 200);
+      }, msg.time);
+      
+      timeouts.push(timeout);
+    });
 
-    const tick = () => {
-      const elapsed = Date.now() - startTime;
+    // Fade out final
+    const fadeTimeout = setTimeout(() => {
+      setFadeOut(true);
+    }, TOTAL_TIME - 800);
+    timeouts.push(fadeTimeout);
 
-      // Actualizar mensajes y progreso
-      for (let i = statusMessages.length - 1; i >= 0; i--) {
-        if (elapsed >= statusMessages[i].time && i !== lastMessageIndex) {
-          setStatusText(statusMessages[i].text);
-          setProgress(statusMessages[i].progress);
-          lastMessageIndex = i;
-          break;
-        }
-      }
-
-      // Fade out cerca del final
-      if (elapsed > TOTAL_TIME - 1000) {
-        setFadeOut(true);
-      }
-
-      // Completar
-      if (elapsed >= TOTAL_TIME) {
-        if (onComplete) onComplete();
-        return;
-      }
-
-      requestAnimationFrame(tick);
-    };
+    // Completar
+    const completeTimeout = setTimeout(() => {
+      if (onComplete) onComplete();
+    }, TOTAL_TIME);
+    timeouts.push(completeTimeout);
 
     // Iniciar video
     if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Autoplay bloqueado, continuar sin video
-      });
+      videoRef.current.play().catch(() => {});
     }
 
-    requestAnimationFrame(tick);
+    // Cleanup
+    return () => {
+      timeouts.forEach(t => clearTimeout(t));
+    };
   }, [duration, onComplete]);
 
   return (
@@ -110,9 +113,9 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
           <p className="text-white/50 text-xs text-center mt-2">{progress}%</p>
         </div>
         
-        {/* Status text */}
+        {/* Status text con animación */}
         <div className="bg-black/40 backdrop-blur-md px-6 py-3 rounded-full border border-white/10">
-          <p className="text-white text-sm font-medium">
+          <p className={`text-white text-sm font-medium transition-opacity duration-200 ${textVisible ? 'opacity-100' : 'opacity-0'}`}>
             {statusText}
           </p>
         </div>

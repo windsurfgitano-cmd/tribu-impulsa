@@ -2927,14 +2927,14 @@ const ActivityView = () => {
   );
 };
 
-// Tutorial Steps Component
+// Tutorial Steps Component - Sin emojis, iconos profesionales
 const TUTORIAL_STEPS = [
   {
     id: 'welcome',
-    title: '¡Bienvenido/a a Tribu Impulsa! 🎉',
+    title: '¡Bienvenido/a a Tribu Impulsa!',
     subtitle: 'Tu comunidad de emprendedores para crecer juntos',
-    content: 'Tribu Impulsa te conecta con otros emprendedores para hacer cross-promotion: tú compartes su contenido y ellos comparten el tuyo. ¡Crecemos juntos!',
-    icon: '👋',
+    content: 'Tribu Impulsa te conecta con otros emprendedores para hacer cross-promotion: tú compartes su contenido y ellos comparten el tuyo. Crecemos juntos.',
+    iconType: 'zap',
     color: 'from-[#6161FF] to-[#00CA72]'
   },
   {
@@ -2942,15 +2942,15 @@ const TUTORIAL_STEPS = [
     title: 'Tu Tribu 10 + 10',
     subtitle: 'Cada mes recibirás nuevas asignaciones',
     content: '• 10 cuentas a las que TÚ compartes\n• 10 cuentas que te comparten A TI\n\nEl algoritmo te asigna matches complementarios, evitando competencia directa.',
-    icon: '🤝',
+    iconType: 'users',
     color: 'from-[#00CA72] to-[#4AE698]'
   },
   {
     id: 'checklist',
     title: 'Checklist de Reciprocidad',
     subtitle: 'Marca lo que vas completando',
-    content: '1. Ve a "Mi Tribu" en el menú inferior\n2. Revisa tus 10+10 asignaciones\n3. Marca ✓ cuando compartas algo\n4. Si alguien no cumple, usa "Reportar"',
-    icon: '✅',
+    content: '1. Ve a "Mi Tribu" en el menú inferior\n2. Revisa tus 10+10 asignaciones\n3. Marca cuando compartas algo\n4. Si alguien no cumple, usa "Reportar"',
+    iconType: 'check',
     color: 'from-[#FFCC00] to-[#FFE066]'
   },
   {
@@ -2958,10 +2958,41 @@ const TUTORIAL_STEPS = [
     title: 'Tu Perfil Profesional',
     subtitle: 'Preséntate ante la comunidad',
     content: 'Tu perfil muestra tu emprendimiento a otros miembros. Asegúrate de tener:\n• Foto de perfil\n• Instagram actualizado\n• Descripción atractiva',
-    icon: '📱',
+    iconType: 'user',
     color: 'from-[#A78BFA] to-[#C9A8FF]'
   }
 ];
+
+// Iconos SVG para el onboarding (más profesionales que emojis)
+const OnboardingIcon = ({ type }: { type: string }) => {
+  const icons: Record<string, React.ReactNode> = {
+    zap: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+      </svg>
+    ),
+    users: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    check: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+    user: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </svg>
+    ),
+  };
+  return icons[type] || icons.zap;
+};
 
 interface OnboardingModalProps {
   onComplete: () => void;
@@ -3028,8 +3059,8 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
         
         {/* Content */}
         <div className="px-6 pb-6">
-          <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center text-4xl shadow-lg`}>
-            {step.icon}
+          <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}>
+            <OnboardingIcon type={step.iconType} />
           </div>
           
           <h2 className="text-2xl font-bold text-[#181B34] text-center mb-1">{step.title}</h2>

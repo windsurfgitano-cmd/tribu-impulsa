@@ -2485,6 +2485,7 @@ interface ActivityItem {
   icon: string;
   color: string;
   actionUrl?: string;
+  archivedAt?: string;  // Para actividades archivadas
 }
 
 const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: number }> = {
@@ -2510,83 +2511,144 @@ const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: n
   system: { icon: '📢', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 2 }
 };
 
-const generateSampleActivities = (): ActivityItem[] => {
-  const now = new Date();
+// ============================================
+// SISTEMA DE ACTIVIDADES PERSISTENTE
+// ============================================
+const ACTIVITIES_KEY = 'tribu_activities';
+const ARCHIVED_KEY = 'tribu_activities_archived';
+
+// Obtener actividades del localStorage
+const getStoredActivities = (): ActivityItem[] => {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(ACTIVITIES_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch { return []; }
+  }
+  // Primera vez - generar actividades iniciales
+  const initial = generateInitialActivities();
+  localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(initial));
+  return initial;
+};
+
+// Guardar actividades
+const persistActivities = (activities: ActivityItem[]) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+};
+
+// Obtener actividades archivadas
+const getArchivedActivities = (): ActivityItem[] => {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem(ARCHIVED_KEY);
+  if (stored) {
+    try { return JSON.parse(stored); } catch { return []; }
+  }
+  return [];
+};
+
+// Archivar una actividad (NO borrar)
+const archiveActivity = (activity: ActivityItem) => {
+  if (typeof window === 'undefined') return;
+  const archived = getArchivedActivities();
+  archived.push({ ...activity, archivedAt: new Date().toISOString() });
+  localStorage.setItem(ARCHIVED_KEY, JSON.stringify(archived));
+};
+
+// Restaurar actividad archivada
+const restoreActivity = (id: string): ActivityItem | null => {
+  const archived = getArchivedActivities();
+  const activity = archived.find(a => a.id === id);
+  if (activity) {
+    const updated = archived.filter(a => a.id !== id);
+    localStorage.setItem(ARCHIVED_KEY, JSON.stringify(updated));
+    return activity;
+  }
+  return null;
+};
+
+// Generar actividades iniciales
+const generateInitialActivities = (): ActivityItem[] => {
+  const currentUser = getCurrentUser();
+  const userName = currentUser?.name?.split(' ')[0] || 'Emprendedor';
+  
   return [
     {
-      id: '1',
+      id: `act_${Date.now()}_1`,
       type: 'welcome',
-      title: '¡Bienvenido/a a Tribu Impulsa!',
+      title: `¡Bienvenido/a ${userName}!`,
       description: 'Tu comunidad de emprendedores te espera. Revisa tu tribu 10+10 y comienza a compartir.',
-      timestamp: 'Hoy',
+      timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
       icon: '🎉',
       color: 'bg-[#00CA72]/10 text-[#00CA72]',
       actionUrl: '/tribe'
     },
     {
-      id: '2',
-      type: 'share_reminder',
-      title: 'Evita que te reporten',
-      description: 'Recuerda compartir contenido de tu tribu. Llevas 3/10 este mes.',
-      timestamp: 'Hace 2h',
-      isRead: false,
-      icon: '📤',
-      color: 'bg-[#FFCC00]/10 text-[#9D6B00]',
-      actionUrl: '/tribe'
-    },
-    {
-      id: '3',
-      type: 'thanks_received',
-      title: '¡Alguien te envió un Gracias!',
-      description: 'María de Dulce Momento agradeció tu compartida.',
-      timestamp: 'Hace 5h',
-      isRead: true,
-      icon: '💜',
-      color: 'bg-[#6161FF]/10 text-[#6161FF]'
-    },
-    {
-      id: '4',
-      type: 'shared_you',
-      title: 'Te compartieron en Instagram',
-      description: 'Roberto de EcoPack compartió tu última publicación.',
-      timestamp: 'Ayer',
-      isRead: true,
-      icon: '🔄',
-      color: 'bg-[#00CA72]/10 text-[#00CA72]'
-    },
-    {
-      id: '5',
+      id: `act_${Date.now()}_2`,
       type: 'new_assignment',
-      title: 'Nueva tribu de Noviembre',
-      description: 'Tu tribu 10+10 ha sido actualizada. ¡Revisa tus nuevas asignaciones!',
-      timestamp: 'Nov 1',
-      isRead: true,
+      title: 'Tu tribu está lista',
+      description: 'Tienes 10 cuentas para impulsar y 10 que te impulsarán. ¡Revísalas!',
+      timestamp: new Date().toLocaleDateString('es-CL'),
+      isRead: false,
       icon: '🎯',
       color: 'bg-[#6161FF]/10 text-[#6161FF]',
       actionUrl: '/tribe'
     },
     {
-      id: '6',
+      id: `act_${Date.now()}_3`,
       type: 'tip',
-      title: 'Consejo del día',
-      description: 'Comparte historias, no solo posts. Las historias tienen más alcance.',
-      timestamp: 'Nov 15',
-      isRead: true,
+      title: 'Consejo: Historias > Posts',
+      description: 'Las historias de Instagram tienen más alcance. Comparte contenido de tu tribu en historias.',
+      timestamp: new Date().toLocaleDateString('es-CL'),
+      isRead: false,
       icon: '💡',
       color: 'bg-[#FFCC00]/10 text-[#9D6B00]'
     }
   ];
 };
 
+// Crear nueva actividad (para uso del sistema)
+const createActivity = (type: string, title: string, description: string, actionUrl?: string): ActivityItem => {
+  const config = ACTIVITY_CONFIG[type] || ACTIVITY_CONFIG.system;
+  const activity: ActivityItem = {
+    id: `act_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    type,
+    title,
+    description,
+    timestamp: new Date().toLocaleDateString('es-CL'),
+    isRead: false,
+    icon: config.icon,
+    color: config.color,
+    actionUrl
+  };
+  
+  // Persistir inmediatamente
+  const activities = getStoredActivities();
+  activities.unshift(activity);
+  persistActivities(activities);
+  
+  return activity;
+};
+
 const ActivityView = () => {
   useSurveyGuard();
   const navigate = useNavigate();
-  const [activities, setActivities] = useState<ActivityItem[]>(() => generateSampleActivities());
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [activities, setActivities] = useState<ActivityItem[]>(() => getStoredActivities());
+  const [archivedActivities, setArchivedActivities] = useState<ActivityItem[]>(() => getArchivedActivities());
+  const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all');
+  const [showArchived, setShowArchived] = useState(false);
+  
+  // Persistir cambios
+  useEffect(() => {
+    persistActivities(activities);
+  }, [activities]);
   
   const filteredActivities = filter === 'unread' 
     ? activities.filter(a => !a.isRead)
+    : filter === 'archived'
+    ? archivedActivities
     : activities;
   
   const unreadCount = activities.filter(a => !a.isRead).length;
@@ -2599,8 +2661,23 @@ const ActivityView = () => {
     setActivities(prev => prev.map(a => ({ ...a, isRead: true })));
   };
   
-  const deleteActivity = (id: string) => {
-    setActivities(prev => prev.filter(a => a.id !== id));
+  // Archivar en vez de borrar
+  const handleArchive = (id: string) => {
+    const activity = activities.find(a => a.id === id);
+    if (activity) {
+      archiveActivity(activity);
+      setActivities(prev => prev.filter(a => a.id !== id));
+      setArchivedActivities(getArchivedActivities());
+    }
+  };
+  
+  // Restaurar actividad archivada
+  const handleRestore = (id: string) => {
+    const activity = restoreActivity(id);
+    if (activity) {
+      setActivities(prev => [activity, ...prev]);
+      setArchivedActivities(getArchivedActivities());
+    }
   };
 
   return (
@@ -2613,21 +2690,23 @@ const ActivityView = () => {
               <span className="bg-[#FB275D] text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>
             )}
           </h1>
-          {unreadCount > 0 && (
-            <button 
-              onClick={markAllAsRead}
-              className="text-sm text-[#6161FF] hover:underline"
-            >
-              Marcar todo leído
-            </button>
-          )}
+          <div className="flex gap-2">
+            {unreadCount > 0 && (
+              <button 
+                onClick={markAllAsRead}
+                className="text-xs text-[#6161FF] hover:underline"
+              >
+                Marcar leído
+              </button>
+            )}
+          </div>
         </div>
         
         {/* Filtros */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
               filter === 'all' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
             }`}
           >
@@ -2635,12 +2714,22 @@ const ActivityView = () => {
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
               filter === 'unread' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
             }`}
           >
             Sin leer ({unreadCount})
           </button>
+          {archivedActivities.length > 0 && (
+            <button
+              onClick={() => setFilter('archived')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                filter === 'archived' ? 'bg-[#7C8193] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+              }`}
+            >
+              Archivadas ({archivedActivities.length})
+            </button>
+          )}
         </div>
       </header>
       
@@ -2682,12 +2771,21 @@ const ActivityView = () => {
                   <span className="text-[10px] text-[#6161FF] mt-1 inline-block">Tocar para ir →</span>
                 )}
               </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); deleteActivity(item.id); }}
-                className="opacity-0 group-hover:opacity-100 text-[#7C8193] hover:text-[#FB275D] transition p-1"
-              >
-                <X size={16} />
-              </button>
+              {filter === 'archived' ? (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleRestore(item.id); }}
+                  className="text-[#00CA72] hover:text-[#008A4E] transition p-1 text-xs"
+                >
+                  Restaurar
+                </button>
+              ) : (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleArchive(item.id); }}
+                  className="opacity-0 group-hover:opacity-100 text-[#7C8193] hover:text-[#FB275D] transition p-1"
+                >
+                  <X size={16} />
+                </button>
+              )}
             </div>
           ))
         )}

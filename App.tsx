@@ -5,6 +5,7 @@ import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
+import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { 
@@ -1722,20 +1723,38 @@ const MyProfileView = () => {
     const [showTagInput, setShowTagInput] = useState(false);
     const currentUser = getCurrentUser();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const bannerInputRef = React.useRef<HTMLInputElement>(null);
 
-    // Manejar upload de foto
+    // Manejar upload de foto de perfil
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
       
       try {
-        setSaveMessage('📷 Procesando imagen...');
+        setSaveMessage('📷 Procesando foto...');
         const compressed = await compressImage(file, 400);
         setProfile({...profile, avatarUrl: compressed});
-        setSaveMessage('✅ Foto lista para guardar');
+        setSaveMessage('✅ Foto de perfil lista');
         setTimeout(() => setSaveMessage(null), 2000);
       } catch {
         setSaveMessage('❌ Error al procesar imagen');
+        setTimeout(() => setSaveMessage(null), 3000);
+      }
+    };
+
+    // Manejar upload de banner/cover
+    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      try {
+        setSaveMessage('🖼️ Procesando banner...');
+        const compressed = await compressImage(file, 1200); // Mayor resolución para banner
+        setProfile({...profile, coverUrl: compressed});
+        setSaveMessage('✅ Banner listo para guardar');
+        setTimeout(() => setSaveMessage(null), 2000);
+      } catch {
+        setSaveMessage('❌ Error al procesar banner');
         setTimeout(() => setSaveMessage(null), 3000);
       }
     };
@@ -1754,12 +1773,13 @@ const MyProfileView = () => {
       setProfile({...profile, tags: profile.tags.filter(t => t !== tagToRemove)});
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!currentUser) return;
         setIsSaving(true);
+        setSaveMessage('💾 Guardando cambios...');
         
-        // Guardar cambios en la base de datos
-        const updated = updateUser(currentUser.id, {
+        // Datos a guardar
+        const profileData = {
             name: profile.name,
             companyName: profile.companyName,
             bio: profile.bio,
@@ -1767,16 +1787,48 @@ const MyProfileView = () => {
             website: profile.website,
             city: profile.location?.split(',')[0]?.trim() || '',
             avatarUrl: profile.avatarUrl,
-        });
+            coverUrl: profile.coverUrl,
+            tags: profile.tags,
+        };
+        
+        // Guardar cambios localmente
+        const updated = updateUser(currentUser.id, profileData);
         
         if (updated) {
-            setSaveMessage('✅ Perfil actualizado');
-            setTimeout(() => setSaveMessage(null), 3000);
+            // Sincronizar con Firebase
+            try {
+                const { syncProfileToCloud, logInteraction } = await import('./services/firebaseService');
+                await syncProfileToCloud({
+                    id: currentUser.id,
+                    name: profile.name,
+                    companyName: profile.companyName,
+                    category: profile.category,
+                    subCategory: profile.subCategory,
+                    location: profile.location,
+                    bio: profile.bio,
+                    instagram: profile.instagram,
+                    website: profile.website,
+                    avatarUrl: profile.avatarUrl,
+                    coverUrl: profile.coverUrl,
+                    tags: profile.tags,
+                });
+                
+                // Registrar la interacción
+                await logInteraction(currentUser.id, 'profile_updated', {
+                    fields: Object.keys(profileData),
+                    timestamp: new Date().toISOString()
+                });
+                
+                setSaveMessage('✅ Perfil guardado y sincronizado');
+            } catch {
+                // Fallback si Firebase falla
+                setSaveMessage('✅ Perfil guardado localmente');
+            }
         } else {
             setSaveMessage('❌ Error al guardar');
-            setTimeout(() => setSaveMessage(null), 3000);
         }
         
+        setTimeout(() => setSaveMessage(null), 3000);
         setIsSaving(false);
         setIsEditing(false);
     };
@@ -1784,9 +1836,27 @@ const MyProfileView = () => {
     return (
         <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
             {/* Header with Cover */}
-            <div className="h-72 w-full relative">
+            <div className="h-72 w-full relative group">
                 <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
+                
+                {/* Botón editar banner */}
+                {isEditing && (
+                  <button 
+                    onClick={() => bannerInputRef.current?.click()}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition-all z-20"
+                  >
+                    <Edit2 size={18} />
+                    <span className="font-medium">Cambiar banner</span>
+                  </button>
+                )}
+                <input 
+                  ref={bannerInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  className="hidden"
+                />
                 
                 {/* Top Navigation Actions */}
                 <div className="absolute top-6 left-6 z-30 flex items-center gap-4 w-full pr-12">
@@ -2307,28 +2377,11 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
   };
   
-  // Estado de carga mejorado
+  // Estado de carga con animación épica
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center animate-pulse">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          </div>
-          <div>
-            <span className="text-sm font-semibold text-[#6161FF] block">Tribu X está analizando...</span>
-            <span className="text-xs text-[#7C8193]">Buscando sinergias y oportunidades</span>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-full"></div>
-          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-5/6"></div>
-          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-4/6"></div>
-          <div className="mt-4 flex gap-2">
-            <div className="h-8 bg-[#E4E7EF] rounded-full animate-pulse flex-1"></div>
-            <div className="h-8 bg-[#E4E7EF] rounded-full animate-pulse flex-1"></div>
-          </div>
-        </div>
+      <div className="rounded-2xl overflow-hidden border border-[#6161FF]/20">
+        <TribalLoadingAnimation isLoading={true} duration={4500} />
       </div>
     );
   }

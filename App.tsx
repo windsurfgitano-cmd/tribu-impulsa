@@ -2489,8 +2489,8 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   };
   
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slideUp my-auto max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slideUp max-h-[85vh] overflow-y-auto">
         {/* Progress */}
         <div className="flex gap-1 p-4">
           {TUTORIAL_STEPS.map((_, i) => (
@@ -2730,17 +2730,12 @@ const Dashboard = () => {
             <div key={match.id} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-[#E4E7EF] hover:border-[#6161FF]/30">
               <div className="p-5">
                 <div className="flex gap-4 mb-4">
-                    {/* Avatar + Logo overlapping */}
-                    <div className="relative flex-shrink-0">
-                        <img 
-                        src={match.targetProfile.avatarUrl} 
-                        alt={match.targetProfile.name} 
-                        className="w-16 h-16 rounded-2xl object-cover border border-[#E4E7EF] shadow-md"
-                        />
-                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-white rounded-lg border border-[#E4E7EF] p-0.5 shadow-sm">
-                            <img src={match.targetProfile.companyLogoUrl} alt="logo" className="w-full h-full rounded-md"/>
-                        </div>
-                    </div>
+                    {/* Avatar simple */}
+                    <img 
+                      src={match.targetProfile.avatarUrl} 
+                      alt={match.targetProfile.name} 
+                      className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                    />
                     
                     <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-1">

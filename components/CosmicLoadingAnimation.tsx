@@ -128,33 +128,45 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
   }, [duration, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-black overflow-hidden">
-      {/* Video de fondo - fullscreen cover */}
+    <div className="fixed inset-0 z-[99999] overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 50%, #0a0a1a 100%)' }}>
+      {/* Video de fondo - sin poster para evitar loop de imagen */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
-        src={`/tribuvideo.mp4?v=${Date.now()}`}
+        src="/tribuvideo.mp4"
         muted
         playsInline
         autoPlay
         loop
         preload="auto"
-        poster="/tribulogo.png"
       />
       
-      {/* Overlay oscuro mate (60% para mejor visibilidad del UI) */}
-      <div className="absolute inset-0 bg-black/60" />
+      {/* Overlay oscuro mate (50% para mejor visibilidad del UI) */}
+      <div className="absolute inset-0 bg-black/50" />
       
       {/* UI Overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-        {/* Logo y título */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        {/* Logo de Tribu Impulsa - con mix-blend para transparencia visual */}
+        <div className="mb-8">
+          <img 
+            src="/tribulogo.png" 
+            alt="Tribu Impulsa" 
+            className="w-40 h-40 object-contain drop-shadow-2xl"
+            style={{ 
+              mixBlendMode: 'screen',
+              filter: 'brightness(1.1) contrast(1.1)'
+            }}
+          />
+        </div>
+        
+        {/* Título */}
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-white drop-shadow-lg">
+          <h1 className="text-2xl font-bold text-white drop-shadow-lg">
             <span className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] bg-clip-text text-transparent">
               Algoritmo Tribal X
             </span>
           </h1>
-          <p className="text-white/70 text-sm mt-1 tracking-wider uppercase drop-shadow">
+          <p className="text-white/60 text-xs mt-1 tracking-wider uppercase drop-shadow">
             Inteligencia de Conexión
           </p>
         </div>

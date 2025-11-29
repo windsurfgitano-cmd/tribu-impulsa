@@ -314,15 +314,18 @@ const getTribeSyncedAt = (): string => {
   return localStorage.getItem(TRIBE_SYNC_KEY) ?? new Date().toLocaleString('es-CL');
 };
 
-const getStoredTribeAssignments = (category: string): TribeAssignments => {
+const getStoredTribeAssignments = (category: string, userId?: string): TribeAssignments => {
   if (typeof window === 'undefined') {
-    return generateTribeAssignments(category);
+    return generateTribeAssignments(category, userId);
   }
 
-  const raw = localStorage.getItem(TRIBE_ASSIGNMENTS_KEY);
+  // Key específica por usuario para que cada uno tenga sus propias asignaciones
+  const storageKey = userId ? `${TRIBE_ASSIGNMENTS_KEY}_${userId}` : TRIBE_ASSIGNMENTS_KEY;
+  
+  const raw = localStorage.getItem(storageKey);
   if (!raw) {
-    const generated = generateTribeAssignments(category);
-    localStorage.setItem(TRIBE_ASSIGNMENTS_KEY, JSON.stringify(generated));
+    const generated = generateTribeAssignments(category, userId);
+    localStorage.setItem(storageKey, JSON.stringify(generated));
     stampTribeSync();
     return generated;
   }
@@ -335,8 +338,8 @@ const getStoredTribeAssignments = (category: string): TribeAssignments => {
     return parsed;
   } catch (error) {
     console.warn('Error reading stored assignments', error);
-    const fallback = generateTribeAssignments(category);
-    localStorage.setItem(TRIBE_ASSIGNMENTS_KEY, JSON.stringify(fallback));
+    const fallback = generateTribeAssignments(category, userId);
+    localStorage.setItem(storageKey, JSON.stringify(fallback));
     stampTribeSync();
     return fallback;
   }
@@ -424,8 +427,8 @@ const persistReport = (report: TribeReport) => {
   localStorage.setItem(TRIBE_REPORTS_KEY, JSON.stringify(next));
 };
 
-const getTribeStatsSnapshot = (userCategory: string) => {
-  const assignments = getStoredTribeAssignments(userCategory);
+const getTribeStatsSnapshot = (userCategory: string, userId?: string) => {
+  const assignments = getStoredTribeAssignments(userCategory, userId);
   const checklist = getStoredChecklistState(assignments);
   const completed = Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length;
   const total = assignments.toShare.length + assignments.shareWithMe.length;
@@ -1444,7 +1447,7 @@ const TribeAssignmentsView = () => {
   useSurveyGuard();
   const navigate = useNavigate();
   const myProfile = useMemo(() => getMyProfile(), []);
-  const [assignments, setAssignments] = useState<TribeAssignments>(() => getStoredTribeAssignments(myProfile.category));
+  const [assignments, setAssignments] = useState<TribeAssignments>(() => getStoredTribeAssignments(myProfile.category, myProfile.id));
   const [checklist, setChecklist] = useState<AssignmentChecklist>(() => getStoredChecklistState(assignments));
   const [status, setStatus] = useState<TribeStatus>(() => getStoredTribeStatus());
   const [lastSynced, setLastSynced] = useState<string>(() => new Date().toLocaleString('es-CL'));
@@ -1507,7 +1510,7 @@ const TribeAssignmentsView = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       resetTribeStorage();
-      const nextAssignments = getStoredTribeAssignments(myProfile.category);
+      const nextAssignments = getStoredTribeAssignments(myProfile.category, myProfile.id);
       const nextChecklist = getStoredChecklistState(nextAssignments);
       setAssignments(nextAssignments);
       setChecklist(nextChecklist);
@@ -3427,7 +3430,7 @@ const Dashboard = () => {
   const matches = generateMockMatches("Bienestar y Salud"); 
   // Use current user profile for icon
   const myProfile = getMyProfile();
-  const tribeStats = getTribeStatsSnapshot(myProfile.category);
+  const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
   
   // Onboarding state
   const currentUser = getCurrentUser();
@@ -4366,11 +4369,11 @@ const AppLayout = () => {
 
         {showNav && (
           <nav 
-            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-2 px-6 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
+            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-3 px-6 flex justify-around items-center z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
             style={{ 
               backgroundColor: 'rgba(232, 245, 233, 0.98)',
-              paddingBottom: 'env(safe-area-inset-bottom, 8px)',
-              height: '64px',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+              minHeight: '76px',
               transform: 'translateZ(0)',
             }}
           >

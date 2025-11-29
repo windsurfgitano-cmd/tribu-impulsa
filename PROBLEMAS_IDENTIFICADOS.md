@@ -76,5 +76,25 @@
    - Ya está instalado via PostCSS, pero el CDN sigue cargando
    - Revisar `index.html` para eliminar referencia al CDN
 
+## PROGRESO SESIÓN 29-Nov-2025 12:45
+
+### Completados hoy:
+1. ✅ **Logo login más grande** - 90% ancho, más cerca del formulario
+2. ✅ **Checklist simplificado** - Solo 2 estados: Pendiente (amarillo) / Completado (verde)
+3. ✅ **Menú dev colapsable** - Opciones avanzadas ocultas en dropdown
+4. ✅ **Avatar único** - Quitado doble círculo en perfiles
+5. ✅ **Azure OpenAI fallback** - Retorna null cuando no está configurado, App usa fallback local
+6. ✅ **Sistema actividades persistente**:
+   - Guardado en localStorage (`tribu_activities`, `tribu_activities_archived`)
+   - Archivar en vez de borrar
+   - Restaurar desde archivados
+   - Estado de lectura persistente
+   - Filtros: Todas / Sin leer / Archivadas
+
+### Filosofía de datos:
+> "Todo dato que los clientes escriban, conclusiones de la IA, la matriz principal de toda la DB, 
+> interacciones, patrones de uso, estadísticas de porcentajes, mensajes, uso del botón de WSP, 
+> todo todo todo debe ser trazable, medible, analizable."
+
 ---
-Última actualización: 29-Nov-2025 12:40
+Última actualización: 29-Nov-2025 12:55

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
@@ -2066,6 +2067,207 @@ const NotificationButton = () => {
   );
 };
 
+// Componente de Análisis de Match con LLM
+const MATCH_ANALYSIS_STORAGE_KEY = 'tribu_match_analysis';
+const MATCH_ANALYSIS_MONTH_KEY = 'tribu_match_analysis_month';
+
+interface MatchAnalysis {
+  profileId: string;
+  analysis: string;
+  generatedAt: string;
+  month: string;
+}
+
+const getStoredAnalysis = (profileId: string): MatchAnalysis | null => {
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const storedMonth = localStorage.getItem(MATCH_ANALYSIS_MONTH_KEY);
+  
+  // Si cambió el mes, limpiar análisis antiguos
+  if (storedMonth !== currentMonth) {
+    localStorage.removeItem(MATCH_ANALYSIS_STORAGE_KEY);
+    localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
+    return null;
+  }
+  
+  const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
+  return allAnalysis[profileId] || null;
+};
+
+const saveAnalysis = (profileId: string, analysis: string) => {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
+  
+  allAnalysis[profileId] = {
+    profileId,
+    analysis,
+    generatedAt: new Date().toISOString(),
+    month: currentMonth
+  };
+  
+  localStorage.setItem(MATCH_ANALYSIS_STORAGE_KEY, JSON.stringify(allAnalysis));
+  localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
+};
+
+// Master Prompt para análisis de compatibilidad
+const generateMatchAnalysisPrompt = (myProfile: MatchProfile, targetProfile: MatchProfile) => {
+  return `Eres el "Algoritmo Tribal X" de Tribu Impulsa, una plataforma de cross-promotion para emprendedores chilenos.
+
+CONTEXTO:
+- Usuario actual: ${myProfile.name} de "${myProfile.companyName}"
+- Categoría: ${myProfile.category}
+- Ubicación: ${myProfile.location}
+- Bio: ${myProfile.bio}
+- Tags: ${myProfile.tags?.join(', ') || 'N/A'}
+
+EMPRENDEDOR A ANALIZAR:
+- Nombre: ${targetProfile.name} de "${targetProfile.companyName}"
+- Categoría: ${targetProfile.category}  
+- Subcategoría: ${targetProfile.subCategory}
+- Ubicación: ${targetProfile.location}
+- Bio: ${targetProfile.bio}
+- Instagram: ${targetProfile.instagram}
+- Tags: ${targetProfile.tags?.join(', ') || 'N/A'}
+
+INSTRUCCIONES:
+Genera un análisis breve (máximo 3-4 oraciones) explicando por qué estos dos emprendedores podrían tener una buena sinergia comercial para hacer cross-promotion en Chile. Considera:
+1. Complementariedad de rubros (no competencia directa)
+2. Potencial de audiencia compartida
+3. Oportunidades de colaboración específicas
+
+Responde en español chileno, de forma cercana y profesional. NO uses bullets, solo texto fluido.`;
+};
+
+const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; profileData: MatchProfile }) => {
+  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const myProfile = getMyProfile();
+  
+  useEffect(() => {
+    const stored = getStoredAnalysis(profileId);
+    if (stored) {
+      setAnalysis(stored.analysis);
+      return;
+    }
+    
+    // Generar análisis con LLM
+    const generateAnalysis = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Intentar usar Azure OpenAI
+        const { analyzeCompatibility } = await import('./services/aiMatchingService');
+        // Convertir MatchProfile a formato compatible
+        const userProfile = {
+          id: myProfile.id,
+          name: myProfile.name,
+          email: '',
+          phone: '',
+          companyName: myProfile.companyName,
+          city: myProfile.location || '',
+          category: myProfile.category,
+          affinity: myProfile.category,
+          instagram: myProfile.instagram || '',
+          status: 'active' as const,
+          createdAt: new Date().toISOString()
+        };
+        const targetUserProfile = {
+          id: profileData.id,
+          name: profileData.name,
+          email: '',
+          phone: '',
+          companyName: profileData.companyName,
+          city: profileData.location || '',
+          category: profileData.category,
+          affinity: profileData.category,
+          instagram: profileData.instagram || '',
+          status: 'active' as const,
+          createdAt: new Date().toISOString()
+        };
+        
+        const result = await analyzeCompatibility(userProfile, targetUserProfile);
+        
+        if (result && result.analysis) {
+          setAnalysis(result.analysis);
+          saveAnalysis(profileId, result.analysis);
+        } else {
+          // Fallback: análisis genérico basado en datos
+          const fallbackAnalysis = generateFallbackAnalysis(myProfile, profileData);
+          setAnalysis(fallbackAnalysis);
+          saveAnalysis(profileId, fallbackAnalysis);
+        }
+      } catch (err) {
+        console.log('LLM no disponible, usando fallback');
+        const fallbackAnalysis = generateFallbackAnalysis(myProfile, profileData);
+        setAnalysis(fallbackAnalysis);
+        saveAnalysis(profileId, fallbackAnalysis);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    generateAnalysis();
+  }, [profileId, myProfile, profileData]);
+  
+  // Fallback sin LLM
+  const generateFallbackAnalysis = (me: MatchProfile, target: MatchProfile) => {
+    const synergies = [];
+    
+    if (me.category !== target.category) {
+      synergies.push(`Al ser de rubros diferentes (${me.category} y ${target.category}), no compiten directamente y pueden referirse clientes mutuamente.`);
+    }
+    
+    if (me.location === target.location) {
+      synergies.push(`Ambos están en ${me.location}, lo que facilita colaboraciones locales y eventos conjuntos.`);
+    }
+    
+    synergies.push(`Sus audiencias podrían complementarse bien: los seguidores de ${target.companyName} podrían estar interesados en ${me.companyName} y viceversa.`);
+    
+    return synergies.join(' ');
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center animate-pulse">
+            <Sparkles size={16} className="text-white" />
+          </div>
+          <span className="text-sm font-semibold text-[#6161FF]">Tribu X está pensando...</span>
+        </div>
+        <div className="space-y-2">
+          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-full"></div>
+          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-4/5"></div>
+          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-3/5"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="bg-[#FB275D]/5 rounded-2xl p-4 border border-[#FB275D]/20">
+        <p className="text-sm text-[#FB275D]">{error}</p>
+      </div>
+    );
+  }
+  
+  if (!analysis) return null;
+  
+  return (
+    <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
+          <Sparkles size={16} className="text-white" />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-wide text-[#6161FF]">¿Por qué podrían hacer match?</span>
+      </div>
+      <p className="text-sm text-[#434343] leading-relaxed">{analysis}</p>
+    </div>
+  );
+};
+
 // 5. Full Profile Detail View (Other User)
 const ProfileDetail = () => {
   useSurveyGuard();
@@ -2175,7 +2377,7 @@ const ProfileDetail = () => {
              </div>
 
              <div>
-               <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Skills</h3>
+               <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Tags</h3>
                <div className="flex flex-wrap gap-2">
                  {profile.tags.map(tag => (
                    <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
@@ -2184,6 +2386,9 @@ const ProfileDetail = () => {
                  ))}
                </div>
              </div>
+
+             {/* Sección de Análisis de Match - Tribu X */}
+             <MatchAnalysisSection profileId={profile.id} profileData={profile} />
 
              <button className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]">
                <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-6 h-6 filter invert brightness-200" alt="ws"/>
@@ -2488,8 +2693,19 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
     onComplete();
   };
   
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  // Usar portal para renderizar fuera del contenedor scrolleable
+  return ReactDOM.createPortal(
+    <div 
+      className="bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 99999,
+      }}
+    >
       <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slideUp max-h-[85vh] overflow-y-auto">
         {/* Progress */}
         <div className="flex gap-1 p-4">
@@ -2532,7 +2748,8 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

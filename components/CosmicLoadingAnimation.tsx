@@ -144,32 +144,8 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
       {/* Overlay oscuro mate (50% para mejor visibilidad del UI) */}
       <div className="absolute inset-0 bg-black/50" />
       
-      {/* UI Overlay */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        {/* Logo de Tribu Impulsa - con mix-blend para transparencia visual */}
-        <div className="mb-8">
-          <img 
-            src="/tribulogo.png" 
-            alt="Tribu Impulsa" 
-            className="w-40 h-40 object-contain drop-shadow-2xl"
-            style={{ 
-              mixBlendMode: 'screen',
-              filter: 'brightness(1.1) contrast(1.1)'
-            }}
-          />
-        </div>
-        
-        {/* Título */}
-        <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-white drop-shadow-lg">
-            <span className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] bg-clip-text text-transparent">
-              Algoritmo Tribal X
-            </span>
-          </h1>
-          <p className="text-white/60 text-xs mt-1 tracking-wider uppercase drop-shadow">
-            Inteligencia de Conexión
-          </p>
-        </div>
+      {/* UI Overlay - solo texto sobre el video */}
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-24 pointer-events-none">
         
         {/* Progress bar */}
         <div className="w-72 mb-4">

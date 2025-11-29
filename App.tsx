@@ -2577,21 +2577,29 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
         { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }
       );
       
-      if (result && result.analysis) {
+      // Verificar que el resultado sea válido y no sea el mensaje de error genérico
+      const isValidResult = result && 
+        result.analysis && 
+        result.analysis !== 'Análisis no disponible' &&
+        result.opportunities && 
+        result.opportunities.length > 0;
+      
+      if (isValidResult) {
         // Convertir resultado de LLM a formato enriquecido
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
-          opportunities: result.opportunities || ['Colaboración en redes', 'Sorteo cruzado', 'Referidos mutuos'],
+          opportunities: result.opportunities,
           icebreaker: `¡Hola ${profileData.name.split(' ')[0]}! 👋 Soy de ${myProfile.companyName} y te encontré en Tribu Impulsa. ${result.analysis.split('.')[0]}. ¿Te gustaría explorar una colaboración? 🚀`
         };
         setAnalysis(enriched);
         saveAnalysis(profileId, JSON.stringify(enriched));
       } else {
-        throw new Error('No result from LLM');
+        // LLM no disponible o respuesta inválida - usar fallback local inteligente
+        throw new Error('Using local fallback');
       }
     } catch {
-      // Usar fallback inteligente local
-      console.log('Usando análisis local enriquecido');
+      // Usar fallback inteligente local (siempre funciona)
+      console.log('✅ Usando análisis local enriquecido');
       const smartAnalysis = generateSmartAnalysis(myProfile, profileData);
       setAnalysis(smartAnalysis);
       saveAnalysis(profileId, JSON.stringify(smartAnalysis));

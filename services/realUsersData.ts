@@ -7,16 +7,16 @@ import { UserProfile } from './databaseService';
 // Contraseña universal para todos los usuarios registrados
 export const UNIVERSAL_PASSWORD = 'TRIBU2026';
 
-// Generar avatar de Instagram usando unavatar.io (extrae foto real de IG)
-// Si falla, usa fallback con iniciales
+// Generar avatar - Primero intenta usar foto local descargada, sino unavatar.io
+// Las fotos locales están en /avatars/{handle}.jpg
 const getAvatarUrl = (name: string, instagram?: string): string => {
-  // Si tiene Instagram, intentar obtener avatar real
   if (instagram) {
     const handle = instagram.replace('@', '').trim();
-    // unavatar.io intenta múltiples fuentes incluyendo Instagram
-    return `https://unavatar.io/instagram/${handle}?fallback=https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`;
+    // Usar foto local descargada (más rápido y confiable)
+    // Si no existe, el navegador mostrará error y se puede usar onerror para fallback
+    return `/avatars/${handle}.jpg`;
   }
-  // Fallback con iniciales
+  // Fallback con iniciales para usuarios sin Instagram
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`;
 };
 

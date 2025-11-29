@@ -29,12 +29,14 @@ export interface MatchProfile {
   companyLogoUrl: string; // New: Abstract company logo
   coverUrl: string;       // New: Category-based background image
   whatsapp: string;
+  phone?: string;         // Teléfono para WhatsApp
   location: string;
   website: string;
   bio: string;
   tags: string[];
   foundingYear: number;
   instagram: string;
+  email?: string;         // Email de contacto
 }
 
 export interface ActivityItem {

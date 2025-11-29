@@ -2180,8 +2180,15 @@ Genera un análisis breve (máximo 3-4 oraciones) explicando por qué estos dos 
 Responde en español chileno, de forma cercana y profesional. NO uses bullets, solo texto fluido.`;
 };
 
+// Estructura de análisis enriquecido
+interface EnrichedAnalysis {
+  insight: string;
+  opportunities: string[];
+  icebreaker: string;
+}
+
 const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; profileData: MatchProfile }) => {
-  const [analysis, setAnalysis] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<EnrichedAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const myProfile = getMyProfile();
@@ -2190,119 +2197,190 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   useEffect(() => {
     const stored = getStoredAnalysis(profileId);
     if (stored) {
-      setAnalysis(stored.analysis);
-      setHasGenerated(true);
+      try {
+        // Intentar parsear como objeto enriquecido
+        const parsed = typeof stored.analysis === 'string' && stored.analysis.startsWith('{') 
+          ? JSON.parse(stored.analysis) 
+          : null;
+        if (parsed && parsed.insight) {
+          setAnalysis(parsed);
+        } else {
+          // Migrar análisis antiguo a formato nuevo
+          setAnalysis({
+            insight: stored.analysis,
+            opportunities: ['Colaboración en redes sociales', 'Referidos mutuos'],
+            icebreaker: `¡Hola! Vi tu emprendimiento en Tribu Impulsa y creo que podríamos colaborar. ¿Te interesa conversar?`
+          });
+        }
+        setHasGenerated(true);
+      } catch {
+        setHasGenerated(false);
+      }
     }
   }, [profileId]);
   
-  // Fallback sin LLM - genera análisis inteligente basado en datos
-  const generateFallbackAnalysis = (me: MatchProfile, target: MatchProfile) => {
-    const parts = [];
+  // Generar análisis inteligente local
+  const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
+    // Insights basados en datos reales
+    const sameLocation = me.location === target.location;
+    const differentCategory = me.category !== target.category;
     
-    // Complementariedad de rubros
-    if (me.category !== target.category) {
-      parts.push(`${target.companyName} está en ${target.category} mientras tú estás en ${me.category}, lo que significa que no compiten directamente y pueden referirse clientes mutuamente.`);
-    } else {
-      parts.push(`Ambos están en ${me.category}, lo que permite colaboraciones estratégicas dentro del mismo sector.`);
-    }
+    // Templates de insights brillantes
+    const insightTemplates = [
+      differentCategory 
+        ? `${target.companyName} en ${target.category} y ${me.companyName} en ${me.category} son el match perfecto: audiencias diferentes pero complementarias. Sus clientes podrían convertirse en tus clientes y viceversa, sin competir directamente.`
+        : `Ambos en ${me.category} pueden crear alianzas estratégicas únicas. En vez de competir, pueden unir fuerzas para proyectos más grandes o referirse clientes según especialización.`,
+      sameLocation 
+        ? `Estando ambos en ${me.location}, tienen la ventaja de poder coordinar activaciones presenciales, pop-ups conjuntos o eventos colaborativos que atraigan a ambas audiencias.`
+        : `Aunque en diferentes ubicaciones, el mundo digital permite colaboraciones potentes a distancia. Un live conjunto o sorteo cruzado podría explotar ambas audiencias.`
+    ];
     
-    // Ubicación
-    if (me.location && target.location) {
-      if (me.location === target.location) {
-        parts.push(`Al estar ambos en ${me.location}, pueden organizar eventos conjuntos o colaborar presencialmente.`);
-      }
-    }
+    // Oportunidades realistas y accionables
+    const opportunityPool = [
+      `Sorteo cruzado: ${me.companyName} regala algo de ${target.companyName} y viceversa`,
+      `Story takeover: un día cada uno muestra el "detrás de cámaras" del otro`,
+      `Pack colaborativo: combinar productos/servicios en una oferta especial`,
+      `Referidos con beneficio: código de descuento exclusivo para clientes del otro`,
+      sameLocation ? `Evento presencial conjunto en ${me.location}` : `Live de Instagram juntos presentando ambos negocios`,
+      `Testimonio cruzado: cada uno recomienda públicamente al otro`
+    ];
     
-    // Audiencia complementaria
-    parts.push(`Los seguidores de ${target.companyName} podrían estar interesados en tus productos/servicios de ${me.companyName}, creando oportunidades de cross-promotion efectiva.`);
+    // Seleccionar 3 oportunidades aleatorias
+    const shuffled = opportunityPool.sort(() => Math.random() - 0.5);
+    const opportunities = shuffled.slice(0, 3);
     
-    return parts.join(' ');
+    // Generar mensaje rompehielos personalizado
+    const icebreaker = `¡Hola ${target.name.split(' ')[0]}! 👋 Soy de ${me.companyName} y te encontré en Tribu Impulsa. Me encanta lo que hacen en ${target.companyName}. Estaba pensando que nuestras audiencias podrían beneficiarse mutuamente, ¿te gustaría explorar una colaboración tipo ${opportunities[0].toLowerCase().split(':')[0]}? ¡Creo que podría funcionar increíble! 🚀`;
+    
+    return {
+      insight: insightTemplates.join(' '),
+      opportunities,
+      icebreaker
+    };
   };
 
-  // Función para generar análisis
+  // Función para generar análisis con delay realista
   const handleGenerateAnalysis = async () => {
     setIsLoading(true);
     
+    // Delay variable de 3-5 segundos para simular "pensando"
+    const thinkingTime = 3000 + Math.random() * 2000;
+    await new Promise(resolve => setTimeout(resolve, thinkingTime));
+    
     try {
-      // Intentar usar Azure OpenAI
+      // Intentar usar Azure OpenAI primero
       const { analyzeCompatibility } = await import('./services/aiMatchingService');
-      const userProfile = {
-        id: myProfile.id,
-        name: myProfile.name,
-        email: '',
-        phone: '',
-        companyName: myProfile.companyName,
-        city: myProfile.location || '',
-        category: myProfile.category,
-        affinity: myProfile.category,
-        instagram: myProfile.instagram || '',
-        status: 'active' as const,
-        createdAt: new Date().toISOString()
-      };
-      const targetUserProfile = {
-        id: profileData.id,
-        name: profileData.name,
-        email: '',
-        phone: '',
-        companyName: profileData.companyName,
-        city: profileData.location || '',
-        category: profileData.category,
-        affinity: profileData.category,
-        instagram: profileData.instagram || '',
-        status: 'active' as const,
-        createdAt: new Date().toISOString()
-      };
-      
-      const result = await analyzeCompatibility(userProfile, targetUserProfile);
+      const result = await analyzeCompatibility(
+        { id: myProfile.id, name: myProfile.name, companyName: myProfile.companyName, city: myProfile.location || '', category: myProfile.category, affinity: myProfile.category },
+        { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }
+      );
       
       if (result && result.analysis) {
-        setAnalysis(result.analysis);
-        saveAnalysis(profileId, result.analysis);
+        // Convertir resultado de LLM a formato enriquecido
+        const enriched: EnrichedAnalysis = {
+          insight: result.analysis,
+          opportunities: result.opportunities || ['Colaboración en redes', 'Sorteo cruzado', 'Referidos mutuos'],
+          icebreaker: `¡Hola ${profileData.name.split(' ')[0]}! 👋 Soy de ${myProfile.companyName} y te encontré en Tribu Impulsa. ${result.analysis.split('.')[0]}. ¿Te gustaría explorar una colaboración? 🚀`
+        };
+        setAnalysis(enriched);
+        saveAnalysis(profileId, JSON.stringify(enriched));
       } else {
         throw new Error('No result from LLM');
       }
-    } catch (err) {
-      // Usar fallback inteligente
-      console.log('Usando análisis local (LLM no disponible)');
-      const fallbackAnalysis = generateFallbackAnalysis(myProfile, profileData);
-      setAnalysis(fallbackAnalysis);
-      saveAnalysis(profileId, fallbackAnalysis);
+    } catch {
+      // Usar fallback inteligente local
+      console.log('Usando análisis local enriquecido');
+      const smartAnalysis = generateSmartAnalysis(myProfile, profileData);
+      setAnalysis(smartAnalysis);
+      saveAnalysis(profileId, JSON.stringify(smartAnalysis));
     } finally {
       setIsLoading(false);
       setHasGenerated(true);
     }
   };
   
-  // Estado de carga
+  // Generar URL de WhatsApp con mensaje pre-escrito
+  const getWhatsAppUrl = () => {
+    if (!analysis) return '#';
+    const phone = profileData.phone?.replace(/\D/g, '') || '';
+    const message = encodeURIComponent(analysis.icebreaker);
+    return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
+  };
+  
+  // Estado de carga mejorado
   if (isLoading) {
     return (
       <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center animate-pulse">
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <span className="text-sm font-semibold text-[#6161FF]">Tribu X está pensando...</span>
+          <div>
+            <span className="text-sm font-semibold text-[#6161FF] block">Tribu X está analizando...</span>
+            <span className="text-xs text-[#7C8193]">Buscando sinergias y oportunidades</span>
+          </div>
         </div>
-        <div className="space-y-2">
-          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-full"></div>
-          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-4/5"></div>
-          <div className="h-3 bg-[#E4E7EF] rounded animate-pulse w-3/5"></div>
+        <div className="space-y-3">
+          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-full"></div>
+          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-5/6"></div>
+          <div className="h-4 bg-[#E4E7EF] rounded-full animate-pulse w-4/6"></div>
+          <div className="mt-4 flex gap-2">
+            <div className="h-8 bg-[#E4E7EF] rounded-full animate-pulse flex-1"></div>
+            <div className="h-8 bg-[#E4E7EF] rounded-full animate-pulse flex-1"></div>
+          </div>
         </div>
       </div>
     );
   }
   
-  // Ya tiene análisis guardado
+  // Mostrar análisis enriquecido
   if (analysis) {
     return (
-      <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
-            <Sparkles size={16} className="text-white" />
+      <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20 space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
+            <Sparkles size={18} className="text-white" />
           </div>
-          <span className="text-xs font-bold uppercase tracking-wide text-[#6161FF]">¿Por qué podrían hacer match?</span>
+          <div>
+            <span className="text-sm font-bold text-[#181B34] block">Análisis de Compatibilidad</span>
+            <span className="text-xs text-[#7C8193]">Generado por Tribu X</span>
+          </div>
         </div>
-        <p className="text-sm text-[#434343] leading-relaxed">{analysis}</p>
+        
+        {/* Insight principal */}
+        <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">💡 Insight</h4>
+          <p className="text-sm text-[#434343] leading-relaxed">{analysis.insight}</p>
+        </div>
+        
+        {/* Oportunidades */}
+        <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2">🎯 Oportunidades concretas</h4>
+          <ul className="space-y-2">
+            {analysis.opportunities.map((opp, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-[#434343]">
+                <span className="text-[#00CA72] mt-0.5">•</span>
+                <span>{opp}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        
+        {/* Romper el hielo */}
+        <div className="bg-[#25D366]/10 rounded-xl p-4 border border-[#25D366]/30">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">💬 Rompe el hielo</h4>
+          <p className="text-sm text-[#434343] leading-relaxed mb-3 italic">"{analysis.icebreaker}"</p>
+          <a
+            href={getWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-[#20BA5C] transition"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Enviar mensaje
+          </a>
+        </div>
       </div>
     );
   }
@@ -2311,15 +2389,17 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   return (
     <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
-          <Sparkles size={16} className="text-white" />
+        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] flex items-center justify-center">
+          <Sparkles size={18} className="text-white" />
         </div>
-        <span className="text-xs font-bold uppercase tracking-wide text-[#6161FF]">Análisis de compatibilidad</span>
+        <div>
+          <span className="text-sm font-bold text-[#181B34] block">¿Es buen match?</span>
+          <span className="text-xs text-[#7C8193]">Descubre sinergias y oportunidades</span>
+        </div>
       </div>
-      <p className="text-sm text-[#7C8193] mb-4">Descubre por qué podrías hacer match con este emprendedor.</p>
       <button
         onClick={handleGenerateAnalysis}
-        className="w-full py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition flex items-center justify-center gap-2"
+        className="w-full py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition flex items-center justify-center gap-2 shadow-lg"
       >
         <Sparkles size={18} />
         Analizar compatibilidad

@@ -1,8 +1,19 @@
 // Firebase Service - Tribu Impulsa
-// Configuración de Firebase y Cloud Messaging para notificaciones push
+// Configuración de Firebase, Firestore y Cloud Messaging
 
 import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  updateDoc, 
+  collection, 
+  getDocs,
+  serverTimestamp,
+  Firestore 
+} from 'firebase/firestore';
 
 // Configuración de Firebase - Tribu Impulsa
 // Nota: Las API keys de Firebase son seguras para exponer en el frontend
@@ -22,6 +33,7 @@ const VAPID_KEY = "BIhxjd_diMAgmMBrqvYxISkqe_vEKy3GYqK0tgNQOFlMQ37K_b0UhqmXAFXDj
 // Instancias de Firebase
 let app: FirebaseApp | null = null;
 let messaging: Messaging | null = null;
+let db: Firestore | null = null;
 
 // Verificar si Firebase está configurado
 export const isFirebaseConfigured = (): boolean => {
@@ -50,6 +62,183 @@ export const initializeFirebase = (): FirebaseApp | null => {
   }
 
   return app;
+};
+
+// Obtener instancia de Firestore
+export const getFirestoreInstance = (): Firestore | null => {
+  if (!app) {
+    initializeFirebase();
+  }
+  if (!app) return null;
+
+  if (!db) {
+    try {
+      db = getFirestore(app);
+      console.log('✅ Firestore inicializado');
+    } catch (error) {
+      console.error('❌ Error obteniendo Firestore:', error);
+      return null;
+    }
+  }
+  return db;
+};
+
+// ============================================
+// SINCRONIZACIÓN DE PERFILES CON FIRESTORE
+// ============================================
+
+interface ProfileData {
+  id: string;
+  name: string;
+  companyName: string;
+  category: string;
+  subCategory?: string;
+  location?: string;
+  bio?: string;
+  instagram?: string;
+  website?: string;
+  avatarUrl?: string;
+  coverUrl?: string;
+  tags?: string[];
+  phone?: string;
+  email?: string;
+  updatedAt?: unknown;
+}
+
+// Sincronizar perfil local a Firestore
+export const syncProfileToCloud = async (profile: ProfileData): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) {
+    console.warn('Firestore no disponible - guardando solo localmente');
+    return false;
+  }
+
+  try {
+    const profileRef = doc(firestore, 'profiles', profile.id);
+    await setDoc(profileRef, {
+      ...profile,
+      updatedAt: serverTimestamp(),
+      syncedAt: new Date().toISOString()
+    }, { merge: true });
+    
+    console.log(`✅ Perfil ${profile.id} sincronizado a la nube`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sincronizando perfil:', error);
+    return false;
+  }
+};
+
+// Obtener perfil desde Firestore
+export const getProfileFromCloud = async (profileId: string): Promise<ProfileData | null> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return null;
+
+  try {
+    const profileRef = doc(firestore, 'profiles', profileId);
+    const snapshot = await getDoc(profileRef);
+    
+    if (snapshot.exists()) {
+      return snapshot.data() as ProfileData;
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Error obteniendo perfil de la nube:', error);
+    return null;
+  }
+};
+
+// Actualizar campo específico del perfil
+export const updateProfileField = async (
+  profileId: string, 
+  field: string, 
+  value: unknown
+): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return false;
+
+  try {
+    const profileRef = doc(firestore, 'profiles', profileId);
+    await updateDoc(profileRef, {
+      [field]: value,
+      updatedAt: serverTimestamp()
+    });
+    console.log(`✅ Campo ${field} actualizado para ${profileId}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando campo:', error);
+    return false;
+  }
+};
+
+// Obtener todos los perfiles desde Firestore
+export const getAllProfilesFromCloud = async (): Promise<ProfileData[]> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return [];
+
+  try {
+    const profilesRef = collection(firestore, 'profiles');
+    const snapshot = await getDocs(profilesRef);
+    
+    const profiles: ProfileData[] = [];
+    snapshot.forEach(doc => {
+      profiles.push({ id: doc.id, ...doc.data() } as ProfileData);
+    });
+    
+    console.log(`✅ ${profiles.length} perfiles obtenidos de la nube`);
+    return profiles;
+  } catch (error) {
+    console.error('❌ Error obteniendo perfiles:', error);
+    return [];
+  }
+};
+
+// Sincronizar foto de perfil (URL)
+export const syncProfilePhoto = async (profileId: string, photoUrl: string): Promise<boolean> => {
+  return updateProfileField(profileId, 'avatarUrl', photoUrl);
+};
+
+// Sincronizar cambios de checklist/tribu
+export const syncChecklistProgress = async (
+  userId: string, 
+  checklistData: { completed: number; total: number; items: Record<string, boolean> }
+): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return false;
+
+  try {
+    const progressRef = doc(firestore, 'progress', userId);
+    await setDoc(progressRef, {
+      ...checklistData,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('❌ Error sincronizando progreso:', error);
+    return false;
+  }
+};
+
+// Registrar interacción (para analytics)
+export const logInteraction = async (
+  userId: string,
+  action: string,
+  details: Record<string, unknown>
+): Promise<void> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return;
+
+  try {
+    const interactionRef = doc(collection(firestore, 'interactions'));
+    await setDoc(interactionRef, {
+      userId,
+      action,
+      details,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    console.error('Error logging interaction:', error);
+  }
 };
 
 // Obtener instancia de Messaging
@@ -238,5 +427,13 @@ export default {
   getSavedFCMToken,
   clearFCMToken,
   sendLocalNotification,
-  getNotificationStatus
+  getNotificationStatus,
+  // Firestore sync
+  syncProfileToCloud,
+  getProfileFromCloud,
+  updateProfileField,
+  getAllProfilesFromCloud,
+  syncProfilePhoto,
+  syncChecklistProgress,
+  logInteraction
 };

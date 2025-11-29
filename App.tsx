@@ -2521,41 +2521,51 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     }
   }, [profileId]);
   
-  // Generar análisis inteligente local
+  // Generar análisis inteligente local - ESPECÍFICO para cada match
   const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
-    // Insights basados en datos reales
     const sameLocation = me.location === target.location;
-    const differentCategory = me.category !== target.category;
+    const meCategory = me.category || 'emprendimiento';
+    const targetCategory = target.category || 'emprendimiento';
+    const meName = me.companyName || me.name;
+    const targetName = target.companyName || target.name;
     
-    // Templates de insights brillantes
-    const insightTemplates = [
-      differentCategory 
-        ? `${target.companyName} en ${target.category} y ${me.companyName} en ${me.category} son el match perfecto: audiencias diferentes pero complementarias. Sus clientes podrían convertirse en tus clientes y viceversa, sin competir directamente.`
-        : `Ambos en ${me.category} pueden crear alianzas estratégicas únicas. En vez de competir, pueden unir fuerzas para proyectos más grandes o referirse clientes según especialización.`,
-      sameLocation 
-        ? `Estando ambos en ${me.location}, tienen la ventaja de poder coordinar activaciones presenciales, pop-ups conjuntos o eventos colaborativos que atraigan a ambas audiencias.`
-        : `Aunque en diferentes ubicaciones, el mundo digital permite colaboraciones potentes a distancia. Un live conjunto o sorteo cruzado podría explotar ambas audiencias.`
+    // Insight ÚNICO basado en la combinación específica de categorías
+    let insight = '';
+    
+    // Análisis específico por tipo de negocio
+    if (targetCategory.includes('Paisajismo') || targetCategory.includes('Jardín')) {
+      insight = `${targetName} puede atraer clientes que valoran el bienestar y la naturaleza - exactamente el perfil que busca servicios como los de ${meName}. Una colaboración donde ${targetName} recomiende tus servicios a sus clientes (y viceversa) podría generar leads de alta calidad para ambos.`;
+    } else if (targetCategory.includes('Belleza') || targetCategory.includes('Estética')) {
+      insight = `Los clientes de ${targetName} buscan verse y sentirse bien - una audiencia perfecta para ${meName}. Podrían crear experiencias conjuntas de bienestar o packs que combinen sus servicios para maximizar el valor percibido.`;
+    } else if (targetCategory.includes('Marketing') || targetCategory.includes('Digital')) {
+      insight = `${targetName} tiene expertise en visibilidad digital que podría potenciar la presencia online de ${meName}. A cambio, ${meName} podría ser un caso de éxito o referencia para ${targetName}.`;
+    } else if (targetCategory.includes('Consultoría') || targetCategory.includes('Coaching')) {
+      insight = `${targetName} trabaja con emprendedores que podrían necesitar exactamente lo que ofrece ${meName}. Esta conexión podría generar referidos de calidad en ambas direcciones.`;
+    } else if (targetCategory.includes('Salud') || targetCategory.includes('Kinesiología')) {
+      insight = `${targetName} y ${meName} comparten una audiencia interesada en bienestar integral. Sus clientes naturalmente podrían beneficiarse de ambos servicios, creando un ecosistema de salud completo.`;
+    } else if (targetCategory.includes('Gastronomía') || targetCategory.includes('Alimentos')) {
+      insight = `${targetName} tiene acceso a una audiencia que valora experiencias de calidad. Un evento conjunto o colaboración de contenido podría exponer ambas marcas a nuevos clientes potenciales.`;
+    } else {
+      insight = `${targetName} en ${targetCategory} y ${meName} en ${meCategory} tienen audiencias complementarias sin competir directamente. Sus clientes podrían beneficiarse de ambos servicios, creando oportunidades de referidos mutuos.`;
+    }
+    
+    if (sameLocation) {
+      insight += ` Al estar ambos en ${me.location}, pueden coordinar eventos presenciales o activaciones conjuntas.`;
+    }
+    
+    // Oportunidades ESPECÍFICAS para este match
+    const opportunities = [
+      `Sorteo conjunto: ${meName} regala un servicio/producto de ${targetName} a sus seguidores (y viceversa)`,
+      `Contenido colaborativo: Live de Instagram donde ambos comparten tips de sus industrias`,
+      `Pack especial: Clientes de ${targetName} reciben descuento exclusivo en ${meName}`
     ];
     
-    // Oportunidades realistas y accionables
-    const opportunityPool = [
-      `Sorteo cruzado: ${me.companyName} regala algo de ${target.companyName} y viceversa`,
-      `Story takeover: un día cada uno muestra el "detrás de cámaras" del otro`,
-      `Pack colaborativo: combinar productos/servicios en una oferta especial`,
-      `Referidos con beneficio: código de descuento exclusivo para clientes del otro`,
-      sameLocation ? `Evento presencial conjunto en ${me.location}` : `Live de Instagram juntos presentando ambos negocios`,
-      `Testimonio cruzado: cada uno recomienda públicamente al otro`
-    ];
-    
-    // Seleccionar 3 oportunidades aleatorias
-    const shuffled = opportunityPool.sort(() => Math.random() - 0.5);
-    const opportunities = shuffled.slice(0, 3);
-    
-    // Generar mensaje rompehielos personalizado
-    const icebreaker = `¡Hola ${target.name.split(' ')[0]}! 👋 Soy de ${me.companyName} y te encontré en Tribu Impulsa. Me encanta lo que hacen en ${target.companyName}. Estaba pensando que nuestras audiencias podrían beneficiarse mutuamente, ¿te gustaría explorar una colaboración tipo ${opportunities[0].toLowerCase().split(':')[0]}? ¡Creo que podría funcionar increíble! 🚀`;
+    // Mensaje rompehielos personalizado
+    const firstName = target.name?.split(' ')[0] || 'Hola';
+    const icebreaker = `¡Hola ${firstName}! 👋 Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! 🚀`;
     
     return {
-      insight: insightTemplates.join(' '),
+      insight,
       opportunities,
       icebreaker
     };
@@ -2789,14 +2799,28 @@ const ProfileDetail = () => {
              <div>
                 <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Enlaces</h3>
                 <div className="flex flex-col gap-3">
-                  <a href="#" className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]">
-                    <Globe size={20} className="text-[#6161FF] group-hover:scale-110 transition-transform"/> 
-                    <span className="font-medium text-sm">{profile.website}</span>
-                  </a>
-                  <a href="#" className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#E91E63]">
-                    <Instagram size={20} className="text-[#E91E63] group-hover:scale-110 transition-transform"/> 
-                    <span className="font-medium text-sm">{profile.instagram}</span>
-                  </a>
+                  {profile.website && (
+                    <a 
+                      href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
+                    >
+                      <Globe size={20} className="text-[#6161FF] group-hover:scale-110 transition-transform"/> 
+                      <span className="font-medium text-sm truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                  )}
+                  {profile.instagram && (
+                    <a 
+                      href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#E91E63]"
+                    >
+                      <Instagram size={20} className="text-[#E91E63] group-hover:scale-110 transition-transform"/> 
+                      <span className="font-medium text-sm">{profile.instagram}</span>
+                    </a>
+                  )}
                 </div>
              </div>
 
@@ -3435,9 +3459,10 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
 const Dashboard = () => {
   useSurveyGuard();
   const navigate = useNavigate();
-  const matches = generateMockMatches("Bienestar y Salud"); 
   // Use current user profile for icon
   const myProfile = getMyProfile();
+  // Generar matches usando usuarios REALES
+  const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
   
   // Onboarding state
@@ -4389,39 +4414,37 @@ const AppLayout = () => {
             {/* Dashboard Button */}
             <button 
               onClick={() => navigate('/dashboard')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isDashboard ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+              className={`flex flex-col items-center transition-all duration-300 ${isDashboard ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Users size={22} strokeWidth={isDashboard ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">Inicio</span>
+              <Users size={24} strokeWidth={isDashboard ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Inicio</span>
             </button>
             
-            {/* Center Action Button – Shortcut to 10+10 checklist */}
+            {/* Tribu Button - mismo tamaño que los demás */}
             <button 
               onClick={() => navigate('/tribe')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1`}
+              className={`flex flex-col items-center transition-all duration-300 ${isTribe ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 ${isTribe ? 'bg-gradient-to-br from-[#00CA72] to-[#4AE698]' : 'bg-gradient-to-br from-[#6161FF] to-[#00CA72]'}`}>
-                <Share2 size={22} className="text-white" />
-              </div>
-              <span className={`text-[10px] mt-1 font-semibold ${isTribe ? 'text-[#00CA72]' : 'text-[#5D6B74]'}`}>Tribu</span>
+              <Share2 size={24} strokeWidth={isTribe ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Tribu</span>
             </button>
 
             {/* Activity Button */}
             <button 
               onClick={() => navigate('/activity')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isActivity ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+              className={`flex flex-col items-center transition-all duration-300 ${isActivity ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Bell size={22} strokeWidth={isActivity ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">Actividad</span>
+              <Bell size={24} strokeWidth={isActivity ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Actividad</span>
             </button>
 
             {/* Profile Button */}
             <button 
               onClick={() => navigate('/my-profile')}
-              className={`flex flex-col items-center transition-all duration-300 w-16 pb-1 ${isProfile ? 'text-[#00CA72] scale-105' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+              className={`flex flex-col items-center transition-all duration-300 ${isProfile ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
             >
-              <Settings size={22} strokeWidth={isProfile ? 2.5 : 2} />
-              <span className="text-[10px] mt-1 font-medium">Perfil</span>
+              <Settings size={24} strokeWidth={isProfile ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Perfil</span>
             </button>
           </nav>
         )}

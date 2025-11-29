@@ -619,16 +619,17 @@ const LoginScreen = () => {
         <div className="absolute top-[30%] left-[20%] w-[200px] h-[200px] rounded-full bg-[#FFCC00]/10 blur-[60px]" />
       </div>
 
+      {/* Logo grande - 25% superior de la pantalla */}
+      <div className="mb-8 flex justify-center" style={{ minHeight: '25vh' }}>
+        <img 
+          src="/tribulogo.png" 
+          alt="Tribu Impulsa" 
+          className="w-[80%] max-w-[320px] object-contain"
+        />
+      </div>
+
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
-        <div className="mb-6 flex justify-center">
-          <img 
-            src="/tribulogo.png" 
-            alt="Tribu Impulsa" 
-            className="w-24 h-24 object-contain"
-          />
-        </div>
-        <h1 className="text-3xl font-bold mb-2 text-[#181B34]">Tribu Impulsa</h1>
-        <p className="text-[#7C8193] mb-8 text-sm">
+        <p className="text-[#7C8193] mb-6 text-sm text-center">
           Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
         </p>
         
@@ -675,32 +676,36 @@ const LoginScreen = () => {
           </button>
         </div>
         
-        {/* Acceso rápido para usuarios registrados */}
-        <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
-          <p className="text-[10px] text-[#6161FF] uppercase tracking-wide mb-2 font-bold">🔐 Contraseña universal: TRIBU2026</p>
-          <div className="space-y-1 text-xs text-left">
-            <button 
-              onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
-              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
-            >
-              👉 Dafna Finkelstein - <span className="text-[#7C8193]">By Turquía (Joyería)</span>
-            </button>
-            <button 
-              onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('TRIBU2026'); }}
-              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
-            >
-              👉 Doraluz Galleguillos - <span className="text-[#7C8193]">Terraflor (Paisajismo)</span>
-            </button>
-            <button 
-              onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('TRIBU2026'); }}
-              className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
-            >
-              👉 Guillermo García - <span className="text-[#7C8193]">Elevate (Marketing)</span>
-            </button>
+        {/* Menú colapsable para uso interno - eliminar en producción */}
+        <details className="mt-4">
+          <summary className="text-[10px] text-[#B3B8C6] cursor-pointer hover:text-[#7C8193] transition select-none">
+            ⚙️ Modo desarrollo
+          </summary>
+          <div className="mt-2 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
+            <p className="text-[10px] text-[#6161FF] uppercase tracking-wide mb-2 font-bold">🔐 Contraseña universal: TRIBU2026</p>
+            <div className="space-y-1 text-xs text-left">
+              <button 
+                onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
+                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+              >
+                👉 Dafna Finkelstein - <span className="text-[#7C8193]">By Turquía</span>
+              </button>
+              <button 
+                onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('TRIBU2026'); }}
+                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+              >
+                👉 Doraluz Galleguillos - <span className="text-[#7C8193]">Terraflor</span>
+              </button>
+              <button 
+                onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('TRIBU2026'); }}
+                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+              >
+                👉 Guillermo García - <span className="text-[#7C8193]">Elevate</span>
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Emprendedores Verificados</p>
           </div>
-        </div>
-        
-        <p className="mt-4 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Emprendedores Verificados</p>
+        </details>
       </div>
     </div>
   );

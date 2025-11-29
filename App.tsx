@@ -3712,6 +3712,7 @@ const AdminPanelInline = () => {
           {[
             { id: 'overview', label: 'Dashboard', icon: Activity },
             { id: 'compliance', label: 'Cumplimiento', icon: TrendingUp },
+            { id: 'shares', label: 'Registros Share', icon: Share2 },
             { id: 'users', label: 'Usuarios', icon: Users },
             { id: 'reports', label: 'Reportes', icon: AlertTriangle },
             { id: 'settings', label: 'Config', icon: Settings },
@@ -4003,6 +4004,86 @@ const AdminPanelInline = () => {
                         </td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
+        {/* TAB DE REGISTROS DE SHARES */}
+        {activeTab === 'shares' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-[#181B34]">Registros de Compartidos</h1>
+              <span className="text-sm text-[#7C8193]">{getShareRecords().length} registros totales</span>
+            </div>
+            
+            <p className="text-sm text-[#7C8193] bg-[#F5F7FB] p-4 rounded-xl border border-[#E4E7EF]">
+              Aquí puedes ver todos los enlaces registrados por los usuarios cuando reportan haber compartido contenido o haberlo recibido.
+              Estos datos sirven para verificar el cumplimiento real de las asignaciones.
+            </p>
+            
+            <div className="bg-white rounded-xl border border-[#E4E7EF] overflow-hidden shadow-sm">
+              <table className="w-full">
+                <thead className="bg-[#F5F7FB]">
+                  <tr>
+                    <th className="text-left text-[#7C8193] text-sm font-medium px-4 py-3">Fecha</th>
+                    <th className="text-left text-[#7C8193] text-sm font-medium px-4 py-3">Tipo</th>
+                    <th className="text-left text-[#7C8193] text-sm font-medium px-4 py-3">Usuario</th>
+                    <th className="text-left text-[#7C8193] text-sm font-medium px-4 py-3">Perfil Relacionado</th>
+                    <th className="text-left text-[#7C8193] text-sm font-medium px-4 py-3">Enlace</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E4E7EF]">
+                  {getShareRecords().length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-[#7C8193]">
+                        No hay registros de compartidos aún. Los usuarios pueden registrar sus shares desde el checklist.
+                      </td>
+                    </tr>
+                  ) : (
+                    getShareRecords()
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .map((record: ShareRecord) => {
+                        const user = realUsers.find(u => u.id === record.userId);
+                        return (
+                          <tr key={record.id} className="hover:bg-[#F5F7FB]/50">
+                            <td className="px-4 py-3 text-sm text-[#434343]">
+                              {new Date(record.timestamp).toLocaleDateString('es-CL', {
+                                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                record.type === 'shared_to' 
+                                  ? 'bg-[#6161FF]/10 text-[#6161FF]' 
+                                  : 'bg-[#00CA72]/10 text-[#00CA72]'
+                              }`}>
+                                {record.type === 'shared_to' ? '📤 Compartió' : '📥 Recibió'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-[#181B34] font-medium">
+                              {user?.name || record.userId}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-[#434343]">
+                              {record.profileName}
+                            </td>
+                            <td className="px-4 py-3">
+                              <a 
+                                href={record.contentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#6161FF] hover:underline text-sm truncate block max-w-[200px]"
+                              >
+                                {record.contentUrl.length > 40 
+                                  ? record.contentUrl.substring(0, 40) + '...' 
+                                  : record.contentUrl}
+                              </a>
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>

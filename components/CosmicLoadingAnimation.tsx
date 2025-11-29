@@ -3,8 +3,11 @@ import * as THREE from 'three';
 
 interface CosmicLoadingAnimationProps {
   onComplete?: () => void;
-  duration?: number; // en ms, default 8000
+  duration?: number;
 }
+
+// Detectar móvil para ajustar rendimiento
+const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({ 
   onComplete, 
@@ -12,190 +15,210 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [fadeOut, setFadeOut] = useState(false);
-  const [statusText, setStatusText] = useState('Iniciando conexión tribal...');
+  const [statusText, setStatusText] = useState('Conectando con tu tribu...');
+  const [progress, setProgress] = useState(0);
   const animationRef = useRef<number | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    particles: THREE.Points;
+    stars: THREE.Points;
+    uniforms: Record<string, { value: number }>;
+  } | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Textos de estado durante la animación
+    const container = containerRef.current;
+    const TOTAL_TIME = duration / 1000;
+    
+    // Ajustar partículas según dispositivo
+    const PARTICLE_COUNT = isMobile ? 15000 : 30000;
+    const STAR_COUNT = isMobile ? 500 : 1500;
+
+    // Mensajes de estado
     const statusMessages = [
-      { time: 0, text: 'Iniciando conexión tribal...' },
-      { time: 1500, text: 'Analizando perfiles de la comunidad...' },
-      { time: 3000, text: 'Calculando afinidades...' },
-      { time: 4500, text: 'Formando tu tribu ideal...' },
-      { time: 6000, text: 'Cristalizando conexiones...' },
-      { time: 7000, text: '¡Tu tribu está lista!' },
+      { time: 0, text: 'Conectando con tu tribu...', progress: 0 },
+      { time: 1000, text: 'Escaneando la red de emprendedores...', progress: 15 },
+      { time: 2000, text: 'Analizando perfiles compatibles...', progress: 30 },
+      { time: 3500, text: 'Calculando afinidades empresariales...', progress: 50 },
+      { time: 5000, text: 'Formando conexiones estratégicas...', progress: 70 },
+      { time: 6500, text: 'Optimizando tu tribu 10+10...', progress: 85 },
+      { time: 7500, text: '¡Tu tribu está lista!', progress: 100 },
     ];
 
-    // Configuración
-    const PARTICLE_COUNT = 35000;
-    const TOTAL_TIME = duration / 1000;
-
-    // Scene setup
+    // ============ SCENE SETUP ============
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x000000, 0.003);
-
+    
     const camera = new THREE.PerspectiveCamera(
-      60,
-      containerRef.current.clientWidth / containerRef.current.clientHeight,
-      0.1,
-      2000
+      75,
+      container.clientWidth / container.clientHeight,
+      1,
+      1000
     );
-    camera.position.set(0, 10, 120);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 0, 100);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
-    renderer.setClearColor(0x000000);
-    containerRef.current.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: !isMobile,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setClearColor(0x0a0a0f, 1);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Fondo de estrellas simple
+    // ============ ESTRELLAS DE FONDO ============
     const starsGeometry = new THREE.BufferGeometry();
-    const starsCount = 2000;
-    const starsPositions = new Float32Array(starsCount * 3);
-    for (let i = 0; i < starsCount * 3; i += 3) {
-      starsPositions[i] = (Math.random() - 0.5) * 1000;
-      starsPositions[i + 1] = (Math.random() - 0.5) * 1000;
-      starsPositions[i + 2] = (Math.random() - 0.5) * 1000;
+    const starsPositions = new Float32Array(STAR_COUNT * 3);
+    const starsSizes = new Float32Array(STAR_COUNT);
+    
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const i3 = i * 3;
+      starsPositions[i3] = (Math.random() - 0.5) * 600;
+      starsPositions[i3 + 1] = (Math.random() - 0.5) * 600;
+      starsPositions[i3 + 2] = (Math.random() - 0.5) * 400 - 100;
+      starsSizes[i] = Math.random() * 2 + 0.5;
     }
+    
     starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    starsGeometry.setAttribute('size', new THREE.BufferAttribute(starsSizes, 1));
+    
     const starsMaterial = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 0.5,
+      size: 1.5,
       transparent: true,
-      opacity: 0.8
+      opacity: 0.6,
+      sizeAttenuation: true
     });
+    
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 
-    // Función para crear la forma del "Ente Tribal" (silueta humanoide)
-    const createFaceTargets = (count: number) => {
-      const vertices = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        const i3 = i * 3;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos((Math.random() * 2) - 1);
-        let radius = 15;
-        let yOffset = 0;
-
-        if (phi < Math.PI * 0.6) {
-          radius = 12 + Math.random() * 2;
-          yOffset = 15;
-        } else {
-          radius = 20 + Math.random() * 5;
-          yOffset = 0;
-        }
-
-        let x = radius * Math.sin(phi) * Math.cos(theta);
-        let y = (radius * Math.cos(phi)) * 1.2 + yOffset;
-        let z = radius * Math.sin(phi) * Math.sin(theta);
-
-        x += (Math.random() - 0.5) * 1.5;
-        y += (Math.random() - 0.5) * 1.5;
-        z += (Math.random() - 0.5) * 1.5;
-
-        vertices[i3] = x;
-        vertices[i3 + 1] = y;
-        vertices[i3 + 2] = z;
-      }
-      return vertices;
-    };
-
-    // Sistema de partículas
+    // ============ SISTEMA DE PARTÍCULAS PRINCIPAL ============
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(PARTICLE_COUNT * 3);
-    const randomness = new Float32Array(PARTICLE_COUNT);
-    const initialRadius = 200;
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+    const randoms = new Float32Array(PARTICLE_COUNT);
+    const targets = new Float32Array(PARTICLE_COUNT * 3);
+
+    // Colores Tribu
+    const colorPurple = new THREE.Color(0x6161FF);
+    const colorGreen = new THREE.Color(0x00CA72);
+    const colorCyan = new THREE.Color(0x00D4FF);
 
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const i3 = i * 3;
+      
+      // Posición inicial: esfera grande dispersa
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos((Math.random() * 2) - 1);
-      const r = initialRadius * Math.cbrt(Math.random());
-
-      positions[i3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i3 + 1] = r * Math.cos(phi);
-      positions[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);
-      randomness[i] = Math.random();
+      const radius = 80 + Math.random() * 120;
+      
+      positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i3 + 1] = radius * Math.cos(phi);
+      positions[i3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      
+      // Posición objetivo: forma de esfera compacta (logo tribal)
+      const targetRadius = 20 + Math.random() * 15;
+      targets[i3] = targetRadius * Math.sin(phi) * Math.cos(theta);
+      targets[i3 + 1] = targetRadius * Math.cos(phi);
+      targets[i3 + 2] = targetRadius * Math.sin(phi) * Math.sin(theta);
+      
+      // Colores mezclados
+      const colorMix = Math.random();
+      const color = colorMix < 0.4 ? colorPurple : colorMix < 0.7 ? colorGreen : colorCyan;
+      colors[i3] = color.r;
+      colors[i3 + 1] = color.g;
+      colors[i3 + 2] = color.b;
+      
+      sizes[i] = Math.random() * 3 + 1;
+      randoms[i] = Math.random();
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute('aRandom', new THREE.BufferAttribute(randomness, 1));
-    geometry.setAttribute('targetPos', new THREE.BufferAttribute(createFaceTargets(PARTICLE_COUNT), 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+    geometry.setAttribute('targetPosition', new THREE.BufferAttribute(targets, 3));
 
-    // Shaders
+    // Shader optimizado
     const vertexShader = `
       uniform float uTime;
-      uniform float uTornadoMix;
-      uniform float uFaceMix;
+      uniform float uProgress;
+      uniform float uSize;
+      
+      attribute float size;
       attribute float aRandom;
-      attribute vec3 targetPos;
-      varying vec3 vPos;
-      varying float vRandom;
-
-      vec3 rotateY(vec3 v, float angle) {
-        float s = sin(angle);
-        float c = cos(angle);
-        return vec3(v.x * c + v.z * s, v.y, -v.x * s + v.z * c);
-      }
-
+      attribute vec3 targetPosition;
+      attribute vec3 color;
+      
+      varying vec3 vColor;
+      varying float vAlpha;
+      
       void main() {
-        vRandom = aRandom;
-        vec3 pos = position;
-
-        float angleOffset = pos.y * 0.1 + uTime * (2.0 + aRandom);
-        float radiusConstrict = smoothstep(-100.0, 50.0, pos.y);
-        vec3 tornadoTarget = pos;
-        tornadoTarget.x *= 0.1 + (1.0 - radiusConstrict) * 2.0;
-        tornadoTarget.z *= 0.1 + (1.0 - radiusConstrict) * 2.0;
-        tornadoTarget = rotateY(tornadoTarget, angleOffset);
-        pos = mix(pos, tornadoTarget, uTornadoMix);
-
-        vec3 noise = vec3(
-          sin(uTime * 5.0 + position.x * 0.1),
-          cos(uTime * 4.0 + position.y * 0.1),
-          sin(uTime * 3.0 + position.z * 0.1)
-        ) * (1.0 - uFaceMix) * 2.0;
-
-        pos = mix(pos + noise, targetPos, uFaceMix);
-        vPos = pos;
-
-        vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-        float size = 80.0 * (1.0 + uFaceMix * 0.5);
-        gl_PointSize = size * (1.0 / -mvPosition.z);
+        vColor = color;
+        
+        // Interpolación suave hacia el objetivo
+        float progress = smoothstep(0.0, 1.0, uProgress);
+        
+        // Movimiento en espiral durante la transición
+        float angle = uTime * (1.0 + aRandom) + aRandom * 6.28;
+        float spiralRadius = (1.0 - progress) * 20.0 * aRandom;
+        
+        vec3 spiral = vec3(
+          cos(angle) * spiralRadius,
+          sin(angle * 0.5) * spiralRadius * 0.5,
+          sin(angle) * spiralRadius
+        );
+        
+        // Posición final
+        vec3 finalPos = mix(position + spiral, targetPosition, progress);
+        
+        // Pulso de energía
+        float pulse = sin(uTime * 3.0 + aRandom * 6.28) * 0.1 + 1.0;
+        finalPos *= pulse;
+        
+        vec4 mvPosition = modelViewMatrix * vec4(finalPos, 1.0);
+        
+        // Tamaño con perspectiva
+        float sizeScale = uSize * size * (1.0 + progress * 0.5);
+        gl_PointSize = sizeScale * (300.0 / -mvPosition.z);
+        gl_PointSize = clamp(gl_PointSize, 1.0, 20.0);
+        
         gl_Position = projectionMatrix * mvPosition;
+        
+        // Alpha basado en distancia y progreso
+        vAlpha = 0.6 + progress * 0.4;
       }
     `;
 
     const fragmentShader = `
-      varying vec3 vPos;
-      varying float vRandom;
-      uniform float uFaceMix;
-
+      varying vec3 vColor;
+      varying float vAlpha;
+      
       void main() {
-        float dist = length(gl_PointCoord - vec2(0.5, 0.5));
+        // Partícula circular con glow
+        float dist = length(gl_PointCoord - vec2(0.5));
         if (dist > 0.5) discard;
-
-        // Colores Tribu Impulsa: púrpura (#6161FF) y verde (#00CA72)
-        vec3 colorScattered = vec3(0.38, 0.38, 1.0); // Púrpura
-        vec3 colorMid = vec3(0.0, 0.79, 0.45); // Verde
-        vec3 colorFace = mix(colorScattered, colorMid, vRandom);
-
-        vec3 finalColor = mix(colorScattered, colorFace, uFaceMix);
-        float alpha = smoothstep(0.5, 0.0, dist);
-
-        gl_FragColor = vec4(finalColor, alpha * (0.6 + uFaceMix * 0.4));
+        
+        float alpha = smoothstep(0.5, 0.0, dist) * vAlpha;
+        
+        // Brillo en el centro
+        float glow = smoothstep(0.3, 0.0, dist);
+        vec3 finalColor = vColor + vec3(glow * 0.3);
+        
+        gl_FragColor = vec4(finalColor, alpha);
       }
     `;
 
     const uniforms = {
       uTime: { value: 0 },
-      uTornadoMix: { value: 0 },
-      uFaceMix: { value: 0 }
+      uProgress: { value: 0 },
+      uSize: { value: isMobile ? 0.8 : 1.0 }
     };
 
     const material = new THREE.ShaderMaterial({
@@ -204,58 +227,64 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
       fragmentShader,
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending
+      blending: THREE.AdditiveBlending,
+      vertexColors: true
     });
 
-    const particleSystem = new THREE.Points(geometry, material);
-    scene.add(particleSystem);
+    const particles = new THREE.Points(geometry, material);
+    particles.frustumCulled = false;
+    scene.add(particles);
 
-    // Clock
+    // Guardar referencias
+    sceneRef.current = { scene, camera, particles, stars, uniforms };
+
+    // ============ ANIMATION LOOP ============
     const clock = new THREE.Clock();
-    let lastStatusIndex = -1;
+    let lastMessageIndex = -1;
 
-    // Animation loop
     const animate = () => {
-      const elapsedTime = clock.getElapsedTime();
-      const elapsedMs = elapsedTime * 1000;
+      const elapsed = clock.getElapsedTime();
+      const elapsedMs = elapsed * 1000;
 
-      // Actualizar texto de estado
+      // Actualizar mensajes y progreso
       for (let i = statusMessages.length - 1; i >= 0; i--) {
-        if (elapsedMs >= statusMessages[i].time && i !== lastStatusIndex) {
+        if (elapsedMs >= statusMessages[i].time && i !== lastMessageIndex) {
           setStatusText(statusMessages[i].text);
-          lastStatusIndex = i;
+          setProgress(statusMessages[i].progress);
+          lastMessageIndex = i;
           break;
         }
       }
 
-      // Fase 1: Tornado (0s a 3.5s)
-      uniforms.uTornadoMix.value = THREE.MathUtils.smoothstep(elapsedTime, 0.0, 3.5);
+      // Progreso de animación (0 a 1)
+      const animProgress = Math.min(elapsed / (TOTAL_TIME * 0.8), 1);
+      uniforms.uProgress.value = animProgress;
+      uniforms.uTime.value = elapsed;
 
-      // Fase 2: Morphing a ente (3.5s a 5.5s)
-      uniforms.uFaceMix.value = THREE.MathUtils.smoothstep(elapsedTime, 3.5, 5.5);
+      // Rotación suave del sistema
+      particles.rotation.y = elapsed * 0.1;
+      particles.rotation.x = Math.sin(elapsed * 0.2) * 0.1;
+      
+      // Estrellas se mueven lento
+      stars.rotation.y = elapsed * 0.02;
+      stars.rotation.z = elapsed * 0.01;
 
-      // Fase 3: Zoom (5.5s a 7.5s)
-      if (elapsedTime > 5.5 && elapsedTime < TOTAL_TIME) {
-        const zoomProgress = THREE.MathUtils.smoothstep(elapsedTime, 5.5, 7.5);
-        camera.position.z = THREE.MathUtils.lerp(120, 45, zoomProgress);
-        camera.position.y = THREE.MathUtils.lerp(10, 15, zoomProgress);
-        camera.lookAt(0, 15, 0);
+      // Zoom de cámara al final
+      if (elapsed > TOTAL_TIME * 0.7) {
+        const zoomProgress = (elapsed - TOTAL_TIME * 0.7) / (TOTAL_TIME * 0.3);
+        camera.position.z = THREE.MathUtils.lerp(100, 60, Math.min(zoomProgress, 1));
       }
 
-      // Fase 4: Fade out (7s)
-      if (elapsedTime > (TOTAL_TIME - 1)) {
+      // Fade out cerca del final
+      if (elapsed > TOTAL_TIME - 1) {
         setFadeOut(true);
       }
 
       // Completar
-      if (elapsedTime > TOTAL_TIME) {
+      if (elapsed >= TOTAL_TIME) {
         if (onComplete) onComplete();
         return;
       }
-
-      uniforms.uTime.value = elapsedTime;
-      particleSystem.rotation.y = elapsedTime * 0.05;
-      stars.rotation.y = elapsedTime * 0.01;
 
       renderer.render(scene, camera);
       animationRef.current = requestAnimationFrame(animate);
@@ -263,12 +292,12 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
 
     animate();
 
-    // Resize handler
+    // Resize
     const handleResize = () => {
-      if (!containerRef.current) return;
-      camera.aspect = containerRef.current.clientWidth / containerRef.current.clientHeight;
+      if (!container) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
-      renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
+      renderer.setSize(container.clientWidth, container.clientHeight);
     };
     window.addEventListener('resize', handleResize);
 
@@ -276,33 +305,54 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (rendererRef.current && containerRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement);
-        rendererRef.current.dispose();
-      }
       geometry.dispose();
       material.dispose();
+      starsGeometry.dispose();
+      starsMaterial.dispose();
+      if (rendererRef.current && container.contains(rendererRef.current.domElement)) {
+        container.removeChild(rendererRef.current.domElement);
+        rendererRef.current.dispose();
+      }
     };
   }, [duration, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-black flex flex-col items-center justify-center">
-      {/* Three.js container */}
+    <div className="fixed inset-0 z-[99999] bg-[#0a0a0f]">
+      {/* Canvas Three.js */}
       <div ref={containerRef} className="absolute inset-0" />
       
-      {/* Overlay con texto */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">
-        {/* Logo / Título */}
-        <div className="mb-4 text-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#6161FF] to-[#00CA72] bg-clip-text text-transparent">
+      {/* Overlay UI */}
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 pointer-events-none">
+        {/* Logo */}
+        <div className="mb-6 text-center">
+          <div className="mb-3">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-[#6161FF] to-[#00CA72] p-[2px] animate-pulse">
+              <div className="w-full h-full rounded-full bg-[#0a0a0f] flex items-center justify-center">
+                <span className="text-2xl">⚡</span>
+              </div>
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#6161FF] via-[#00CA72] to-[#6161FF] bg-clip-text text-transparent bg-[length:200%_auto] animate-[gradient_3s_linear_infinite]">
             Algoritmo Tribal X
           </h1>
-          <p className="text-white/60 text-sm mt-1">Inteligencia de conexión</p>
+          <p className="text-white/50 text-xs mt-1 tracking-wider uppercase">
+            Inteligencia de Conexión
+          </p>
         </div>
         
-        {/* Estado actual */}
-        <div className="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full">
-          <p className="text-white text-sm font-medium animate-pulse">
+        {/* Progress bar */}
+        <div className="w-64 mb-4">
+          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+        
+        {/* Status text */}
+        <div className="bg-white/5 backdrop-blur-sm px-5 py-2 rounded-full border border-white/10">
+          <p className="text-white/80 text-sm font-medium">
             {statusText}
           </p>
         </div>
@@ -310,10 +360,18 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
       
       {/* Fade overlay */}
       <div 
-        className={`absolute inset-0 bg-[#F5F7FB] pointer-events-none transition-opacity duration-1000 ${
+        className={`absolute inset-0 bg-[#F5F7FB] pointer-events-none transition-opacity duration-700 ${
           fadeOut ? 'opacity-100' : 'opacity-0'
         }`}
       />
+      
+      {/* CSS para animación de gradiente */}
+      <style>{`
+        @keyframes gradient {
+          0% { background-position: 0% center; }
+          100% { background-position: 200% center; }
+        }
+      `}</style>
     </div>
   );
 };

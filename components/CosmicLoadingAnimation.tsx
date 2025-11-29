@@ -20,32 +20,40 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
-    // Forzar configuración para autoplay móvil
+    // Configuración para autoplay móvil
     video.muted = true;
     video.playsInline = true;
     video.loop = true;
+    video.autoplay = true;
     
-    // Intentar reproducir inmediatamente
-    const playVideo = () => {
-      video.play().catch((err) => {
-        console.log('Autoplay falló, reintentando...', err);
-        // Reintentar después de un momento
-        setTimeout(() => {
-          video.play().catch(() => {});
-        }, 100);
-      });
+    // Función para intentar reproducir
+    const tryPlay = async () => {
+      try {
+        await video.play();
+        console.log('✅ Video reproduciéndose');
+      } catch (err) {
+        console.log('⚠️ Autoplay bloqueado, reintentando...', err);
+        // Reintentar con delay
+        setTimeout(tryPlay, 200);
+      }
     };
 
-    // Reproducir cuando esté listo
-    if (video.readyState >= 3) {
-      playVideo();
-    } else {
-      video.addEventListener('canplay', playVideo, { once: true });
-      video.load(); // Forzar carga
-    }
+    // Escuchar múltiples eventos para iniciar
+    const events = ['loadeddata', 'canplay', 'canplaythrough'];
+    events.forEach(evt => {
+      video.addEventListener(evt, tryPlay, { once: true });
+    });
+
+    // Forzar carga inmediata
+    video.load();
+    
+    // También intentar reproducir directamente
+    tryPlay();
 
     return () => {
-      video.removeEventListener('canplay', playVideo);
+      events.forEach(evt => {
+        video.removeEventListener(evt, tryPlay);
+      });
     };
   }, []);
 
@@ -121,24 +129,21 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
 
   return (
     <div className="fixed inset-0 z-[99999] bg-black overflow-hidden">
-      {/* Video de fondo - fullscreen cover con máxima compatibilidad */}
+      {/* Video de fondo - fullscreen cover */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
-        src="/tribuvideo.mp4"
+        src={`/tribuvideo.mp4?v=${Date.now()}`}
         muted
         playsInline
         autoPlay
         loop
         preload="auto"
-        webkit-playsinline="true"
-        x-webkit-airplay="allow"
-        disablePictureInPicture
-        disableRemotePlayback
+        poster="/tribulogo.png"
       />
       
-      {/* Overlay oscuro mate para el video en segundo plano */}
-      <div className="absolute inset-0 bg-black/50" />
+      {/* Overlay oscuro mate (60% para mejor visibilidad del UI) */}
+      <div className="absolute inset-0 bg-black/60" />
       
       {/* UI Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-end pb-20 pointer-events-none">

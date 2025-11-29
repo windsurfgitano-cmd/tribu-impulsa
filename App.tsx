@@ -1759,27 +1759,23 @@ const MyProfileView = () => {
             <div className="px-4 -mt-24 relative z-10">
                 <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
                     
-                    {/* Avatar - Con upload de foto */}
-                    <div className="relative -mt-20 mb-6 group z-20">
+                    {/* Avatar - Simple, sin círculo extra */}
+                    <div className="relative -mt-20 mb-4 z-20">
                         <img 
                             src={profile.avatarUrl} 
                             alt={profile.name}
                             className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
                         />
-                        {isEditing ? (
+                        {isEditing && (
                           <button 
                             onClick={() => fileInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity"
+                            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white"
                           >
                             <div className="text-center">
                               <Edit2 size={20} className="mx-auto mb-1" />
-                              <span className="text-xs">Cambiar</span>
+                              <span className="text-xs">Cambiar foto</span>
                             </div>
                           </button>
-                        ) : (
-                          <div className="absolute bottom-0 right-0 bg-[#6161FF] rounded-full p-2 border-4 border-white">
-                            <Edit2 size={14} className="text-white" />
-                          </div>
                         )}
                         <input 
                           ref={fileInputRef}
@@ -1790,8 +1786,8 @@ const MyProfileView = () => {
                         />
                     </div>
 
-                    {/* Main Info - Flows naturally after the avatar */}
-                    <div className="text-center mb-8 w-full">
+                    {/* Main Info */}
+                    <div className="text-center mb-4 w-full">
                         {isEditing ? (
                             <div className="space-y-2">
                                 <input 
@@ -1812,39 +1808,42 @@ const MyProfileView = () => {
                             </>
                         )}
                         
+                        {/* Categoría */}
                         <div className="flex justify-center gap-2 mt-4 flex-wrap">
                             <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-4 py-1.5 rounded-full">
                                 {profile.category}
                             </span>
+                        </div>
+                        
+                        {/* Botón Editar Perfil - Centrado debajo de categoría */}
+                        <div className="mt-4">
+                          {isEditing ? (
+                            <div className="flex justify-center gap-3">
+                              <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-medium">
+                                <X size={16}/> Cancelar
+                              </button>
+                              <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-medium disabled:opacity-50">
+                                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16}/>} Guardar
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-full border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 flex items-center gap-2 text-sm font-medium mx-auto">
+                              <Edit2 size={14} /> Editar Perfil
+                            </button>
+                          )}
                         </div>
                     </div>
 
                     {/* Mensaje de guardado */}
                     {saveMessage && (
                         <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${
-                            saveMessage.includes('✅') 
+                            saveMessage.includes('✅') || saveMessage.includes('📷')
                                 ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30' 
                                 : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
                         }`}>
                             {saveMessage}
                         </div>
                     )}
-
-                    {/* Actions */}
-                    <div className="flex justify-end w-full mb-4">
-            {isEditing ? (
-                <div className="flex gap-2 ml-auto">
-                    <button onClick={() => setIsEditing(false)} className="p-2 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20"><X size={20}/></button>
-                    <button onClick={handleSave} disabled={isSaving} className="p-2 rounded-full bg-[#00CA72]/10 text-[#00CA72] hover:bg-[#00CA72]/20 disabled:opacity-50">
-                        {isSaving ? <RefreshCw size={20} className="animate-spin" /> : <Save size={20}/>}
-                    </button>
-                </div>
-            ) : (
-                <button onClick={() => setIsEditing(true)} className="text-xs flex items-center gap-1 text-[#6161FF] hover:text-[#00CA72] transition-colors ml-auto font-medium">
-                    <Edit2 size={14} /> Editar Perfil
-                </button>
-            )}
-        </div>
 
         {/* Redes sociales editables */}
         {isEditing && (
@@ -1992,7 +1991,13 @@ const MyProfileView = () => {
                         
                         <div className="pt-6 border-t border-[#E4E7EF]">
                             <button 
-                                onClick={() => navigate('/')} 
+                                onClick={() => {
+                                  // Limpiar toda la sesión
+                                  clearStoredSession();
+                                  localStorage.removeItem('tribu_session');
+                                  localStorage.removeItem('algorithm_seen');
+                                  navigate('/');
+                                }} 
                                 className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
                             >
                                 <LogOut size={16} /> Cerrar Sesión

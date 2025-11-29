@@ -2694,19 +2694,36 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   };
   
   // Usar portal para renderizar fuera del contenedor scrolleable
+  // Estilos completamente inline para máxima prioridad
   return ReactDOM.createPortal(
     <div 
-      className="bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 99999,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px',
+        zIndex: 999999,
+        overflow: 'hidden',
       }}
     >
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl animate-slideUp max-h-[85vh] overflow-y-auto">
+      <div 
+        style={{
+          backgroundColor: 'white',
+          borderRadius: '24px',
+          width: '100%',
+          maxWidth: '400px',
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }}
+        className="animate-slideUp">
         {/* Progress */}
         <div className="flex gap-1 p-4">
           {TUTORIAL_STEPS.map((_, i) => (

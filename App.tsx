@@ -619,17 +619,17 @@ const LoginScreen = () => {
         <div className="absolute top-[30%] left-[20%] w-[200px] h-[200px] rounded-full bg-[#FFCC00]/10 blur-[60px]" />
       </div>
 
-      {/* Logo grande - 25% superior de la pantalla */}
-      <div className="mb-8 flex justify-center" style={{ minHeight: '25vh' }}>
+      {/* Logo grande */}
+      <div className="mb-4 flex justify-center">
         <img 
           src="/tribulogo.png" 
           alt="Tribu Impulsa" 
-          className="w-[80%] max-w-[320px] object-contain"
+          className="w-[90%] max-w-[380px] object-contain"
         />
       </div>
 
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
-        <p className="text-[#7C8193] mb-6 text-sm text-center">
+        <p className="text-[#7C8193] mb-6 text-sm text-center -mt-2">
           Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
         </p>
         
@@ -1456,11 +1456,12 @@ const TribeAssignmentsView = () => {
     return Math.round((done / Math.max(total, 1)) * 100);
   }, [checklist, assignments]);
 
-  const statusThemes: Record<TribeStatus, string> = {
-    'PENDIENTE': 'bg-[#FFF8E6] text-[#9D6B00] border-[#FFCC00]',
-    'EN PROCESO': 'bg-[#E6F7FF] text-[#0066B3] border-[#6161FF]',
-    'COMPLETADO': 'bg-[#E6FFF3] text-[#008A4E] border-[#00CA72]'
-  };
+  // Estado automático basado en completion
+  const isCompleted = completion === 100;
+  const statusLabel = isCompleted ? 'Completado' : 'Pendiente';
+  const statusStyle = isCompleted 
+    ? 'bg-[#E6FFF3] text-[#008A4E] border-[#00CA72]' 
+    : 'bg-[#FFF8E6] text-[#9D6B00] border-[#FFCC00]';
 
   const handleToggle = (list: keyof AssignmentChecklist, profileId: string) => {
     setChecklist(prev => {
@@ -1539,31 +1540,33 @@ const TribeAssignmentsView = () => {
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
-      <header className="px-6 py-6 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] flex flex-col gap-2 md:flex-row md:items-center md:justify-between shadow-sm">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] font-medium">Mi red tribal</p>
-          <h1 className="text-3xl font-bold text-[#181B34]">Checklist de Reciprocidad</h1>
-          <p className="text-[#7C8193] text-sm">Última sincronización: {lastSynced}</p>
+      <header className="px-6 py-6 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] font-medium">Mi red tribal</p>
+            <h1 className="text-2xl font-bold text-[#181B34]">Checklist de Reciprocidad</h1>
+          </div>
+          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border ${statusStyle}`}>
+            {isCompleted ? '✓ ' : '○ '}{statusLabel}
+          </span>
         </div>
-        <div className="flex flex-wrap gap-3 items-center">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusThemes[status]}`}>{status}</span>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as TribeStatus)}
-            className="bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-3 py-2 text-sm text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
-          >
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="EN PROCESO">En proceso</option>
-            <option value="COMPLETADO">Completado</option>
-          </select>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 bg-white border border-[#E4E7EF] text-[#434343] px-4 py-2 rounded-xl hover:border-[#6161FF] hover:text-[#6161FF] transition disabled:opacity-40 shadow-sm"
-          >
-            <Share2 size={16} /> {isRefreshing ? 'Generando...' : 'Regenerar tribu'}
-          </button>
-        </div>
+        
+        {/* Menú desarrollo colapsable */}
+        <details className="mt-3">
+          <summary className="text-[10px] text-[#B3B8C6] cursor-pointer hover:text-[#7C8193] transition select-none">
+            ⚙️ Opciones avanzadas
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <span className="text-[10px] text-[#7C8193]">Sync: {lastSynced}</span>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1 text-[10px] bg-[#F5F7FB] border border-[#E4E7EF] text-[#7C8193] px-3 py-1 rounded-lg hover:border-[#6161FF] hover:text-[#6161FF] transition disabled:opacity-40"
+            >
+              <Share2 size={12} /> {isRefreshing ? 'Generando...' : 'Regenerar tribu'}
+            </button>
+          </div>
+        </details>
       </header>
 
       <section className="px-6 py-6 space-y-6">
@@ -2362,22 +2365,13 @@ const ProfileDetail = () => {
       <div className="px-4 -mt-20 relative z-10">
         <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
            
-           {/* Avatar & Logo Composition - Standard Block */}
-           <div className="relative -mt-20 mb-6 z-20">
-              <div className="relative">
-                <img 
-                    src={profile.avatarUrl} 
-                    alt={profile.name}
-                    className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-md">
-                    <img 
-                        src={profile.companyLogoUrl} 
-                        alt="Logo"
-                        className="w-10 h-10 rounded-full bg-white border border-[#E4E7EF]"
-                    />
-                </div>
-             </div>
+           {/* Avatar simple sin logo overlay */}
+           <div className="-mt-20 mb-6 z-20">
+              <img 
+                  src={profile.avatarUrl} 
+                  alt={profile.name}
+                  className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+              />
            </div>
 
            {/* Main Info - Flows naturally */}

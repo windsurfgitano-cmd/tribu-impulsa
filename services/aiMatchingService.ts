@@ -232,9 +232,16 @@ export async function generateAITribeAssignments(
 export async function analyzeCompatibility(
   user1: UserProfile,
   user2: UserProfile
-): Promise<{ score: number; analysis: string; opportunities: string[] }> {
+): Promise<{ score: number; analysis: string; opportunities: string[] } | null> {
   
   try {
+    // Verificar configuración primero
+    const config = await getAzureConfig();
+    if (!config.endpoint || !config.key) {
+      console.log('Azure OpenAI no configurado - el caller debe usar fallback local');
+      return null;
+    }
+
     const prompt = `
 Analiza la compatibilidad para cross-promotion entre estos dos negocios:
 
@@ -253,11 +260,6 @@ Responde en JSON:
   "opportunities": ["oportunidad 1", "oportunidad 2", "oportunidad 3"]
 }
 `;
-
-    const config = await getAzureConfig();
-    if (!config.endpoint || !config.key) {
-      throw new Error('Azure OpenAI no configurado. Usa configureAzureAI()');
-    }
     
     const response = await fetch(config.endpoint, {
       method: 'POST',

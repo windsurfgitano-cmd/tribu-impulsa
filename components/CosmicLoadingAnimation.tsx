@@ -15,14 +15,38 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
   const [progress, setProgress] = useState(0);
   const [textVisible, setTextVisible] = useState(true);
 
-  // EFECTO 1: Reproducir video
+  // EFECTO 1: Forzar reproducción del video
   useEffect(() => {
     const video = videoRef.current;
-    if (video) {
-      video.play().catch(() => {
-        console.log('Autoplay bloqueado');
+    if (!video) return;
+
+    // Forzar configuración para autoplay móvil
+    video.muted = true;
+    video.playsInline = true;
+    video.loop = true;
+    
+    // Intentar reproducir inmediatamente
+    const playVideo = () => {
+      video.play().catch((err) => {
+        console.log('Autoplay falló, reintentando...', err);
+        // Reintentar después de un momento
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 100);
       });
+    };
+
+    // Reproducir cuando esté listo
+    if (video.readyState >= 3) {
+      playVideo();
+    } else {
+      video.addEventListener('canplay', playVideo, { once: true });
+      video.load(); // Forzar carga
     }
+
+    return () => {
+      video.removeEventListener('canplay', playVideo);
+    };
   }, []);
 
   // EFECTO 2: Progreso continuo (independiente de mensajes)
@@ -97,7 +121,7 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
 
   return (
     <div className="fixed inset-0 z-[99999] bg-black overflow-hidden">
-      {/* Video de fondo - fullscreen cover */}
+      {/* Video de fondo - fullscreen cover con máxima compatibilidad */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover"
@@ -107,6 +131,10 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
         autoPlay
         loop
         preload="auto"
+        webkit-playsinline="true"
+        x-webkit-airplay="allow"
+        disablePictureInPicture
+        disableRemotePlayback
       />
       
       {/* Overlay oscuro mate para el video en segundo plano */}

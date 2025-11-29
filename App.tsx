@@ -4365,7 +4365,16 @@ const AppLayout = () => {
         </div>
 
         {showNav && (
-          <nav className="fixed bottom-0 left-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-2 px-6 flex justify-around items-end z-40 pb-safe h-[72px] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" style={{ backgroundColor: 'rgba(232, 245, 233, 0.95)' }}>
+          <nav 
+            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-2 px-6 flex justify-around items-center z-[9999] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
+            style={{ 
+              backgroundColor: 'rgba(232, 245, 233, 0.98)',
+              paddingBottom: 'max(env(safe-area-inset-bottom, 8px), 8px)',
+              height: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+              transform: 'translateZ(0)', // Forzar GPU layer para evitar glitches
+              WebkitTransform: 'translateZ(0)',
+            }}
+          >
             
             {/* Dashboard Button */}
             <button 

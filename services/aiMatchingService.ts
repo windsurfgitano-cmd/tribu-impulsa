@@ -258,8 +258,7 @@ Responde en JSON:
         { role: 'system', content: 'Eres un experto en networking empresarial chileno. Analiza compatibilidad de negocios para cross-promotion. Responde SOLO en JSON válido, sin markdown ni explicaciones adicionales.' },
         { role: 'user', content: prompt }
       ],
-      max_completion_tokens: 800,
-      temperature: 0.7
+      max_completion_tokens: 800
     };
 
     console.log('🚀 Llamando Azure OpenAI...');

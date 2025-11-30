@@ -1,10 +1,8 @@
 // AI Matching Service - Tribu Impulsa
 // Usa Azure OpenAI (GPT-5.1) para matching inteligente de emprendedores
 
-import { getAzureCredentials } from './productionInit';
-
 // ============================================
-// CONFIGURACIÓN AZURE OPENAI (desde Firestore)
+// CONFIGURACIÓN AZURE OPENAI
 // ============================================
 
 interface AzureConfig {
@@ -12,32 +10,26 @@ interface AzureConfig {
   key: string;
 }
 
-// Cache local para evitar muchas lecturas
-let azureConfigCache: AzureConfig | null = null;
+// Leer directamente de variables de entorno (Vite)
+const AZURE_ENDPOINT = import.meta.env.VITE_AZURE_OPENAI_ENDPOINT || '';
+const AZURE_KEY = import.meta.env.VITE_AZURE_OPENAI_KEY || '';
 
 const getAzureConfig = async (): Promise<AzureConfig> => {
-  // Usar cache si existe
-  if (azureConfigCache) {
-    return azureConfigCache;
-  }
-
-  // Obtener de Firestore (configurado automáticamente en producción)
-  const credentials = await getAzureCredentials();
-  
-  if (credentials) {
-    azureConfigCache = {
-      endpoint: credentials.endpoint,
-      key: credentials.apiKey
+  // Leer directamente de env vars
+  if (AZURE_ENDPOINT && AZURE_KEY) {
+    console.log('✅ Azure OpenAI configurado desde variables de entorno');
+    return {
+      endpoint: AZURE_ENDPOINT,
+      key: AZURE_KEY
     };
-    return azureConfigCache;
   }
   
+  console.log('⚠️ Variables de entorno Azure no encontradas');
   return { endpoint: '', key: '' };
 };
 
 export const isAzureConfigured = async (): Promise<boolean> => {
-  const config = await getAzureConfig();
-  return !!(config.endpoint && config.key);
+  return !!(AZURE_ENDPOINT && AZURE_KEY);
 };
 
 // ============================================

@@ -255,14 +255,11 @@ Responde en JSON:
     
     const requestBody = {
       messages: [
-        { role: 'system', content: 'Eres un experto en networking empresarial chileno. Analiza compatibilidad de negocios para cross-promotion. Responde SOLO en JSON válido, sin markdown.' },
+        { role: 'system', content: 'Eres un experto en networking empresarial chileno. Analiza compatibilidad de negocios para cross-promotion. Responde SOLO en JSON válido, sin markdown ni explicaciones adicionales.' },
         { role: 'user', content: prompt }
       ],
-      max_tokens: 800,
-      temperature: 0.7,
-      top_p: 0.95,
-      frequency_penalty: 0,
-      presence_penalty: 0
+      max_completion_tokens: 800,
+      temperature: 0.7
     };
 
     console.log('🚀 Llamando Azure OpenAI...');

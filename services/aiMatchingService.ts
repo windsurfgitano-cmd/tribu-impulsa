@@ -253,38 +253,49 @@ Responde en JSON:
 }
 `;
     
+    const requestBody = {
+      messages: [
+        { role: 'system', content: 'Eres un experto en networking empresarial chileno. Analiza compatibilidad de negocios para cross-promotion. Responde SOLO en JSON válido, sin markdown.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 800,
+      temperature: 0.7,
+      top_p: 0.95,
+      frequency_penalty: 0,
+      presence_penalty: 0
+    };
+
+    console.log('🚀 Llamando Azure OpenAI...');
+    
     const response = await fetch(config.endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api-key': config.key
       },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: 'Eres un experto en networking empresarial. Responde SOLO en JSON válido.' },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 500,
-        temperature: 0.5
-      })
+      body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('❌ Azure OpenAI Error:', response.status, errorText);
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('✅ Azure OpenAI respondió:', data);
+    
     const aiResponse = data.choices?.[0]?.message?.content;
     
-    return JSON.parse(aiResponse);
+    // Limpiar respuesta de posible markdown
+    const cleanJson = aiResponse?.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    return JSON.parse(cleanJson);
 
   } catch (error) {
     console.error('Error analizando compatibilidad:', error);
-    return {
-      score: 50,
-      analysis: 'Análisis no disponible',
-      opportunities: []
-    };
+    // Retornar null para que use el fallback local inteligente
+    return null;
   }
 }
 

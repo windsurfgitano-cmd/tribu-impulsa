@@ -2595,12 +2595,16 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
         result.opportunities.length > 0;
       
       if (isValidResult) {
-        // Convertir resultado de LLM a formato enriquecido
+        // Usar icebreaker del LLM si existe, o generar uno básico
+        const llmIcebreaker = result.icebreaker || 
+          `¡Hola ${profileData.name.split(' ')[0]}! 👋 Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? 🤝`;
+        
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
           opportunities: result.opportunities,
-          icebreaker: `¡Hola ${profileData.name.split(' ')[0]}! 👋 Soy de ${myProfile.companyName} y te encontré en Tribu Impulsa. ${result.analysis.split('.')[0]}. ¿Te gustaría explorar una colaboración? 🚀`
+          icebreaker: llmIcebreaker
         };
+        console.log('✅ Análisis LLM completo:', enriched);
         setAnalysis(enriched);
         saveAnalysis(profileId, JSON.stringify(enriched));
       } else {

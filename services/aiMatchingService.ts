@@ -220,11 +220,12 @@ export async function generateAITribeAssignments(
 
 /**
  * Analiza la compatibilidad entre dos usuarios
+ * Retorna análisis completo con icebreaker diferenciado
  */
 export async function analyzeCompatibility(
   user1: UserProfile,
   user2: UserProfile
-): Promise<{ score: number; analysis: string; opportunities: string[] } | null> {
+): Promise<{ score: number; analysis: string; opportunities: string[]; icebreaker?: string } | null> {
   
   try {
     // Verificar configuración primero
@@ -234,31 +235,44 @@ export async function analyzeCompatibility(
       return null;
     }
 
-    const prompt = `
-Analiza la compatibilidad para cross-promotion entre estos dos negocios:
+    const prompt = `Analiza estos 2 negocios chilenos para cross-promotion:
 
-NEGOCIO 1:
-- ${user1.companyName} (${user1.category})
-- ${user1.bio || user1.businessDescription || 'Sin descripción'}
+NEGOCIO A (quien busca colaborar):
+- Empresa: ${user1.companyName}
+- Rubro: ${user1.category}
+- Descripción: ${user1.bio || user1.businessDescription || 'Emprendimiento chileno'}
+- Ciudad: ${user1.city || 'Chile'}
 
-NEGOCIO 2:
-- ${user2.companyName} (${user2.category})
-- ${user2.bio || user2.businessDescription || 'Sin descripción'}
+NEGOCIO B (potencial match):
+- Empresa: ${user2.companyName}
+- Rubro: ${user2.category}  
+- Descripción: ${user2.bio || user2.businessDescription || 'Emprendimiento chileno'}
+- Ciudad: ${user2.city || 'Chile'}
 
-Responde en JSON:
-{
-  "score": 0-100,
-  "analysis": "Análisis breve de compatibilidad",
-  "opportunities": ["oportunidad 1", "oportunidad 2", "oportunidad 3"]
-}
-`;
+Genera un JSON con:
+1. score: Número 70-98 (compatibilidad real basada en audiencias complementarias)
+2. analysis: Insight estratégico de POR QUÉ esta colaboración tiene potencial (2-3 oraciones, específico a estos negocios)
+3. opportunities: Array con 3 acciones CONCRETAS y CREATIVAS que pueden hacer juntos (ej: "Sorteo cruzado donde ${user1.companyName} regale un servicio de ${user2.companyName}")
+4. icebreaker: Mensaje corto y MOTIVADOR para enviar por WhatsApp (máx 280 chars, debe ser amigable, mencionar algo específico del negocio B, y proponer una acción clara)
+
+IMPORTANTE para el icebreaker:
+- NO repetir el análisis
+- Ser cálido y directo
+- Mencionar el nombre de la empresa
+- Terminar con pregunta o propuesta concreta
+- Usar máximo 1-2 emojis
+
+Responde SOLO el JSON, sin markdown:`;
     
     const requestBody = {
       messages: [
-        { role: 'system', content: 'Eres un experto en networking empresarial chileno. Analiza compatibilidad de negocios para cross-promotion. Responde SOLO en JSON válido, sin markdown ni explicaciones adicionales.' },
+        { 
+          role: 'system', 
+          content: 'Eres un experto en networking y marketing colaborativo para emprendedores latinoamericanos. Tu especialidad es identificar sinergias únicas entre negocios complementarios y crear mensajes que generan conexiones reales. Responde SOLO en JSON válido.' 
+        },
         { role: 'user', content: prompt }
       ],
-      max_completion_tokens: 800
+      max_completion_tokens: 1000
     };
 
     console.log('🚀 Llamando Azure OpenAI...');

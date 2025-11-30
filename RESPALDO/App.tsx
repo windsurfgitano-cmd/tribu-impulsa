@@ -1558,100 +1558,105 @@ const TribeAssignmentsView = () => {
 
   const renderList = (title: string, subtitle: string, list: MatchProfile[], key: keyof AssignmentChecklist) => {
     const isToShare = key === 'toShare';
+    const actionLabel = isToShare ? 'Yo compartí' : 'Me compartieron';
     const whatsappMessage = isToShare 
-      ? (profile: MatchProfile) => `Hola ${profile.name.split(' ')[0]}! Te acabo de compartir en mis redes. Aquí está el enlace: `
-      : (profile: MatchProfile) => `Hola ${profile.name.split(' ')[0]}! Vi que me compartiste, muchas gracias! Me podrías pasar el enlace?`;
-    
-    const completedCount = Object.entries(checklist[key]).filter(([id, done]) => done && list.some(p => p.id === id)).length;
+      ? (profile: MatchProfile) => `¡Hola ${profile.name.split(' ')[0]}! 👋 Te acabo de compartir en mis redes. Aquí está el enlace: `
+      : (profile: MatchProfile) => `¡Hola ${profile.name.split(' ')[0]}! 👋 Vi que me compartiste, ¡muchas gracias! ¿Me podrías pasar el enlace? 🙏`;
     
     return (
-      <div key={title} className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-        <header className="mb-3 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-[#181B34]">{title}</h3>
-            <p className="text-[#7C8193] text-xs">{subtitle}</p>
-          </div>
-          <span className="text-sm font-semibold text-[#6161FF]">{completedCount}/{list.length}</span>
+      <div key={title} className="bg-white rounded-2xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
+        <header className="mb-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] mb-1 font-medium">{title}</p>
+          <h3 className="text-2xl font-bold text-[#181B34] flex items-center gap-2">
+            <Share2 size={18} className="text-[#00CA72]" /> {list.length} cuentas
+          </h3>
+          <p className="text-[#7C8193] text-sm">{subtitle}</p>
         </header>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {list.map(profile => {
             const isCompleted = checklist[key][profile.id] ?? false;
             return (
-              <div key={profile.id} className={`p-3 rounded-lg border transition ${
+              <div key={profile.id} className={`p-4 rounded-xl border transition ${
                 isCompleted 
                   ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
-                  : 'bg-white border-[#E4E7EF]'
+                  : 'bg-[#F5F7FB] border-[#E4E7EF] hover:border-[#6161FF]/40'
               }`}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <input
                     type="checkbox"
-                    className="accent-[#00CA72] w-4 h-4 flex-shrink-0"
+                    className="mt-1 accent-[#00CA72] w-5 h-5"
                     checked={isCompleted}
                     onChange={() => handleToggle(key, profile.id)}
                   />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-[#181B34] truncate">{profile.companyName}</p>
-                    <p className="text-xs text-[#7C8193] truncate">{profile.name}</p>
-                  </div>
-                  <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
-                    {/* YO DEBO IMPULSAR: "Yo compartí" + "Avisarle" */}
-                    {isToShare && (
-                      <>
-                        {!isCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#00CA72] text-white font-medium"
-                          >
-                            Ya compartí
-                          </button>
-                        )}
-                        <a
-                          href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#25D366] text-white font-medium"
-                        >
-                          Avisarle
-                        </a>
-                      </>
-                    )}
-                    
-                    {/* ME IMPULSAN: "Ya me compartieron" + "Preguntar" */}
-                    {!isToShare && (
-                      <>
-                        {!isCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => setShowShareModal({ profile, type: 'received_from' })}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#6161FF] text-white font-medium"
-                          >
-                            Me compartieron
-                          </button>
-                        )}
-                        <a
-                          href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#25D366] text-white font-medium"
-                        >
-                          Preguntar
-                        </a>
-                      </>
-                    )}
-                    
-                    {/* Reportar */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReportingProfile(profile);
-                        setReportNote('');
-                      }}
-                      className="text-[10px] px-2 py-1.5 rounded-lg border border-[#FB275D]/40 text-[#FB275D]"
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                    className="flex-1 text-left"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-[#181B34]">{profile.companyName}</p>
+                      <span className="text-xs text-[#7C8193] bg-white/80 px-2 py-0.5 rounded-full border border-[#E4E7EF]">{profile.category}</span>
+                    </div>
+                    <p className="text-sm text-[#434343]">{profile.name} · {profile.subCategory}</p>
+                    <p className="text-xs text-[#7C8193]">{profile.location}</p>
+                  </button>
+                </div>
+                
+                {/* Botones de acción - Simplificados según contexto */}
+                <div className="flex flex-wrap gap-2 mt-3 pl-8">
+                  {/* YO DEBO IMPULSAR: Botón "Yo compartí" + "Avisarle" */}
+                  {isToShare && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
+                        className="text-[10px] px-3 py-1.5 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] transition flex items-center gap-1"
+                      >
+                        <CheckCircle size={12} /> Yo compartí
+                      </button>
+                      <a
+                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
+                      >
+                        <Send size={12} /> Avisarle
+                      </a>
+                    </>
+                  )}
+                  
+                  {/* ME COMPARTEN: Solo botón "Pedir enlace" */}
+                  {!isToShare && (
+                    <a
+                      href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] px-3 py-1.5 rounded-full bg-[#25D366] text-white hover:bg-[#128C7E] transition flex items-center gap-1"
                     >
-                      Reportar
-                    </button>
-                  </div>
+                      <Send size={12} /> Pedir enlace
+                    </a>
+                  )}
+                  
+                  {/* Ver perfil - siempre visible */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                    className="text-[10px] px-3 py-1.5 rounded-full border border-[#6161FF]/40 text-[#6161FF] hover:bg-[#6161FF]/10 transition"
+                  >
+                    Ver perfil
+                  </button>
+                  
+                  {/* Reportar - siempre visible */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportingProfile(profile);
+                      setReportNote('');
+                    }}
+                    className="text-[10px] px-3 py-1.5 rounded-full border border-[#FB275D]/40 text-[#FB275D] hover:bg-[#FB275D]/10 transition"
+                  >
+                    Reportar
+                  </button>
                 </div>
               </div>
             );
@@ -1723,64 +1728,67 @@ const TribeAssignmentsView = () => {
         document.body
       )}
       
-      <header className="px-5 py-5 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
-        style={{
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
-        }}
-      >
+      <header className="px-6 py-6 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[#181B34]">Checklist 10+10</h1>
-            <p className="text-sm text-[#7C8193]">Tu reciprocidad mensual</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#6161FF] font-medium">Mi red tribal</p>
+            <h1 className="text-2xl font-bold text-[#181B34]">Checklist de Reciprocidad</h1>
           </div>
-          <span className={`px-3 py-1 rounded-lg text-xs font-semibold border backdrop-blur-sm ${statusStyle}`}>
-            {statusLabel}
+          <span className={`px-4 py-1.5 rounded-full text-xs font-semibold border ${statusStyle}`}>
+            {isCompleted ? '✓ ' : '○ '}{statusLabel}
           </span>
         </div>
+        
+        {/* Menú desarrollo colapsable */}
+        <details className="mt-3">
+          <summary className="text-[10px] text-[#B3B8C6] cursor-pointer hover:text-[#7C8193] transition select-none">
+            ⚙️ Opciones avanzadas
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <span className="text-[10px] text-[#7C8193]">Sync: {lastSynced}</span>
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-1 text-[10px] bg-[#F5F7FB] border border-[#E4E7EF] text-[#7C8193] px-3 py-1 rounded-lg hover:border-[#6161FF] hover:text-[#6161FF] transition disabled:opacity-40"
+            >
+              <Share2 size={12} /> {isRefreshing ? 'Generando...' : 'Regenerar tribu'}
+            </button>
+          </div>
+        </details>
       </header>
 
-      <section className="px-4 py-4 space-y-4">
-        {/* Progress Card - Solid color */}
-        <div className="bg-[#6161FF] rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-white/80 text-xs font-medium">Avance mensual</span>
-            <span className="text-white text-xs">{Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length} de {assignments.toShare.length + assignments.shareWithMe.length}</span>
-          </div>
-          <div className="flex items-end gap-4">
-            <h2 className="text-4xl font-bold text-white">{completion}%</h2>
-            <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white rounded-full transition-all duration-500" 
-                style={{ width: `${completion}%` }}
-              />
+      <section className="px-6 py-6 space-y-6">
+        <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/80 font-medium">Avance mensual</p>
+              <h2 className="text-5xl font-bold">{completion}%</h2>
+              <p className="text-white/80 text-sm">{Object.values(checklist.toShare).filter(Boolean).length} de {assignments.toShare.length} acciones realizadas</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-5 py-2.5 rounded-xl bg-white text-[#6161FF] font-semibold hover:bg-white/90 transition shadow-md"
+              >
+                Ver recomendaciones
+              </button>
+              <button
+                onClick={() => window.open('https://wa.me/56912345678', '_blank')}
+                className="px-5 py-2.5 rounded-xl border-2 border-white/30 text-white hover:bg-white/10 transition font-medium"
+              >
+                Soporte WhatsApp
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Quick Actions */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex-1 py-2.5 rounded-lg bg-white border border-[#E4E7EF] text-sm font-medium text-[#181B34] hover:border-[#6161FF] transition"
-          >
-            Ver matches
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="py-2.5 px-4 rounded-lg bg-white border border-[#E4E7EF] text-sm text-[#7C8193] hover:border-[#6161FF] transition disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {renderList('Yo debo impulsar', 'Comparte antes del día 20', assignments.toShare, 'toShare')}
-          {renderList('Me impulsan a mí', 'Verifica que te compartan', assignments.shareWithMe, 'shareWithMe')}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {renderList('Cuentas que debo impulsar', 'Publica su contenido y etiquétalas antes del día 20.', assignments.toShare, 'toShare')}
+          {renderList('Cuentas que me comparten', 'Coordinación para que me etiqueten y reportar si no cumplen.', assignments.shareWithMe, 'shareWithMe')}
         </div>
         {reports.length > 0 && (
-          <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-            <h3 className="text-sm font-semibold text-[#181B34] mb-3">Reportes enviados</h3>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E4E7EF]">
+            <h3 className="text-sm font-semibold text-[#434343] mb-3 tracking-wide uppercase">Reportes enviados</h3>
             <ul className="space-y-3 text-sm">
               {reports.slice(-3).reverse().map((report, idx) => (
                 <li key={`${report.targetId}-${idx}`} className="p-4 bg-[#F5F7FB] rounded-xl border border-[#E4E7EF]">
@@ -3187,74 +3195,6 @@ const ActivityView = () => {
   );
 };
 
-// Directory View - Lista de todos los emprendedores
-const DirectoryView = () => {
-  useSurveyGuard();
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const allUsers = getAllUsers().filter(u => u.email !== 'admin@tribuimpulsa.cl');
-  const myProfile = getMyProfile();
-  
-  const filteredUsers = allUsers.filter(user => 
-    user.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.category?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  return (
-    <div className="pb-32 min-h-screen bg-[#F5F7FB]">
-      <header className="px-5 py-5 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
-        style={{
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
-        }}
-      >
-        <h1 className="text-xl font-bold text-[#181B34]">Red de Emprendedores</h1>
-        <p className="text-sm text-[#7C8193]">{allUsers.length} emprendimientos activos</p>
-        
-        {/* Search with glass effect */}
-        <div className="mt-3 relative">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o rubro..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/50 backdrop-blur-sm border border-white/30 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-[#6161FF] pl-10"
-          />
-          <Globe size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7C8193]" />
-        </div>
-      </header>
-      
-      <div className="px-4 py-4 space-y-2">
-        {filteredUsers.map(user => (
-          <div 
-            key={user.id}
-            onClick={() => navigate(`/profile/${user.id}`)}
-            className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors cursor-pointer flex items-center gap-3"
-          >
-            <img 
-              src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=6161FF&color=fff`}
-              alt={user.name}
-              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm text-[#181B34] truncate">{user.companyName || user.name}</h3>
-              <p className="text-xs text-[#7C8193] truncate">{user.name}</p>
-              <span className="text-[10px] text-[#6161FF]">{user.category}</span>
-            </div>
-            <ChevronRight size={18} className="text-[#7C8193] flex-shrink-0" />
-          </div>
-        ))}
-        
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-[#7C8193]">No se encontraron emprendimientos</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Tutorial Steps Component - Sin emojis, iconos profesionales
 const TUTORIAL_STEPS = [
   {
@@ -3578,125 +3518,108 @@ const Dashboard = () => {
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
       
-      {/* Header - Liquid Glass iOS 26 */}
-      <header className="px-5 py-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
-        style={{
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
-        }}
-      >
+      {/* Header */}
+      <header className="px-6 py-6 flex justify-between items-center bg-white/80 sticky top-0 z-30 backdrop-blur-md border-b border-[#E4E7EF]">
         <div>
-          <h1 className="text-xl font-bold text-[#181B34]">Hola, {myProfile.name.split(' ')[0]}</h1>
-          <p className="text-[#7C8193] text-sm">Tus conexiones activas</p>
+          <h1 className="text-2xl font-bold text-[#181B34] tracking-tight">Hola, {myProfile.name.split(' ')[0]}</h1>
+          <p className="text-[#7C8193] text-sm">Tus conexiones activas para hoy</p>
         </div>
-        <button 
+        <div 
           onClick={() => navigate('/my-profile')}
-          className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#E4E7EF] hover:border-[#6161FF] transition-colors"
+          className="w-12 h-12 rounded-full bg-gradient-to-br from-[#6161FF] to-[#00CA72] p-[2px] cursor-pointer hover:scale-105 transition-transform shadow-lg"
         >
            <img 
             src={myProfile.avatarUrl} 
             alt="Me"
-            className="w-full h-full object-cover"
+            className="w-full h-full rounded-full object-cover border-2 border-white"
            />
-        </button>
+        </div>
       </header>
 
-      {/* Stats Cards - Solid colors, no gradients */}
-      <div className="px-4 mt-4 mb-6">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card: Acciones */}
-          <div 
-            onClick={() => navigate('/tribe')}
-            className="bg-[#6161FF] rounded-xl p-4 cursor-pointer hover:opacity-90 transition-opacity"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-white/80 text-xs font-medium">Acciones</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <CheckCircle size={16} className="text-white" />
-              </div>
+      {/* Stats */}
+      <div className="px-4 mb-8 mt-4">
+        <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-2xl p-6 shadow-lg text-white">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-white/70 mb-1">Acciones completas</p>
+              <p className="text-3xl font-bold">{tribeStats.completed}/{tribeStats.total}</p>
+              <span className="text-xs text-white/70">Pendientes: {tribeStats.pending}</span>
             </div>
-            <p className="text-2xl font-bold text-white">{tribeStats.completed}/{tribeStats.total}</p>
-            <span className="text-white/70 text-xs">Pendientes: {tribeStats.pending}</span>
-          </div>
-          
-          {/* Card: Reportes */}
-          <div className="bg-[#00CA72] rounded-xl p-4">
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-white/80 text-xs font-medium">Reportes</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <AlertTriangle size={16} className="text-white" />
-              </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-white/70 mb-1">Reportes enviados</p>
+              <p className="text-3xl font-bold text-[#FFCC00]">{tribeStats.reports}</p>
+              <span className="text-xs text-white/70">"Acusete" activos</span>
             </div>
-            <p className="text-2xl font-bold text-white">{tribeStats.reports}</p>
-            <span className="text-white/70 text-xs">Acusetes enviados</span>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-white/70 mb-1">Match rate</p>
+              <p className="text-3xl font-bold">85%</p>
+              <span className="text-xs text-white/70">{matches.length} recomendaciones</span>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-white/70 mb-1">Última sincronización</p>
+              <p className="text-sm font-semibold">{tribeStats.syncedAt}</p>
+              <button
+                onClick={() => navigate('/tribe')}
+                className="mt-2 text-xs px-4 py-2 rounded-full bg-white text-[#6161FF] font-bold hover:shadow-lg transition"
+              >
+                Ir a Mi Tribu (10 + 10)
+              </button>
+            </div>
           </div>
         </div>
-        
-        {/* Alert Card - if pending actions */}
-        {tribeStats.pending > 0 && (
-          <div 
-            onClick={() => navigate('/tribe')}
-            className="mt-3 bg-[#FB275D] rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
-          >
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <Clock size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-semibold">Tienes {tribeStats.pending} acciones pendientes</p>
-              <p className="text-white/70 text-xs">Completa tu checklist mensual</p>
-            </div>
-            <ChevronRight size={20} className="text-white/70" />
-          </div>
-        )}
-        
-        {/* Success Card - if all completed */}
-        {tribeStats.pending === 0 && tribeStats.completed > 0 && (
-          <div className="mt-3 bg-[#00CA72] rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-semibold">Checklist completado</p>
-              <p className="text-white/70 text-xs">Excelente trabajo esta semana</p>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Matches List - Clean design */}
+      {/* Matches List */}
       <div className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-[#181B34]">Recomendados para ti</h2>
-          <span className="text-xs text-[#7C8193]">{matches.length} matches</span>
-        </div>
+        <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-[#181B34]">
+          <Sparkles size={18} className="text-[#FFCC00]"/> 
+          Tus Matches Recomendados
+        </h2>
         
-        <div className="space-y-3">
+        <div className="space-y-4">
           {matches.map((match) => (
-            <div 
-              key={match.id} 
-              onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
-              className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors cursor-pointer"
-            >
-              <div className="flex gap-3 items-center">
-                <img 
-                  src={match.targetProfile.avatarUrl} 
-                  alt={match.targetProfile.name} 
-                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                />
+            <div key={match.id} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-[#E4E7EF] hover:border-[#6161FF]/30">
+              <div className="p-5">
+                <div className="flex gap-4 mb-4">
+                    {/* Avatar simple */}
+                    <img 
+                      src={match.targetProfile.avatarUrl} 
+                      alt={match.targetProfile.name} 
+                      className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-1">
+                            <h3 className="font-bold text-lg leading-tight text-[#181B34] truncate pr-2">{match.targetProfile.companyName}</h3>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${
+                                match.affinityScore > 90 ? 'bg-[#00CA72]/10 text-[#00CA72]' : 'bg-[#FFCC00]/10 text-[#9D6B00]'
+                            }`}>
+                            {match.affinityScore}%
+                            </span>
+                        </div>
+                        <p className="text-sm text-[#7C8193] truncate mb-2">{match.targetProfile.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] bg-[#6161FF]/10 px-2 py-0.5 rounded text-[#6161FF] truncate max-w-[120px]">
+                                {match.targetProfile.category}
+                            </span>
+                            <span className="text-[10px] bg-[#00CA72]/10 px-2 py-0.5 rounded text-[#00CA72] truncate max-w-[120px]">
+                                {match.targetProfile.subCategory}
+                            </span>
+                        </div>
+                    </div>
+                </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-[#181B34] truncate text-sm">{match.targetProfile.companyName}</h3>
-                      <p className="text-xs text-[#7C8193] truncate">{match.targetProfile.name}</p>
+                <div className="pt-4 border-t border-[#E4E7EF] flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[#7C8193] text-xs">
+                        <Briefcase size={14} />
+                        <span className="italic">{match.reason}</span>
                     </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                      <span className={`text-xs font-semibold ${match.affinityScore > 90 ? 'text-[#00CA72]' : 'text-[#6161FF]'}`}>
-                        {match.affinityScore}%
-                      </span>
-                      <ChevronRight size={16} className="text-[#7C8193]" />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[#7C8193] mt-1 truncate">{match.reason}</p>
+                    <button 
+                      onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
+                      className="text-xs font-bold bg-[#6161FF] text-white px-4 py-2 rounded-lg hover:bg-[#5050DD] transition-colors shadow-md flex items-center gap-1"
+                    >
+                      Ver Perfil <ArrowRight size={12}/>
+                    </button>
                 </div>
               </div>
             </div>
@@ -4456,11 +4379,16 @@ const AppLayout = () => {
   const isActivity = location.pathname.includes('/activity');
   const isProfile = location.pathname.includes('/my-profile');
   const isTribe = location.pathname.includes('/tribe');
-  const isDirectory = location.pathname.includes('/directory');
 
   return (
-    <div className="min-h-screen w-full text-[#181B34] font-sans bg-[#F5F7FB]">
-        <div>
+    <div className="min-h-screen w-full text-[#434343] font-sans relative bg-[#F5F7FB]">
+        {/* Ambient Background - Soft gradients */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+            <div className="absolute top-[-20%] left-[20%] w-[800px] h-[800px] bg-[#6161FF]/5 rounded-full blur-[120px]"></div>
+            <div className="absolute bottom-[-20%] right-[20%] w-[600px] h-[600px] bg-[#00CA72]/5 rounded-full blur-[100px]"></div>
+        </div>
+        
+        <div className="relative z-10">
             <Routes>
                 <Route path="/" element={<LoginScreen />} />
                 <Route path="/register" element={<RegisterScreen />} />
@@ -4469,7 +4397,6 @@ const AppLayout = () => {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tribe" element={<TribeAssignmentsView />} />
                 <Route path="/activity" element={<ActivityView />} />
-                <Route path="/directory" element={<DirectoryView />} />
                 <Route path="/profile/:id" element={<ProfileDetail />} />
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
@@ -4479,68 +4406,55 @@ const AppLayout = () => {
 
         {showNav && (
           <nav 
-            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl bg-white/80 border-t border-white/30" 
+            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl border-t border-[#A8E6CF]/50 py-2 px-4 flex justify-around items-center shadow-[0_-4px_20px_rgba(0,0,0,0.08)]" 
             style={{ 
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-              height: 'calc(70px + env(safe-area-inset-bottom, 0px))',
+              backgroundColor: 'rgba(232, 245, 233, 0.98)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)',
+              height: '70px',
+              position: 'fixed',
               zIndex: 9999,
-              boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+              transform: 'translate3d(0,0,0)',
+              WebkitTransform: 'translate3d(0,0,0)',
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
             }}
           >
-            <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
-              {/* Inicio - Dashboard con métricas */}
-              <button 
-                onClick={() => navigate('/dashboard')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isDashboard ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <Activity size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Inicio</span>
-              </button>
-              
-              {/* Actividad - Notificaciones */}
-              <button 
-                onClick={() => navigate('/activity')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isActivity ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <Bell size={22} strokeWidth={isActivity ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Actividad</span>
-              </button>
+            
+            {/* Dashboard Button */}
+            <button 
+              onClick={() => navigate('/dashboard')}
+              className={`flex flex-col items-center transition-all duration-300 ${isDashboard ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+            >
+              <Users size={24} strokeWidth={isDashboard ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Inicio</span>
+            </button>
+            
+            {/* Tribu Button - mismo tamaño que los demás */}
+            <button 
+              onClick={() => navigate('/tribe')}
+              className={`flex flex-col items-center transition-all duration-300 ${isTribe ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+            >
+              <Share2 size={24} strokeWidth={isTribe ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Tribu</span>
+            </button>
 
-              {/* Checklist - Centro destacado con liquid glass */}
-              <button 
-                onClick={() => navigate('/tribe')}
-                className="flex flex-col items-center justify-center -mt-4"
-              >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${isTribe ? 'bg-[#6161FF]/90' : 'bg-[#00CA72]/90'}`}
-                  style={{
-                    boxShadow: isTribe 
-                      ? '0 8px 32px rgba(97, 97, 255, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
-                      : '0 8px 32px rgba(0, 202, 114, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
-                  }}
-                >
-                  <CheckCircle size={26} className="text-white" strokeWidth={2} />
-                </div>
-                <span className={`text-[10px] mt-1 font-semibold ${isTribe ? 'text-[#6161FF]' : 'text-[#00CA72]'}`}>Checklist</span>
-              </button>
+            {/* Activity Button */}
+            <button 
+              onClick={() => navigate('/activity')}
+              className={`flex flex-col items-center transition-all duration-300 ${isActivity ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+            >
+              <Bell size={24} strokeWidth={isActivity ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Actividad</span>
+            </button>
 
-              {/* Red - Directorio de emprendedores */}
-              <button 
-                onClick={() => navigate('/directory')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isDirectory ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <Users size={22} strokeWidth={isDirectory ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Red</span>
-              </button>
-
-              {/* Menu/Perfil */}
-              <button 
-                onClick={() => navigate('/my-profile')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <UserIcon size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Menú</span>
-              </button>
-            </div>
+            {/* Profile Button */}
+            <button 
+              onClick={() => navigate('/my-profile')}
+              className={`flex flex-col items-center transition-all duration-300 ${isProfile ? 'text-[#00CA72]' : 'text-[#5D6B74] hover:text-[#00CA72]'}`}
+            >
+              <Settings size={24} strokeWidth={isProfile ? 2.5 : 2} />
+              <span className="text-[10px] mt-0.5 font-medium">Perfil</span>
+            </button>
           </nav>
         )}
         

@@ -35,7 +35,8 @@ import {
   updateOnboardingProgress,
   isOnboardingComplete,
   getCategoryDistribution,
-  Report
+  Report,
+  syncNotificationsFromFirebase
 } from './services/databaseService';
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
@@ -830,6 +831,9 @@ const LoginScreen = () => {
     setStoredSession(session);
     setCurrentUser(loggedUser.id);
     localStorage.setItem('tribu_current_user', loggedUser.id);
+    
+    // Sincronizar notificaciones desde Firebase
+    syncNotificationsFromFirebase(loggedUser.id);
     
     const surveyData = {
       email: loggedUser.email,
@@ -2289,7 +2293,7 @@ const TribeAssignmentsView = () => {
                         </button>
                       )}
                       <a
-                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}`}
+                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
@@ -2312,7 +2316,7 @@ const TribeAssignmentsView = () => {
                         </button>
                       )}
                       <a
-                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}`}
+                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
@@ -4947,10 +4951,10 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
       localStorage.removeItem(`membership_payment_${userId}`);
     }
 
-    // 2. SINCRONIZAR CON FIREBASE
+    // 2. SINCRONIZAR CON FIREBASE + HISTORIAL DE PAGOS
     try {
       const { getFirestoreInstance } = await import('./services/firebaseService');
-      const { doc, setDoc, deleteField } = await import('firebase/firestore');
+      const { doc, setDoc, collection, addDoc } = await import('firebase/firestore');
       const db = getFirestoreInstance();
       if (db) {
         const membershipDoc = {
@@ -4973,7 +4977,21 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
           })
         };
         await setDoc(doc(db, 'memberships', userId), membershipDoc);
-        console.log(`✅ Firebase actualizado: ${user.name} → ${newStatus}`);
+        
+        // REGISTRAR EN HISTORIAL DE PAGOS
+        await addDoc(collection(db, 'payment_history'), {
+          userId,
+          userEmail: user.email,
+          userName: user.name,
+          companyName: user.companyName,
+          action: newStatus === 'miembro' || newStatus === 'admin' ? 'membership_granted' : 'membership_revoked',
+          newStatus,
+          amount: newStatus === 'miembro' || newStatus === 'admin' ? MEMBERSHIP_PRICE : 0,
+          timestamp: now,
+          adminAction: true
+        });
+        
+        console.log(`✅ Firebase actualizado + historial: ${user.name} → ${newStatus}`);
       }
     } catch (err) {
       console.log('⚠️ Error sincronizando membresía con Firebase:', err);

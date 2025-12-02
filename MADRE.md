@@ -400,6 +400,9 @@ Proyecto: tribu-impulsa
 | 6 | **Error TypeScript Object.values** | `App.tsx` línea 5005 | Agregado cast explícito `as MembershipData[]` |
 | 7 | **Navegación no bloqueada para invitados** | `App.tsx` | Agregado `MemberRoute` y candados visuales |
 | 8 | **Formulario registro sin categoría** | `App.tsx` | Sistema de categorías anidadas con 17 rubros |
+| 9 | **WhatsApp tribu usaba campo incorrecto** | `App.tsx` líneas 2292, 2315 | Cambiar `profile.whatsapp` a `profile.phone` |
+| 10 | **Notificaciones no llegaban entre dispositivos** | `databaseService.ts` | Guardar notificaciones en Firebase + sync al login |
+| 11 | **Sin historial de pagos/cambios** | `App.tsx` MembershipAdminTab | Registro en colección `payment_history` en Firebase |
 
 ### 🛡️ VALIDACIONES IMPLEMENTADAS
 

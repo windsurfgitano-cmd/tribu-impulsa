@@ -147,6 +147,41 @@ export const getAllNotifications = (): Notification[] => {
   return raw ? JSON.parse(raw) : [];
 };
 
+// Sincronizar notificaciones desde Firebase (llamar al cargar la app)
+export const syncNotificationsFromFirebase = async (userId: string): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    if (!db) return;
+    
+    const notifRef = collection(db, 'notifications');
+    const q = query(notifRef, where('userId', '==', userId));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) return;
+    
+    const localNotifs = getAllNotifications();
+    const localIds = localNotifs.map(n => n.id);
+    let addedCount = 0;
+    
+    snapshot.forEach(doc => {
+      const firebaseNotif = doc.data() as Notification;
+      if (!localIds.includes(firebaseNotif.id)) {
+        localNotifs.push(firebaseNotif);
+        addedCount++;
+      }
+    });
+    
+    if (addedCount > 0) {
+      localStorage.setItem(DB_KEYS.NOTIFICATIONS, JSON.stringify(localNotifs));
+      console.log(`📬 ${addedCount} notificaciones sincronizadas desde Firebase`);
+    }
+  } catch (err) {
+    console.log('⚠️ Error sincronizando notificaciones:', err);
+  }
+};
+
 export const getUserNotifications = (userId: string): Notification[] => {
   return getAllNotifications().filter(n => n.userId === userId);
 };
@@ -155,7 +190,7 @@ export const getUnreadNotifications = (userId: string): Notification[] => {
   return getUserNotifications(userId).filter(n => !n.read);
 };
 
-export const createNotification = (data: Omit<Notification, 'id' | 'createdAt' | 'read'>): Notification => {
+export const createNotification = async (data: Omit<Notification, 'id' | 'createdAt' | 'read'>): Promise<Notification> => {
   const notifications = getAllNotifications();
   const newNotification: Notification = {
     ...data,
@@ -165,6 +200,20 @@ export const createNotification = (data: Omit<Notification, 'id' | 'createdAt' |
   };
   notifications.push(newNotification);
   localStorage.setItem(DB_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+  
+  // TAMBIÉN guardar en Firebase para cross-device
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, collection } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    if (db) {
+      await setDoc(doc(collection(db, 'notifications'), newNotification.id), newNotification);
+      console.log('📬 Notificación guardada en Firebase:', newNotification.title);
+    }
+  } catch (err) {
+    console.log('⚠️ Error guardando notificación en Firebase:', err);
+  }
+  
   return newNotification;
 };
 

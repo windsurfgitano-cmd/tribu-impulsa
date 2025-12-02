@@ -1960,7 +1960,7 @@ const TribeAssignmentsView = () => {
                   </div>
                   <p className="text-[#434343] text-sm mb-3">{report.reason}</p>
                   <a 
-                    href={`https://wa.me/56912345678?text=${encodeURIComponent(`🚨 REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
+                    href={`https://wa.me/56951776005?text=${encodeURIComponent(`🚨 REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs px-3 py-1.5 bg-[#00CA72] text-white rounded-full hover:bg-[#00B366] transition"
@@ -2190,7 +2190,7 @@ const MyProfileView = () => {
                 {isEditing && (
                   <button 
                     onClick={() => bannerInputRef.current?.click()}
-                    className="absolute top-14 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-20 text-sm"
+                    className="absolute top-14 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-40 text-sm"
                   >
                     <Edit2 size={16} />
                     <span className="font-medium">Cambiar banner</span>
@@ -2205,7 +2205,7 @@ const MyProfileView = () => {
                 />
                 
                 {/* Top Navigation Actions (con safe-area para iPhone) */}
-                <div className="absolute top-14 left-4 z-30 flex items-center gap-4 w-full pr-12">
+                <div className="absolute top-14 left-4 z-30 flex items-center gap-4">
                     <button 
                         onClick={() => navigate('/dashboard')}
                         className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
@@ -2349,7 +2349,7 @@ const MyProfileView = () => {
               <Instagram size={16} /> Compartir en Instagram
             </a>
             <a
-              href={`https://wa.me/56912345678?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
+              href={`https://wa.me/56951776005?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"

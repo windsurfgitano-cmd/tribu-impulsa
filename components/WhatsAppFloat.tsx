@@ -4,7 +4,7 @@ import { MessageCircle } from 'lucide-react';
 export const WhatsAppFloat: React.FC = () => {
   return (
     <a
-      href="https://wa.me/56900000000" // Replace with actual Tribu number
+      href="https://wa.me/56951776005" // WhatsApp oficial Tribu Impulsa
       target="_blank"
       rel="noopener noreferrer"
       // Changed bottom-6 to bottom-24 to clear the navigation bar

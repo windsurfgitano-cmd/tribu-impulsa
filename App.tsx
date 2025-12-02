@@ -667,8 +667,46 @@ const LoginScreen = () => {
     companyName: '',
     instagram: '',
     phone: '',
-    category: ''
+    category: '',
+    subcategory: '',
+    affinity: ''
   });
+  
+  // Sistema de categorías anidadas
+  const CATEGORY_TREE: Record<string, string[]> = {
+    'Moda y Accesorios': ['Ropa mujer', 'Ropa hombre', 'Joyas/Bijouterie', 'Zapatos', 'Carteras', 'Anteojos', 'Relojes', 'Accesorios varios'],
+    'Belleza y Bienestar': ['Peluquería/Barbería', 'Manicure/Pedicure', 'Cejas/Pestañas', 'Estética/Spa', 'Maquillaje', 'Skincare/Cosmética', 'Terapias alternativas', 'Masoterapia'],
+    'Salud y Fitness': ['Entrenamiento personal', 'Nutrición', 'Psicología', 'Kinesiología', 'Medicina estética', 'Dentista'],
+    'Alimentación y Gastronomía': ['Restaurante/Café', 'Pastelería/Repostería', 'Panadería', 'Comida saludable', 'Productos gourmet', 'Catering', 'Delivery', 'Food truck'],
+    'Hogar y Decoración': ['Muebles', 'Decoración', 'Ropa de cama', 'Menaje/Cocina', 'Jardinería/Paisajismo', 'Piscinas'],
+    'Arte y Diseño': ['Fotografía/Video', 'Diseño gráfico', 'Ilustración', 'Pintura/Cerámica', 'Producción audiovisual', 'Impresión'],
+    'Servicios Profesionales': ['Abogados', 'Contadores', 'Arquitectos', 'Coaching', 'Consultoría', 'Traductores', 'Corredores seguros', 'Corredores propiedades'],
+    'Marketing y Digital': ['Marketing digital', 'Redes sociales', 'Desarrollo web', 'E-commerce', 'Branding', 'Publicidad'],
+    'Educación': ['Clases particulares', 'Cursos idiomas', 'Talleres arte/música', 'Coaching/Mentoring', 'Capacitación empresarial'],
+    'Eventos': ['Matrimonios', 'Cumpleaños', 'Eventos corporativos', 'DJ/Música', 'Arriendo espacios', 'Producción ferias'],
+    'Mascotas': ['Peluquería canina', 'Alimentos mascotas', 'Accesorios mascotas', 'Veterinaria', 'Paseo perros', 'Hotel mascotas'],
+    'Transporte y Logística': ['Delivery', 'Mudanzas', 'Transporte pasajeros', 'Arriendo vehículos'],
+    'Construcción': ['Remodelación', 'Electricidad', 'Gasfitería', 'Carpintería', 'Pintura', 'Paneles solares'],
+    'Niños y Bebés': ['Ropa infantil', 'Juguetes', 'Accesorios bebé', 'Fiestas infantiles', 'Educación inicial'],
+    'Tecnología': ['Desarrollo software', 'Soporte técnico', 'Venta equipos', 'Ciberseguridad', 'Automatización'],
+    'Turismo': ['Agencia viajes', 'Hotelería', 'Guías turísticos', 'Cabañas/Arriendo'],
+    'Otro': ['Otro']
+  };
+  
+  const AFFINITY_OPTIONS_REG = [
+    'Bienestar y salud',
+    'Moda y estilo', 
+    'Gastronomía',
+    'Familia',
+    'Mascotas',
+    'Tecnología',
+    'Arte y cultura',
+    'Deportes',
+    'Viajes',
+    'Emprendimiento',
+    'Sustentabilidad',
+    'Educación'
+  ];
 
   // Check existing session
   useEffect(() => {
@@ -740,8 +778,19 @@ const LoginScreen = () => {
       return;
     }
     
+    // Validar subcategoría si la categoría no es "Otro"
+    if (registerData.category !== 'Otro' && !registerData.subcategory) {
+      setError('Por favor selecciona qué ofreces específicamente');
+      return;
+    }
+    
     // Validar formato de Instagram
     const instagramHandle = registerData.instagram.startsWith('@') ? registerData.instagram : `@${registerData.instagram}`;
+    
+    // Combinar categoría y subcategoría para el perfil
+    const fullCategory = registerData.subcategory 
+      ? `${registerData.category} - ${registerData.subcategory}` 
+      : registerData.category;
 
     setIsLoading(true);
     
@@ -753,11 +802,12 @@ const LoginScreen = () => {
         companyName: registerData.companyName,
         instagram: instagramHandle,
         phone: registerData.phone,
-        category: registerData.category
+        category: fullCategory,
+        affinity: registerData.affinity || registerData.category // Usar afinidad o categoría como fallback
       });
       
       if (newUser) {
-        console.log('✅ Nuevo usuario registrado:', newUser.name, newUser.category);
+        console.log('✅ Nuevo usuario registrado:', newUser.name, fullCategory);
         completeLogin(newUser);
       } else {
         setError('Error al registrar. Intenta de nuevo.');
@@ -963,29 +1013,54 @@ const LoginScreen = () => {
               />
             </div>
             
+            {/* Categoría madre */}
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Categoría / Rubro *</label>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Rubro principal *</label>
               <select 
                 value={registerData.category}
-                onChange={(e) => setRegisterData({...registerData, category: e.target.value})}
+                onChange={(e) => setRegisterData({...registerData, category: e.target.value, subcategory: ''})}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                 required
               >
                 <option value="">Selecciona tu rubro...</option>
-                <option value="Moda y Accesorios">👗 Moda y Accesorios</option>
-                <option value="Belleza y Cuidado Personal">💄 Belleza y Cuidado Personal</option>
-                <option value="Alimentación y Bebidas">🍽️ Alimentación y Bebidas</option>
-                <option value="Hogar y Decoración">🏠 Hogar y Decoración</option>
-                <option value="Salud y Bienestar">💪 Salud y Bienestar</option>
-                <option value="Tecnología y Servicios Digitales">💻 Tecnología y Servicios Digitales</option>
-                <option value="Arte y Diseño">🎨 Arte y Diseño</option>
-                <option value="Educación y Capacitación">📚 Educación y Capacitación</option>
-                <option value="Servicios Profesionales">💼 Servicios Profesionales</option>
-                <option value="Mascotas">🐾 Mascotas</option>
-                <option value="Niños y Bebés">👶 Niños y Bebés</option>
-                <option value="Eventos y Entretenimiento">🎉 Eventos y Entretenimiento</option>
-                <option value="Otro">📦 Otro</option>
+                {Object.keys(CATEGORY_TREE).map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
+            </div>
+            
+            {/* Subcategoría - aparece solo si hay categoría */}
+            {registerData.category && CATEGORY_TREE[registerData.category] && (
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Específico *</label>
+                <select 
+                  value={registerData.subcategory}
+                  onChange={(e) => setRegisterData({...registerData, subcategory: e.target.value})}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  required
+                >
+                  <option value="">¿Qué ofreces específicamente?</option>
+                  {CATEGORY_TREE[registerData.category].map(sub => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {/* Afinidad / Estilo de vida */}
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Afinidad / Estilo de vida</label>
+              <select 
+                value={registerData.affinity}
+                onChange={(e) => setRegisterData({...registerData, affinity: e.target.value})}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+              >
+                <option value="">¿Con qué te identificas? (opcional)</option>
+                {AFFINITY_OPTIONS_REG.map(aff => (
+                  <option key={aff} value={aff}>{aff}</option>
+                ))}
+              </select>
+              <p className="text-[9px] text-[#7C8193] mt-0.5">Ayuda al algoritmo a conectarte mejor</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
@@ -1018,7 +1093,7 @@ const LoginScreen = () => {
             
             <button 
               type="submit"
-              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone}
+              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone || (registerData.category !== 'Otro' && !registerData.subcategory)}
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
             >
               {isLoading ? 'Registrando...' : '¡Unirme a la Tribu!'}

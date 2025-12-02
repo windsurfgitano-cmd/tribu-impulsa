@@ -2434,6 +2434,7 @@ export interface NewUserData {
   instagram: string;
   phone: string;
   category?: string;
+  affinity?: string;
 }
 
 // Verificar si un email ya existe
@@ -2461,7 +2462,7 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     instagram: userData.instagram.startsWith('@') ? userData.instagram : `@${userData.instagram}`,
     phone: userData.phone,
     category: userData.category || 'General',
-    affinity: userData.category || 'Emprendimiento',
+    affinity: userData.affinity || userData.category || 'Emprendimiento',
     bio: '',
     businessDescription: '',
     city: 'Chile',

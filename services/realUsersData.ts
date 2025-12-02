@@ -7,17 +7,15 @@ import { UserProfile } from './databaseService';
 // Contraseña universal para todos los usuarios registrados
 export const UNIVERSAL_PASSWORD = 'TRIBU2026';
 
-// Generar avatar usando unavatar.io (extrae foto real de Instagram)
-// Fallback a iniciales si no tiene IG o falla
-const getAvatarUrl = (name: string, instagram?: string): string => {
-  if (instagram) {
-    const handle = instagram.replace('@', '').trim();
-    // unavatar.io busca en múltiples fuentes incluyendo Instagram
-    const fallback = encodeURIComponent(`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`);
-    return `https://unavatar.io/instagram/${handle}?fallback=${fallback}`;
-  }
-  // Sin Instagram: usar iniciales
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6161FF&color=fff&size=200&bold=true`;
+// Generar avatar con iniciales (Instagram bloquea hotlinking)
+// Colores vibrantes basados en el nombre para variedad visual
+const getAvatarUrl = (name: string, _instagram?: string): string => {
+  // Colores vibrantes para avatares (basado en hash del nombre)
+  const colors = ['6161FF', '00CA72', 'FF6B6B', 'FFD93D', '6BCB77', 'FF8E53', '4D96FF', 'FF6B9D'];
+  const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+  const bgColor = colors[colorIndex];
+  
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bgColor}&color=fff&size=200&bold=true&rounded=true`;
 };
 
 // Generar logo basado en empresa

@@ -545,6 +545,8 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [devMode, setDevMode] = useState(false);
+  const [devPassword, setDevPassword] = useState('');
 
   // Check existing session
   useEffect(() => {
@@ -566,35 +568,43 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     
-    // Autenticación REAL con contraseña universal TRIBU2026
+    // Autenticación con contraseña universal O contraseña personal
     setTimeout(() => {
+      // 1. Verificar con contraseña universal TRIBU2026
       const user = validateCredentials(email, password);
       
-      if (user) {
+      // 2. Si no funciona, verificar con contraseña personal (usuarios nuevos)
+      const userCredentials = JSON.parse(localStorage.getItem('tribu_user_credentials') || '{}');
+      const savedPassword = userCredentials[email.toLowerCase()];
+      const existingUser = getUserByEmail(email);
+      const isPersonalPasswordValid = savedPassword && savedPassword === password;
+      
+      if (user || (existingUser && isPersonalPasswordValid)) {
+        const loggedUser = user || existingUser;
         // Usuario encontrado y autenticado
         const session: UserSession = {
-          email: user.email,
-          name: user.name,
+          email: loggedUser.email,
+          name: loggedUser.name,
           isLoggedIn: true
         };
         setStoredSession(session);
-        setCurrentUser(user.id);
+        setCurrentUser(loggedUser.id);
         
         // Marcar survey como completado para usuarios reales (ya tienen todos sus datos)
         const surveyData = {
-          email: user.email,
-          name: user.name,
-          phone: user.phone || '',
-          instagram: user.instagram || '',
-          city: user.city || '',
-          category: user.category || '',
-          affinity: user.affinityChoices?.[0] || user.category || '',
+          email: loggedUser.email,
+          name: loggedUser.name,
+          phone: loggedUser.phone || '',
+          instagram: loggedUser.instagram || '',
+          city: loggedUser.city || '',
+          category: loggedUser.category || '',
+          affinity: loggedUser.affinityChoices?.[0] || loggedUser.category || '',
           scope: 'NACIONAL'
         };
         localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
         
         // Guardar flag de primer login para mostrar modal después
-        if ((user as { firstLogin?: boolean }).firstLogin) {
+        if ((loggedUser as { firstLogin?: boolean }).firstLogin) {
           localStorage.setItem('show_password_change', 'true');
         }
         
@@ -602,9 +612,8 @@ const LoginScreen = () => {
         navigate('/searching');
       } else {
         // Verificar si el email existe
-        const existingUser = getUserByEmail(email);
         if (existingUser) {
-          setError('Contraseña incorrecta. Usa: TRIBU2026');
+          setError('Contraseña incorrecta');
         } else {
           // Usuario NO existe - mostrar error y ofrecer registro
           setError('Usuario no encontrado. ¿Quieres registrarte?');
@@ -681,36 +690,53 @@ const LoginScreen = () => {
           </button>
         </div>
         
-        {/* Menú colapsable para uso interno - eliminar en producción */}
-        <details className="mt-4">
-          <summary className="text-[10px] text-[#B3B8C6] cursor-pointer hover:text-[#7C8193] transition select-none">
-            ⚙️ Modo desarrollo
-          </summary>
-          <div className="mt-2 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
-            <p className="text-[10px] text-[#6161FF] uppercase tracking-wide mb-2 font-bold">🔐 Contraseña universal: TRIBU2026</p>
+        {/* Menú protegido para uso interno */}
+        {!devMode ? (
+          <div className="mt-4 flex items-center gap-2">
+            <input
+              type="password"
+              value={devPassword}
+              onChange={(e) => setDevPassword(e.target.value)}
+              placeholder="PIN"
+              className="w-16 text-center text-xs bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg px-2 py-1.5"
+            />
+            <button
+              onClick={() => devPassword === '1234' && setDevMode(true)}
+              className="text-[10px] text-[#B3B8C6] hover:text-[#7C8193] transition"
+            >
+              ⚙️
+            </button>
+          </div>
+        ) : (
+          <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-[10px] text-[#6161FF] uppercase tracking-wide font-bold">🔐 Modo Desarrollo</p>
+              <button onClick={() => setDevMode(false)} className="text-[10px] text-[#7C8193] hover:text-[#FB275D]">✕</button>
+            </div>
+            <p className="text-[10px] text-[#7C8193] mb-2">Contraseña universal: TRIBU2026</p>
             <div className="space-y-1 text-xs text-left">
               <button 
                 onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
                 className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
               >
-                👉 Dafna Finkelstein - <span className="text-[#7C8193]">By Turquía</span>
+                👉 Dafna - By Turquía
               </button>
               <button 
                 onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('TRIBU2026'); }}
                 className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
               >
-                👉 Doraluz Galleguillos - <span className="text-[#7C8193]">Terraflor</span>
+                👉 Doraluz - Terraflor
               </button>
               <button 
                 onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('TRIBU2026'); }}
                 className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
               >
-                👉 Guillermo García - <span className="text-[#7C8193]">Elevate</span>
+                👉 Guillermo - Elevate
               </button>
             </div>
-            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Emprendedores Verificados</p>
+            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Verificados</p>
           </div>
-        </details>
+        )}
       </div>
     </div>
   );
@@ -726,6 +752,7 @@ const RegisterScreen = () => {
     name: '',
     email: '',
     phone: '',
+    password: '',
     // Paso 2: Emprendimiento
     companyName: '',
     city: '',
@@ -753,6 +780,8 @@ const RegisterScreen = () => {
       if (!formData.email.trim()) newErrors.email = 'Requerido';
       else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email inválido';
       if (!formData.phone.trim()) newErrors.phone = 'Requerido';
+      if (!formData.password.trim()) newErrors.password = 'Requerido';
+      else if (formData.password.length < 4) newErrors.password = 'Mínimo 4 caracteres';
     } else if (step === 2) {
       if (!formData.companyName.trim()) newErrors.companyName = 'Requerido';
       if (!formData.city.trim()) newErrors.city = 'Requerido';
@@ -791,6 +820,11 @@ const RegisterScreen = () => {
         scope: formData.scope
       });
       
+      // Guardar contraseña del usuario (hash simple para localStorage)
+      const userCredentials = JSON.parse(localStorage.getItem('tribu_user_credentials') || '{}');
+      userCredentials[formData.email.toLowerCase()] = formData.password;
+      localStorage.setItem('tribu_user_credentials', JSON.stringify(userCredentials));
+      
       // También guardar en formato antiguo para compatibilidad
       const surveyData = {
         email: formData.email,
@@ -810,6 +844,9 @@ const RegisterScreen = () => {
         copyResponse: false
       };
       persistSurveyResponse(surveyData);
+      
+      // Auto-login después de registrar
+      localStorage.setItem('tribu_current_user', formData.email.toLowerCase());
       
       console.log('✅ Usuario registrado en DB:', newUser.id);
       navigate('/searching');
@@ -880,6 +917,18 @@ const RegisterScreen = () => {
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
               />
               {errors.phone && <p className="text-xs text-[#FB275D] mt-1">{errors.phone}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña *</label>
+              <input 
+                type="password" 
+                className={`w-full bg-[#F5F7FB] border ${errors.password ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
+                placeholder="Mínimo 4 caracteres"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+              />
+              {errors.password && <p className="text-xs text-[#FB275D] mt-1">{errors.password}</p>}
+              <p className="text-[10px] text-[#7C8193] mt-1">Usa esta contraseña para ingresar después</p>
             </div>
           </div>
         )}
@@ -1577,81 +1626,84 @@ const TribeAssignmentsView = () => {
           {list.map(profile => {
             const isCompleted = checklist[key][profile.id] ?? false;
             return (
-              <div key={profile.id} className={`p-3 rounded-lg border transition ${
+              <div key={profile.id} className={`p-4 rounded-xl border transition ${
                 isCompleted 
                   ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
                   : 'bg-white border-[#E4E7EF]'
               }`}>
-                <div className="flex items-center gap-3">
+                {/* Row 1: Checkbox + Full Name */}
+                <div className="flex items-start gap-3 mb-3">
                   <input
                     type="checkbox"
-                    className="accent-[#00CA72] w-4 h-4 flex-shrink-0"
+                    className="accent-[#00CA72] w-5 h-5 flex-shrink-0 mt-0.5"
                     checked={isCompleted}
                     onChange={() => handleToggle(key, profile.id)}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-[#181B34] truncate">{profile.companyName}</p>
-                    <p className="text-xs text-[#7C8193] truncate">{profile.name}</p>
+                    <p className="font-semibold text-[15px] text-[#181B34] break-words leading-tight">{profile.companyName || 'Sin nombre de empresa'}</p>
+                    <p className="text-[13px] text-[#7C8193] mt-0.5">{profile.name}</p>
                   </div>
-                  <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
-                    {/* YO DEBO IMPULSAR: "Yo compartí" + "Avisarle" */}
-                    {isToShare && (
-                      <>
-                        {!isCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#00CA72] text-white font-medium"
-                          >
-                            Ya compartí
-                          </button>
-                        )}
-                        <a
-                          href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#25D366] text-white font-medium"
+                </div>
+                
+                {/* Row 2: Action buttons - WhatsApp directo al número */}
+                <div className="flex gap-2 pl-8 flex-wrap">
+                  {/* YO DEBO IMPULSAR: "Yo compartí" + "Avisarle" */}
+                  {isToShare && (
+                    <>
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
+                          className="text-[12px] px-3 py-2 rounded-lg bg-[#00CA72] text-white font-medium"
                         >
-                          Avisarle
-                        </a>
-                      </>
-                    )}
-                    
-                    {/* ME IMPULSAN: "Ya me compartieron" + "Preguntar" */}
-                    {!isToShare && (
-                      <>
-                        {!isCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => setShowShareModal({ profile, type: 'received_from' })}
-                            className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#6161FF] text-white font-medium"
-                          >
-                            Me compartieron
-                          </button>
-                        )}
-                        <a
-                          href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}?text=${encodeURIComponent(whatsappMessage(profile))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] px-2.5 py-1.5 rounded-lg bg-[#25D366] text-white font-medium"
+                          Ya compartí
+                        </button>
+                      )}
+                      <a
+                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
+                      >
+                        💬 WhatsApp
+                      </a>
+                    </>
+                  )}
+                  
+                  {/* ME IMPULSAN: "Ya me compartieron" + "Preguntar" */}
+                  {!isToShare && (
+                    <>
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => setShowShareModal({ profile, type: 'received_from' })}
+                          className="text-[12px] px-3 py-2 rounded-lg bg-[#6161FF] text-white font-medium"
                         >
-                          Preguntar
-                        </a>
-                      </>
-                    )}
-                    
-                    {/* Reportar */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReportingProfile(profile);
-                        setReportNote('');
-                      }}
-                      className="text-[10px] px-2 py-1.5 rounded-lg border border-[#FB275D]/40 text-[#FB275D]"
-                    >
-                      Reportar
-                    </button>
-                  </div>
+                          Me compartieron
+                        </button>
+                      )}
+                      <a
+                        href={`https://wa.me/${profile.whatsapp?.replace(/\D/g, '') || ''}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
+                      >
+                        💬 WhatsApp
+                      </a>
+                    </>
+                  )}
+                  
+                  {/* Reportar */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReportingProfile(profile);
+                      setReportNote('');
+                    }}
+                    className="text-[12px] px-3 py-2 rounded-lg border border-[#FB275D]/40 text-[#FB275D]"
+                  >
+                    Reportar
+                  </button>
                 </div>
               </div>
             );
@@ -1723,8 +1775,9 @@ const TribeAssignmentsView = () => {
         document.body
       )}
       
-      <header className="px-5 py-5 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
+      <header className="px-5 pb-4 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
         style={{
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
         }}
       >
@@ -3032,6 +3085,7 @@ const ActivityView = () => {
   const [archivedActivities, setArchivedActivities] = useState<ActivityItem[]>(() => getArchivedActivities());
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [expandedItem, setExpandedItem] = useState<ActivityItem | null>(null);
   
   // Persistir cambios
   useEffect(() => {
@@ -3075,7 +3129,9 @@ const ActivityView = () => {
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
-      <header className="px-6 py-4 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm">
+      <header className="px-6 pb-4 sticky top-0 z-30 backdrop-blur-xl bg-white/90 border-b border-[#E4E7EF] shadow-sm"
+        style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 16px))' }}
+      >
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-xl font-bold flex items-center gap-2 text-[#181B34]">
             <Bell className="text-[#6161FF]" /> Actividad
@@ -3136,17 +3192,14 @@ const ActivityView = () => {
           filteredActivities.map((item) => (
             <div 
               key={item.id} 
-              className={`bg-white p-4 rounded-2xl flex gap-4 items-start group hover:shadow-md transition-all border ${
+              className={`bg-white p-4 rounded-2xl flex gap-4 items-start group hover:shadow-md transition-all border cursor-pointer ${
                 item.isRead ? 'border-[#E4E7EF]' : 'border-[#6161FF]/30 bg-[#6161FF]/5'
-              } ${item.actionUrl ? 'cursor-pointer' : ''}`}
+              }`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                markAsRead(item.id);
-                // Solo navegar si hay actionUrl definido
-                if (item.actionUrl && item.actionUrl.trim() !== '') {
-                  navigate(item.actionUrl);
-                }
+                // Abrir modal para ver completo
+                setExpandedItem(item);
               }}
             >
               <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 text-xl ${item.color}`}>
@@ -3160,9 +3213,7 @@ const ActivityView = () => {
                   <span className="text-[10px] text-[#7C8193] whitespace-nowrap">{item.timestamp}</span>
                 </div>
                 <p className="text-xs text-[#7C8193] leading-relaxed line-clamp-2">{item.description}</p>
-                {item.actionUrl && (
-                  <span className="text-[10px] text-[#6161FF] mt-1 inline-block">Tocar para ir →</span>
-                )}
+                <span className="text-[10px] text-[#6161FF] mt-1 inline-block">Tocar para ver más →</span>
               </div>
               {filter === 'archived' ? (
                 <button 
@@ -3183,6 +3234,74 @@ const ActivityView = () => {
           ))
         )}
       </div>
+      
+      {/* Modal para ver actividad completa */}
+      {expandedItem && ReactDOM.createPortal(
+        <div 
+          className="fixed inset-0 bg-black/50 z-[10000] flex items-end justify-center animate-fadeIn"
+          onClick={() => {
+            markAsRead(expandedItem.id);
+            setExpandedItem(null);
+          }}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slideUp max-h-[80vh] overflow-y-auto"
+            style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-start gap-4 mb-4">
+              <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 text-2xl ${expandedItem.color}`}>
+                {expandedItem.icon}
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold text-[#181B34]">{expandedItem.title}</h2>
+                <p className="text-xs text-[#7C8193]">{expandedItem.timestamp}</p>
+              </div>
+              <button 
+                onClick={() => {
+                  markAsRead(expandedItem.id);
+                  setExpandedItem(null);
+                }}
+                className="text-[#7C8193] hover:text-[#181B34] p-1"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="text-sm text-[#434343] leading-relaxed whitespace-pre-wrap mb-6">
+              {expandedItem.description}
+            </div>
+            
+            {/* Actions */}
+            <div className="flex gap-3">
+              {expandedItem.actionUrl && (
+                <button
+                  onClick={() => {
+                    markAsRead(expandedItem.id);
+                    navigate(expandedItem.actionUrl!);
+                    setExpandedItem(null);
+                  }}
+                  className="flex-1 bg-[#6161FF] text-white py-3 rounded-xl font-medium hover:opacity-90 transition"
+                >
+                  Ir a ver →
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  markAsRead(expandedItem.id);
+                  setExpandedItem(null);
+                }}
+                className={`${expandedItem.actionUrl ? '' : 'flex-1'} px-6 py-3 rounded-xl font-medium border border-[#E4E7EF] text-[#7C8193] hover:bg-[#F5F7FB] transition`}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };
@@ -3203,8 +3322,9 @@ const DirectoryView = () => {
 
   return (
     <div className="pb-32 min-h-screen bg-[#F5F7FB]">
-      <header className="px-5 py-5 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
+      <header className="px-5 pb-4 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
         style={{
+          paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
         }}
       >
@@ -3578,9 +3698,10 @@ const Dashboard = () => {
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
       
-      {/* Header - Liquid Glass iOS 26 */}
-      <header className="px-5 py-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
+      {/* Header - Liquid Glass iOS 26 with safe area */}
+      <header className="px-5 pb-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
         style={{
+          paddingTop: 'max(20px, env(safe-area-inset-top, 20px))',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
         }}
       >
@@ -3618,16 +3739,16 @@ const Dashboard = () => {
             <span className="text-white/70 text-xs">Pendientes: {tribeStats.pending}</span>
           </div>
           
-          {/* Card: Reportes */}
-          <div className="bg-[#00CA72] rounded-xl p-4">
+          {/* Card: Reportes - Amarillo */}
+          <div className="bg-[#FFCC00] rounded-xl p-4">
             <div className="flex justify-between items-start mb-3">
-              <span className="text-white/80 text-xs font-medium">Reportes</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <AlertTriangle size={16} className="text-white" />
+              <span className="text-[#181B34]/70 text-xs font-medium">Reportes</span>
+              <div className="w-8 h-8 rounded-full bg-[#181B34]/10 flex items-center justify-center">
+                <AlertTriangle size={16} className="text-[#181B34]" />
               </div>
             </div>
-            <p className="text-2xl font-bold text-white">{tribeStats.reports}</p>
-            <span className="text-white/70 text-xs">Acusetes enviados</span>
+            <p className="text-2xl font-bold text-[#181B34]">{tribeStats.reports}</p>
+            <span className="text-[#181B34]/60 text-xs">Acusetes enviados</span>
           </div>
         </div>
         

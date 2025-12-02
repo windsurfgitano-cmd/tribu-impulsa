@@ -3106,7 +3106,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
         });
       }
       
-      // Luego intentar obtener de Firebase
+      // Luego intentar obtener de Firebase (fuente de verdad)
       try {
         const { getFirestoreInstance } = await import('./services/firebaseService');
         const { doc, getDoc } = await import('firebase/firestore');
@@ -3122,8 +3122,21 @@ const MembershipSection = ({ userId }: { userId: string }) => {
               paymentMethod: data.paymentMethod,
               amount: data.amount
             });
-            // Sincronizar con localStorage
-            localStorage.setItem(`membership_status_${userId}`, data.status);
+            // Sincronizar con localStorage (Firebase es fuente de verdad)
+            localStorage.setItem(`membership_status_${userId}`, data.status || 'invitado');
+            
+            // Si es miembro/admin, guardar datos de pago. Si no, limpiar
+            if (data.status === 'miembro' || data.status === 'admin') {
+              localStorage.setItem(`membership_payment_${userId}`, JSON.stringify({
+                method: data.paymentMethod,
+                amount: data.amount,
+                date: data.paymentDate,
+                expiresAt: data.expiresAt
+              }));
+            } else {
+              // Limpiar datos de pago si fue revocado
+              localStorage.removeItem(`membership_payment_${userId}`);
+            }
           }
         }
       } catch (err) {
@@ -3146,14 +3159,15 @@ const MembershipSection = ({ userId }: { userId: string }) => {
     });
   };
 
-  // Formatear precio
+  // Formatear precio - Usar precio de configuración como fallback
+  const config = getAppConfig();
   const formatPrice = (amount?: number) => {
-    if (!amount) return '$15.000';
+    const value = amount || config.membershipPrice;
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
       currency: 'CLP',
       minimumFractionDigits: 0
-    }).format(amount);
+    }).format(value);
   };
 
   // Calcular días restantes
@@ -4720,27 +4734,18 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
   const [memberships, setMemberships] = useState<Record<string, {status: string; paymentDate?: string; expiresAt?: string; amount?: number}>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'miembro' | 'invitado'>('all');
+  
+  // Obtener precio desde configuración
+  const config = getAppConfig();
+  const MEMBERSHIP_PRICE = config.membershipPrice;
 
-  // Cargar membresías
+  // Cargar membresías - PRIORIDAD: Firebase > localStorage
   useEffect(() => {
     const loadMemberships = async () => {
       const membershipData: Record<string, {status: string; paymentDate?: string; expiresAt?: string; amount?: number}> = {};
       
-      // Cargar desde localStorage
-      users.forEach(user => {
-        const status = localStorage.getItem(`membership_status_${user.id}`);
-        const paymentStr = localStorage.getItem(`membership_payment_${user.id}`);
-        const payment = paymentStr ? JSON.parse(paymentStr) : {};
-        
-        membershipData[user.id] = {
-          status: status || 'invitado',
-          paymentDate: payment.date,
-          expiresAt: payment.expiresAt,
-          amount: payment.amount
-        };
-      });
-      
-      // Intentar cargar desde Firebase
+      // Primero intentar cargar desde Firebase (fuente de verdad)
+      let loadedFromFirebase = false;
       try {
         const { getFirestoreInstance } = await import('./services/firebaseService');
         const { collection, getDocs } = await import('firebase/firestore');
@@ -4756,11 +4761,48 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
               expiresAt: data.expiresAt,
               amount: data.amount
             };
+            // Sincronizar a localStorage
+            localStorage.setItem(`membership_status_${doc.id}`, data.status || 'invitado');
+            if (data.status === 'miembro' || data.status === 'admin') {
+              localStorage.setItem(`membership_payment_${doc.id}`, JSON.stringify({
+                method: data.paymentMethod,
+                amount: data.amount,
+                date: data.paymentDate,
+                expiresAt: data.expiresAt
+              }));
+            } else {
+              localStorage.removeItem(`membership_payment_${doc.id}`);
+            }
           });
+          loadedFromFirebase = true;
+          console.log('✅ Membresías cargadas desde Firebase:', Object.keys(membershipData).length);
         }
       } catch (err) {
-        console.log('Error cargando membresías desde Firebase:', err);
+        console.log('⚠️ Error cargando desde Firebase, usando localStorage:', err);
       }
+      
+      // Si no se pudo cargar desde Firebase, usar localStorage
+      if (!loadedFromFirebase) {
+        users.forEach(user => {
+          const status = localStorage.getItem(`membership_status_${user.id}`);
+          const paymentStr = localStorage.getItem(`membership_payment_${user.id}`);
+          const payment = paymentStr ? JSON.parse(paymentStr) : {};
+          
+          membershipData[user.id] = {
+            status: status || 'invitado',
+            paymentDate: payment.date,
+            expiresAt: payment.expiresAt,
+            amount: payment.amount
+          };
+        });
+      }
+      
+      // Asegurar que todos los usuarios tengan entrada
+      users.forEach(user => {
+        if (!membershipData[user.id]) {
+          membershipData[user.id] = { status: 'invitado' };
+        }
+      });
       
       setMemberships(membershipData);
       setIsLoading(false);
@@ -4769,67 +4811,89 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
     loadMemberships();
   }, [users]);
 
-  // Cambiar estado de membresía manualmente
+  // Cambiar estado de membresía manualmente - SINCRONIZACIÓN COMPLETA
   const changeMembershipStatus = async (userId: string, newStatus: 'miembro' | 'invitado' | 'admin') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
+    
+    const now = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    // Actualizar localStorage
+    // 1. ACTUALIZAR LOCALSTORAGE
     localStorage.setItem(`membership_status_${userId}`, newStatus);
     
-    if (newStatus === 'miembro') {
+    if (newStatus === 'miembro' || newStatus === 'admin') {
       const paymentData = {
         method: 'manual_admin',
-        amount: 20000,
-        date: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        amount: MEMBERSHIP_PRICE,
+        date: now,
+        expiresAt: expiresAt
       };
       localStorage.setItem(`membership_payment_${userId}`, JSON.stringify(paymentData));
+    } else {
+      // REVOCAR: Limpiar datos de pago
+      localStorage.removeItem(`membership_payment_${userId}`);
     }
 
-    // Sincronizar con Firebase
+    // 2. SINCRONIZAR CON FIREBASE
     try {
       const { getFirestoreInstance } = await import('./services/firebaseService');
-      const { doc, setDoc } = await import('firebase/firestore');
+      const { doc, setDoc, deleteField } = await import('firebase/firestore');
       const db = getFirestoreInstance();
       if (db) {
-        await setDoc(doc(db, 'memberships', userId), {
+        const membershipDoc = {
           id: userId,
           email: user.email,
           status: newStatus,
-          paymentMethod: newStatus === 'miembro' ? 'manual_admin' : undefined,
-          paymentDate: newStatus === 'miembro' ? new Date().toISOString() : undefined,
-          amount: newStatus === 'miembro' ? 20000 : undefined,
-          expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
           updatedBy: 'admin',
-          updatedAt: new Date().toISOString()
-        });
+          updatedAt: now,
+          // Solo incluir datos de pago si es miembro/admin
+          ...(newStatus === 'miembro' || newStatus === 'admin' ? {
+            paymentMethod: 'manual_admin',
+            paymentDate: now,
+            amount: MEMBERSHIP_PRICE,
+            expiresAt: expiresAt
+          } : {
+            paymentMethod: null,
+            paymentDate: null,
+            amount: null,
+            expiresAt: null
+          })
+        };
+        await setDoc(doc(db, 'memberships', userId), membershipDoc);
+        console.log(`✅ Firebase actualizado: ${user.name} → ${newStatus}`);
       }
     } catch (err) {
-      console.log('Error sincronizando membresía:', err);
+      console.log('⚠️ Error sincronizando membresía con Firebase:', err);
     }
 
-    // Actualizar estado local
+    // 3. ACTUALIZAR ESTADO LOCAL INMEDIATAMENTE
     setMemberships(prev => ({
       ...prev,
       [userId]: {
         status: newStatus,
-        paymentDate: newStatus === 'miembro' ? new Date().toISOString() : undefined,
-        expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
-        amount: newStatus === 'miembro' ? 20000 : undefined
+        ...(newStatus === 'miembro' || newStatus === 'admin' ? {
+          paymentDate: now,
+          expiresAt: expiresAt,
+          amount: MEMBERSHIP_PRICE
+        } : {
+          paymentDate: undefined,
+          expiresAt: undefined,
+          amount: undefined
+        })
       }
     }));
 
     alert(`✅ ${user.name} ahora es ${newStatus.toUpperCase()}`);
   };
 
-  // Estadísticas
+  // Estadísticas - USAR PRECIO DE CONFIGURACIÓN
   const stats = {
     total: users.length,
     miembros: Object.values(memberships).filter(m => m.status === 'miembro').length,
     invitados: Object.values(memberships).filter(m => m.status === 'invitado' || !m.status).length,
     admins: Object.values(memberships).filter(m => m.status === 'admin').length,
-    ingresos: Object.values(memberships).filter(m => m.status === 'miembro').reduce((sum, m) => sum + (m.amount || 20000), 0)
+    ingresos: Object.values(memberships).filter(m => m.status === 'miembro' || m.status === 'admin').reduce((sum, m) => sum + (m.amount || MEMBERSHIP_PRICE), 0)
   };
 
   // Filtrar usuarios

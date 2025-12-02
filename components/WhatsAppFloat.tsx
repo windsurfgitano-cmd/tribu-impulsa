@@ -1,13 +1,27 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
 
+// Helper para obtener configuración global
+const getWhatsAppNumber = () => {
+  try {
+    const config = localStorage.getItem('tribu_admin_config');
+    if (config) {
+      const parsed = JSON.parse(config);
+      // Limpiar el número (solo dígitos)
+      return (parsed.whatsappSupport || '+56951776005').replace(/[^0-9]/g, '');
+    }
+  } catch {}
+  return '56951776005';
+};
+
 export const WhatsAppFloat: React.FC = () => {
+  const whatsappNumber = getWhatsAppNumber();
+  
   return (
     <a
-      href="https://wa.me/56951776005" // WhatsApp oficial Tribu Impulsa
+      href={`https://wa.me/${whatsappNumber}`}
       target="_blank"
       rel="noopener noreferrer"
-      // Changed bottom-6 to bottom-24 to clear the navigation bar
       className="fixed bottom-24 right-6 z-50 group"
       aria-label="Contactar por WhatsApp"
     >

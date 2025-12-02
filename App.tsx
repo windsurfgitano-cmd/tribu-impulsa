@@ -40,7 +40,24 @@ import {
 import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
-import { initializeFirebase, requestNotificationPermission, onForegroundMessage, getNotificationStatus, sendLocalNotification, saveUserFCMToken, sendPushToAll, countUsersWithPush, clearFCMToken } from './services/firebaseService';
+import { 
+  initializeFirebase, 
+  requestNotificationPermission, 
+  onForegroundMessage, 
+  getNotificationStatus, 
+  sendLocalNotification, 
+  saveUserFCMToken, 
+  sendPushToAll, 
+  countUsersWithPush, 
+  clearFCMToken,
+  // Sincronización con Firestore
+  syncProfileToCloud,
+  getProfileFromCloud,
+  getAllProfilesFromCloud,
+  syncChecklistProgress,
+  getFirestoreInstance,
+  logInteraction
+} from './services/firebaseService';
 import { ensureInitialized } from './services/productionInit';
 
 // ============================================
@@ -78,6 +95,64 @@ onForegroundMessage((payload: unknown) => {
 console.log('🚀 Tribu Impulsa v2.0 - 23 Emprendedores Reales');
 console.log('📊 Integridad de datos:', checkDataIntegrity());
 console.log('🔔 Estado notificaciones:', getNotificationStatus());
+
+// ============================================
+// SINCRONIZACIÓN AUTOMÁTICA CON FIRESTORE
+// ============================================
+
+// Sincronizar usuario a la nube
+const syncUserToCloud = async (user: UserProfile) => {
+  try {
+    await syncProfileToCloud({
+      id: user.id,
+      name: user.name,
+      companyName: user.companyName,
+      category: user.category,
+      location: user.city,
+      bio: user.bio,
+      instagram: user.instagram,
+      website: user.website,
+      phone: user.phone,
+      email: user.email
+    });
+    console.log('☁️ Usuario sincronizado a la nube:', user.email);
+  } catch (error) {
+    console.error('Error sincronizando usuario:', error);
+  }
+};
+
+// Sincronizar checklist a la nube
+const syncChecklistToCloud = async (userId: string, checklist: { toShare: Record<string, boolean>; shareWithMe: Record<string, boolean> }) => {
+  try {
+    const completed = Object.values(checklist.toShare).filter(Boolean).length + 
+                      Object.values(checklist.shareWithMe).filter(Boolean).length;
+    const total = Object.keys(checklist.toShare).length + Object.keys(checklist.shareWithMe).length;
+    
+    await syncChecklistProgress(userId, {
+      completed,
+      total,
+      items: { ...checklist.toShare, ...checklist.shareWithMe }
+    });
+    console.log('☁️ Checklist sincronizado:', `${completed}/${total}`);
+  } catch (error) {
+    console.error('Error sincronizando checklist:', error);
+  }
+};
+
+// Cargar perfil desde la nube
+const loadUserFromCloud = async (userId: string): Promise<UserProfile | null> => {
+  try {
+    const cloudProfile = await getProfileFromCloud(userId);
+    if (cloudProfile) {
+      console.log('☁️ Perfil cargado desde la nube:', cloudProfile.email);
+      return cloudProfile as unknown as UserProfile;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error cargando perfil de la nube:', error);
+    return null;
+  }
+};
 
 const SURVEY_CATEGORY_OPTIONS = [
   "Moda Mujer Ropa  Jeans",
@@ -432,6 +507,17 @@ const persistReport = (report: TribeReport) => {
   const current = getStoredReports();
   const next = [...current, report];
   localStorage.setItem(getUserStorageKey(TRIBE_REPORTS_KEY), JSON.stringify(next));
+  
+  // ☁️ Sincronizar a Firestore
+  const userId = localStorage.getItem('tribu_current_user');
+  if (userId) {
+    logInteraction(userId, 'report', {
+      targetId: report.targetId,
+      targetName: report.targetName,
+      reason: report.reason,
+      timestamp: report.timestamp
+    });
+  }
 };
 
 const getTribeStatsSnapshot = (userCategory: string, userId?: string) => {
@@ -834,6 +920,9 @@ const RegisterScreen = () => {
       
       // Establecer usuario actual con el ID (NO email)
       localStorage.setItem('tribu_current_user', newUser.id);
+      
+      // ☁️ SINCRONIZAR A FIRESTORE (nube)
+      syncUserToCloud(newUser);
       
       // También guardar en formato antiguo para compatibilidad
       const surveyData = {
@@ -1558,6 +1647,10 @@ const TribeAssignmentsView = () => {
         }
       };
       persistChecklistState(next);
+      
+      // ☁️ Sincronizar a Firestore (nube)
+      syncChecklistToCloud(myProfile.id, next);
+      
       return next;
     });
   };
@@ -1591,10 +1684,24 @@ const TribeAssignmentsView = () => {
     
     // Marcar como completado en el checklist
     const key = type === 'shared_to' ? 'toShare' : 'shareWithMe';
-    setChecklist(prev => ({
-      ...prev,
-      [key]: { ...prev[key], [profile.id]: true }
-    }));
+    setChecklist(prev => {
+      const next = {
+        ...prev,
+        [key]: { ...prev[key], [profile.id]: true }
+      };
+      
+      // ☁️ Sincronizar checklist a Firestore
+      syncChecklistToCloud(currentUser.id, next);
+      
+      return next;
+    });
+    
+    // ☁️ Registrar interacción en Firestore
+    logInteraction(currentUser.id, type, {
+      targetId: profile.id,
+      targetName: profile.companyName,
+      contentUrl: url
+    });
     
     setToastMessage(type === 'shared_to' 
       ? `✅ Registrado: compartiste a ${profile.companyName}` 

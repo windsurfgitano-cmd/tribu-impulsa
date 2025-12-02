@@ -100,17 +100,24 @@
 ## 📋 TAREAS PENDIENTES (Urgentes antes de entrega)
 
 ### CRÍTICO (Hacer ahora)
-1. [ ] **Verificar deploy en Vercel** - que compile sin errores
-2. [ ] **Probar registro completo** - usuario nuevo de principio a fin
-3. [ ] **Probar login** - con usuario existente y contraseña TRIBU2026
-4. [ ] **Verificar nombres visibles** - en checklist iOS
-5. [ ] **Verificar Firestore** - que esté recibiendo datos
+1. [x] **WhatsApp Tribu actualizado** - +56951776005 en botón flotante, acusetes y compartir
+2. [x] **Banner editable** - z-index corregido para que no quede tapado
+3. [ ] **Verificar deploy en Vercel** - que compile sin errores
+4. [ ] **Probar registro completo** - usuario nuevo de principio a fin
+5. [ ] **Probar login** - con usuario existente y contraseña TRIBU2026
+6. [ ] **Verificar nombres visibles** - en checklist iOS
+7. [ ] **Verificar Firestore** - que esté recibiendo datos
 
 ### IMPORTANTE (Si hay tiempo)
 1. [ ] Configurar Security Rules en Firebase Console
 2. [ ] Verificar que los 23 usuarios reales aparecen en Red
 3. [ ] Probar en iPhone real (no solo simulador)
 4. [ ] Limpiar console.log de desarrollo
+
+### PENDIENTE POST-ENTREGA (Trabajo largo)
+1. [ ] **Cargar 115 usuarios del CSV** - WEBTRIBU/export_vista_usuario_pyme_full.csv (solo los con datos completos)
+2. [ ] **Algoritmo matching único** - Cada usuario debe tener tribu 10+10 diferente basada en su perfil
+3. [ ] **Relleno con byturquia/terraflor/elevate** - Hasta 3 espacios si faltan personas
 
 ### NICE TO HAVE (V2.0)
 1. [ ] Cargar datos de Firestore al login

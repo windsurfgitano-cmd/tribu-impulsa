@@ -2672,7 +2672,7 @@ const MyProfileView = () => {
                 <input 
                   ref={bannerInputRef}
                   type="file"
-                  accept="image/*"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
                   onChange={handleBannerUpload}
                   className="hidden"
                 />
@@ -2713,7 +2713,7 @@ const MyProfileView = () => {
                         <input 
                           ref={fileInputRef}
                           type="file"
-                          accept="image/*"
+                          accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
                           onChange={handlePhotoUpload}
                           className="hidden"
                         />
@@ -2948,6 +2948,9 @@ const MyProfileView = () => {
                             </div>
                         </div>
                         
+                        {/* SECCIÓN MEMBRESÍA */}
+                        <MembershipSection userId={currentUser?.id || ''} />
+                        
                         {/* Botón de Notificaciones Push */}
                         <NotificationButton />
                         
@@ -3050,6 +3053,180 @@ const MyProfileView = () => {
             </div>
         </div>
     );
+};
+
+// Componente de Sección de Membresía
+const MembershipSection = ({ userId }: { userId: string }) => {
+  const navigate = useNavigate();
+  const [membership, setMembership] = useState<{
+    status: string;
+    paymentDate?: string;
+    expiresAt?: string;
+    paymentMethod?: string;
+    amount?: number;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Cargar datos de membresía
+  useEffect(() => {
+    const loadMembership = async () => {
+      if (!userId) return;
+      
+      // Primero buscar en localStorage
+      const localStatus = localStorage.getItem(`membership_status_${userId}`);
+      const localPayment = localStorage.getItem(`membership_payment_${userId}`);
+      
+      if (localStatus) {
+        const paymentData = localPayment ? JSON.parse(localPayment) : {};
+        setMembership({
+          status: localStatus,
+          paymentDate: paymentData.date,
+          paymentMethod: paymentData.method,
+          amount: paymentData.amount,
+          expiresAt: paymentData.expiresAt
+        });
+      }
+      
+      // Luego intentar obtener de Firebase
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (db) {
+          const membershipDoc = await getDoc(doc(db, 'memberships', userId));
+          if (membershipDoc.exists()) {
+            const data = membershipDoc.data();
+            setMembership({
+              status: data.status,
+              paymentDate: data.paymentDate,
+              expiresAt: data.expiresAt,
+              paymentMethod: data.paymentMethod,
+              amount: data.amount
+            });
+            // Sincronizar con localStorage
+            localStorage.setItem(`membership_status_${userId}`, data.status);
+          }
+        }
+      } catch (err) {
+        console.log('Error cargando membresía:', err);
+      }
+      
+      setIsLoading(false);
+    };
+    
+    loadMembership();
+  }, [userId]);
+
+  // Formatear fecha
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('es-CL', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Formatear precio
+  const formatPrice = (amount?: number) => {
+    if (!amount) return '$15.000';
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Calcular días restantes
+  const getDaysRemaining = () => {
+    if (!membership?.expiresAt) return null;
+    const expiry = new Date(membership.expiresAt);
+    const now = new Date();
+    const diff = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 0;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="pt-4 border-t border-[#E4E7EF]">
+        <div className="animate-pulse bg-[#F5F7FB] rounded-2xl h-32"></div>
+      </div>
+    );
+  }
+
+  const isMember = membership?.status === 'miembro' || membership?.status === 'admin';
+  const daysRemaining = getDaysRemaining();
+
+  return (
+    <div className="pt-4 border-t border-[#E4E7EF]">
+      <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Membresía</h3>
+      
+      <div className={`rounded-2xl p-4 border ${isMember ? 'bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 border-[#6161FF]/20' : 'bg-[#F5F7FB] border-[#E4E7EF]'}`}>
+        {/* Estado */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isMember ? 'bg-[#6161FF]/10' : 'bg-[#7C8193]/10'}`}>
+              <Crown size={20} className={isMember ? 'text-[#6161FF]' : 'text-[#7C8193]'} />
+            </div>
+            <div>
+              <p className="font-semibold text-[#181B34]">
+                {membership?.status === 'admin' ? 'Administrador' : isMember ? 'Miembro Activo' : 'Invitado'}
+              </p>
+              <p className="text-xs text-[#7C8193]">
+                {isMember ? 'Acceso completo' : 'Acceso limitado'}
+              </p>
+            </div>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#B38F00]' :
+            isMember ? 'bg-[#00CA72]/20 text-[#008A4E]' : 'bg-[#7C8193]/20 text-[#7C8193]'
+          }`}>
+            {membership?.status === 'admin' ? 'ADMIN' : isMember ? 'ACTIVO' : 'PENDIENTE'}
+          </span>
+        </div>
+
+        {/* Detalles si es miembro */}
+        {isMember && (
+          <div className="space-y-2 text-sm border-t border-[#E4E7EF]/50 pt-3">
+            <div className="flex justify-between">
+              <span className="text-[#7C8193]">Fecha de pago:</span>
+              <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7C8193]">Método:</span>
+              <span className="text-[#181B34] font-medium capitalize">{membership?.paymentMethod || 'N/A'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7C8193]">Monto:</span>
+              <span className="text-[#181B34] font-medium">{formatPrice(membership?.amount)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[#7C8193]">Vence:</span>
+              <span className="text-[#181B34] font-medium">{formatDate(membership?.expiresAt)}</span>
+            </div>
+            {daysRemaining !== null && daysRemaining <= 30 && (
+              <div className="mt-2 p-2 bg-[#FFCC00]/10 rounded-lg">
+                <p className="text-xs text-[#B38F00] font-medium">
+                  ⚠️ Tu membresía vence en {daysRemaining} días
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Botón para invitados */}
+        {!isMember && (
+          <button
+            onClick={() => navigate('/membership')}
+            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+          >
+            <CreditCard size={18} />
+            Activar Membresía - {formatPrice(15000)}/año
+          </button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 // Componente Toggle de Notificaciones

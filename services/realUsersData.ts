@@ -2075,6 +2075,267 @@ export const REAL_USERS: RealUser[] = [
     status: 'active',
     followers: 500,
     firstLogin: true
+  },
+  // ===============================================
+  // USUARIOS ADICIONALES DEL CSV (Faltantes)
+  // ===============================================
+  {
+    email: 'akuschel@dtpingenieria.cl',
+    name: 'Alejandra Kuschel',
+    companyName: 'Centro Elysia',
+    instagram: '@elysia_cl',
+    phone: '+56994513299',
+    category: 'Manicure y Pedicure',
+    affinity: 'Bienestar',
+    bio: 'Enfocados en autocuidado y bienestar.',
+    businessDescription: 'Servicios de Manicure y Pedicure',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Alejandra Kuschel', '@elysia_cl'),
+    companyLogoUrl: getLogoUrl('Centro Elysia'),
+    coverUrl: getCoverUrl('Belleza'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true,
+    rut: '78098333-7',
+    razonSocial: 'Centro Elysia Spa',
+    direccion: 'Hochstetter 1002 of 510'
+  },
+  {
+    email: 'clau7552@gmail.com',
+    name: 'Claudia Suárez',
+    companyName: 'GroB Pastelería',
+    instagram: '@grobpasteleriacl',
+    phone: '+56977918833',
+    category: 'Pastelería',
+    affinity: 'Gastronomía',
+    bio: 'En Pastelería GroB creamos productos únicos e innovadores, elaborados con ingredientes de alta calidad.',
+    businessDescription: 'Pastelería',
+    city: 'Las Condes',
+    avatarUrl: getAvatarUrl('Claudia Suárez', '@grobpasteleriacl'),
+    companyLogoUrl: getLogoUrl('GroB Pastelería'),
+    coverUrl: getCoverUrl('Gastronomía'),
+    status: 'active',
+    followers: 10000,
+    firstLogin: true,
+    rut: '12.537.022-5',
+    razonSocial: 'Grob Pastelería',
+    direccion: 'Luis Matte Larrain 10185, Las Condes'
+  },
+  {
+    email: 'cristobal.baier@gmail.com',
+    name: 'Cristobal Baier',
+    companyName: 'BAW Arquitectura',
+    instagram: '@baw_arquitectos',
+    phone: '+56987271997',
+    category: 'Arquitectura',
+    affinity: 'Diseño',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Cristobal Baier', '@baw_arquitectos'),
+    companyLogoUrl: getLogoUrl('BAW Arquitectura'),
+    coverUrl: getCoverUrl('Arte'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'emedinapaez@gmail.com',
+    name: 'Emiliano Medina',
+    companyName: 'Lion',
+    instagram: '@emilianolion',
+    phone: '+56961399990',
+    category: 'General',
+    affinity: 'Emprendimiento',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Emiliano Medina', '@emilianolion'),
+    companyLogoUrl: getLogoUrl('Lion'),
+    coverUrl: getCoverUrl('default'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'fmolinab21@gmail.com',
+    name: 'Felipe Nicolás Molina Bustos',
+    companyName: 'Nutrifit Chile',
+    instagram: '@Nutrifitchile.cl',
+    phone: '+56913100000',
+    category: 'Nutrición',
+    affinity: 'Bienestar',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Felipe Molina', '@Nutrifitchile.cl'),
+    companyLogoUrl: getLogoUrl('Nutrifit Chile'),
+    coverUrl: getCoverUrl('Salud'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'jcrisostomol@gmail.com',
+    name: 'Jorge Crisostomo',
+    companyName: 'Vortex33',
+    instagram: '@jorgecl.fotos',
+    phone: '+56975870149',
+    category: 'Fotografía',
+    affinity: 'Arte',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Jorge Crisostomo', '@jorgecl.fotos'),
+    companyLogoUrl: getLogoUrl('Vortex33'),
+    coverUrl: getCoverUrl('Arte'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'jorge@itvis.cl',
+    name: 'Jorge Crisostomo',
+    companyName: 'ITVIS SpA',
+    instagram: '@grupovis.io',
+    phone: '+56975870149',
+    category: 'Tecnología',
+    affinity: 'Tecnología',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Jorge Crisostomo', '@grupovis.io'),
+    companyLogoUrl: getLogoUrl('ITVIS'),
+    coverUrl: getCoverUrl('Tecnología'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'klga.aranguiz@gmail.com',
+    name: 'Katherine Aránguiz',
+    companyName: 'Kinesióloga Katherine',
+    instagram: '@Kinekatherinearanguiz',
+    phone: '+56981298763',
+    category: 'Kinesiología',
+    affinity: 'Bienestar',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Katherine Aránguiz', '@Kinekatherinearanguiz'),
+    companyLogoUrl: getLogoUrl('Kinesióloga'),
+    coverUrl: getCoverUrl('Salud'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'lionskill@gmail.com',
+    name: 'Emiliano Lion',
+    companyName: 'Lion Skills',
+    instagram: '@lion',
+    phone: '+56961399990',
+    category: 'General',
+    affinity: 'Emprendimiento',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Emiliano', '@lion'),
+    companyLogoUrl: getLogoUrl('Lion Skills'),
+    coverUrl: getCoverUrl('default'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'murua.mauricio@gmail.com',
+    name: 'Mauricio Murúa',
+    companyName: 'Proyecto Escala',
+    instagram: '@proyectoescalatemuco',
+    phone: '+56942558204',
+    category: 'Consultoría',
+    affinity: 'Negocios',
+    bio: '',
+    businessDescription: '',
+    city: 'Temuco',
+    avatarUrl: getAvatarUrl('Mauricio Murúa', '@proyectoescalatemuco'),
+    companyLogoUrl: getLogoUrl('Proyecto Escala'),
+    coverUrl: getCoverUrl('default'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'nicolasfuentes35@gmail.com',
+    name: 'Nicolás Fuentes',
+    companyName: 'Nicofvivallo22',
+    instagram: '@Nicofvivallo22',
+    phone: '+56992493070',
+    category: 'General',
+    affinity: 'Emprendimiento',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Nicolás Fuentes', '@Nicofvivallo22'),
+    companyLogoUrl: getLogoUrl('Nicofvivallo'),
+    coverUrl: getCoverUrl('default'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'pablo.gonzalez@madsupport.cl',
+    name: 'Pablo Gonzalez',
+    companyName: 'MAD Support',
+    instagram: '@madsupport',
+    phone: '+56984590309',
+    category: 'Tecnología',
+    affinity: 'Tecnología',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Pablo Gonzalez', '@madsupport'),
+    companyLogoUrl: getLogoUrl('MAD Support'),
+    coverUrl: getCoverUrl('Tecnología'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'pamelareyesrivera@gmail.com',
+    name: 'Pamela Reyes',
+    companyName: 'Luna Enfermería Dermoestética',
+    instagram: '@luna_enfermeria_dermoestetica',
+    phone: '+56999309948',
+    category: 'Dermoestética',
+    affinity: 'Bienestar',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Pamela Reyes', '@luna_enfermeria_dermoestetica'),
+    companyLogoUrl: getLogoUrl('Luna Enfermería'),
+    coverUrl: getCoverUrl('Belleza'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
+  },
+  {
+    email: 'ryaropa.accesorios@gmail.com',
+    name: 'Juliette Poblete',
+    companyName: 'R.A Ropa y Accesorios',
+    instagram: '@r.a_ropayaccesorios',
+    phone: '+56999516249',
+    category: 'Moda',
+    affinity: 'Moda',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl('Juliette Poblete', '@r.a_ropayaccesorios'),
+    companyLogoUrl: getLogoUrl('RA Ropa'),
+    coverUrl: getCoverUrl('Moda'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true
   }
 ];
 
@@ -2160,6 +2421,95 @@ export const forceReloadRealUsers = (): void => {
   localStorage.removeItem('tribu_users');
   loadRealUsers();
   console.log('🔄 Usuarios reales recargados');
+};
+
+// ===============================================
+// REGISTRO DE NUEVOS USUARIOS
+// ===============================================
+
+export interface NewUserData {
+  email: string;
+  name: string;
+  companyName: string;
+  instagram: string;
+  phone: string;
+  category?: string;
+}
+
+// Verificar si un email ya existe
+export const emailExists = (email: string): boolean => {
+  const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  return users.some((u: UserProfile) => u.email.toLowerCase() === email.toLowerCase());
+};
+
+// Registrar nuevo usuario
+export const registerNewUser = async (userData: NewUserData): Promise<UserProfile | null> => {
+  // Verificar si el email ya existe
+  if (emailExists(userData.email)) {
+    console.log('⚠️ Email ya registrado');
+    return null;
+  }
+  
+  const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  const newUser: UserProfile & { firstLogin: boolean; password: string } = {
+    id: newId,
+    email: userData.email.toLowerCase(),
+    name: userData.name,
+    companyName: userData.companyName,
+    instagram: userData.instagram.startsWith('@') ? userData.instagram : `@${userData.instagram}`,
+    phone: userData.phone,
+    category: userData.category || 'General',
+    affinity: userData.category || 'Emprendimiento',
+    bio: '',
+    businessDescription: '',
+    city: 'Chile',
+    avatarUrl: getAvatarUrl(userData.name, userData.instagram),
+    companyLogoUrl: getLogoUrl(userData.companyName),
+    coverUrl: getCoverUrl('default'),
+    status: 'active',
+    followers: 500,
+    firstLogin: true,
+    password: UNIVERSAL_PASSWORD,
+    createdAt: new Date().toISOString(),
+    surveyCompleted: true,
+    tribeAssigned: true
+  };
+  
+  users.push(newUser);
+  localStorage.setItem('tribu_users', JSON.stringify(users));
+  
+  // Sincronizar con Firebase
+  try {
+    const { syncProfileToCloud } = await import('./firebaseService');
+    await syncProfileToCloud({
+      id: newUser.id,
+      name: newUser.name,
+      companyName: newUser.companyName,
+      category: newUser.category,
+      subCategory: newUser.affinity,
+      location: newUser.city,
+      bio: newUser.bio,
+      instagram: newUser.instagram,
+      website: '',
+      avatarUrl: newUser.avatarUrl,
+      coverUrl: newUser.coverUrl,
+      tags: [],
+    });
+    console.log('☁️ Nuevo usuario sincronizado con Firebase');
+  } catch (error) {
+    console.log('⚠️ Error sincronizando con Firebase:', error);
+  }
+  
+  console.log(`✅ Nuevo usuario registrado: ${userData.email}`);
+  return newUser;
+};
+
+// Obtener total de usuarios
+export const getTotalUsersCount = (): number => {
+  const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  return users.length;
 };
 
 export default REAL_USERS;

@@ -631,15 +631,26 @@ const clearStoredSession = () => {
   localStorage.removeItem(AUTH_SESSION_KEY);
 };
 
-// 1. Login / Landing with User + Pass
+// 1. Login / Landing - FLUJO UNIFICADO SEAMLESS
 const LoginScreen = () => {
   const navigate = useNavigate();
+  // Estados del flujo
+  const [step, setStep] = useState<'email' | 'password' | 'register'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devPassword, setDevPassword] = useState('');
+  
+  // Datos de registro (si es usuario nuevo)
+  const [registerData, setRegisterData] = useState({
+    name: '',
+    companyName: '',
+    instagram: '',
+    phone: '',
+    category: ''
+  });
 
   // Check existing session
   useEffect(() => {
@@ -650,74 +661,119 @@ const LoginScreen = () => {
     }
   }, [navigate]);
 
+  // Paso 1: Verificar email
+  const handleEmailCheck = (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!email) {
+      setError('Por favor ingresa tu email');
+      return;
+    }
+
+    // Verificar si el email existe
+    const existingUser = getUserByEmail(email);
+    
+    if (existingUser) {
+      // Usuario existe → pedir contraseña
+      setStep('password');
+    } else {
+      // Usuario NO existe → mostrar registro
+      setStep('register');
+    }
+  };
+
+  // Paso 2a: Login con contraseña
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (!email || !password) {
+    if (!password) {
+      setError('Por favor ingresa tu contraseña');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      const user = validateCredentials(email, password);
+      const existingUser = getUserByEmail(email);
+      const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
+      
+      if (user || (existingUser && isProfilePasswordValid)) {
+        const loggedUser = user || existingUser;
+        completeLogin(loggedUser);
+      } else {
+        setError('Contraseña incorrecta. Recuerda: TRIBU2026');
+      }
+      
+      setIsLoading(false);
+    }, 500);
+  };
+
+  // Paso 2b: Registro de nuevo usuario
+  const handleRegister = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone) {
       setError('Por favor completa todos los campos');
       return;
     }
 
     setIsLoading(true);
     
-    // Autenticación con contraseña universal O contraseña del perfil
-    setTimeout(() => {
-      // 1. Verificar con contraseña universal TRIBU2026 (usuarios originales)
-      const user = validateCredentials(email, password);
+    try {
+      const { registerNewUser } = await import('./services/realUsersData');
+      const newUser = await registerNewUser({
+        email,
+        name: registerData.name,
+        companyName: registerData.companyName,
+        instagram: registerData.instagram,
+        phone: registerData.phone,
+        category: registerData.category || 'General'
+      });
       
-      // 2. Buscar usuario por email
-      const existingUser = getUserByEmail(email);
-      
-      // 3. Verificar contraseña del perfil (usuarios nuevos)
-      const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
-      
-      if (user || (existingUser && isProfilePasswordValid)) {
-        const loggedUser = user || existingUser;
-        // Usuario encontrado y autenticado
-        const session: UserSession = {
-          email: loggedUser.email,
-          name: loggedUser.name,
-          isLoggedIn: true
-        };
-        setStoredSession(session);
-        setCurrentUser(loggedUser.id);
-        
-        // IMPORTANTE: Establecer tribu_current_user con el ID para segregar datos
-        localStorage.setItem('tribu_current_user', loggedUser.id);
-        
-        // Marcar survey como completado para usuarios reales (ya tienen todos sus datos)
-        const surveyData = {
-          email: loggedUser.email,
-          name: loggedUser.name,
-          phone: loggedUser.phone || '',
-          instagram: loggedUser.instagram || '',
-          city: loggedUser.city || '',
-          category: loggedUser.category || '',
-          affinity: loggedUser.affinity || loggedUser.category || '',
-          scope: 'NACIONAL'
-        };
-        localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
-        
-        // Guardar flag de primer login para mostrar modal después
-        if ((loggedUser as { firstLogin?: boolean }).firstLogin) {
-          localStorage.setItem('show_password_change', 'true');
-        }
-        
-        // Usuario real pasa por animación del algoritmo (rápida si ya lo vio)
-        navigate('/searching');
+      if (newUser) {
+        completeLogin(newUser);
       } else {
-        // Verificar si el email existe
-        if (existingUser) {
-          setError('Contraseña incorrecta');
-        } else {
-          // Usuario NO existe - mostrar error y ofrecer registro
-          setError('Usuario no encontrado. ¿Quieres registrarte?');
-        }
+        setError('Error al registrar. Intenta de nuevo.');
       }
-      
-      setIsLoading(false);
-    }, 500);
+    } catch (err) {
+      setError('Error al registrar. Intenta de nuevo.');
+    }
+    
+    setIsLoading(false);
+  };
+
+  // Función común para completar el login
+  const completeLogin = (loggedUser: any) => {
+    const session: UserSession = {
+      email: loggedUser.email,
+      name: loggedUser.name,
+      isLoggedIn: true
+    };
+    setStoredSession(session);
+    setCurrentUser(loggedUser.id);
+    localStorage.setItem('tribu_current_user', loggedUser.id);
+    
+    const surveyData = {
+      email: loggedUser.email,
+      name: loggedUser.name,
+      phone: loggedUser.phone || '',
+      instagram: loggedUser.instagram || '',
+      city: loggedUser.city || '',
+      category: loggedUser.category || '',
+      affinity: loggedUser.affinity || loggedUser.category || '',
+      scope: 'NACIONAL'
+    };
+    localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
+    
+    if ((loggedUser as { firstLogin?: boolean }).firstLogin) {
+      localStorage.setItem('show_password_change', 'true');
+    }
+    
+    navigate('/searching');
   };
 
   return (
@@ -743,48 +799,156 @@ const LoginScreen = () => {
           Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
         </p>
         
-        <form onSubmit={handleLogin} className="space-y-4 text-left">
-          <div>
-            <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email</label>
-            <input 
-              type="email" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-              placeholder="tu@email.com"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña</label>
-            <input 
-              type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
-          
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50"
-          >
-            {isLoading ? 'Ingresando...' : 'Ingresar'}
-            {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
-          </button>
-        </form>
+        {/* PASO 1: Email */}
+        {step === 'email' && (
+          <form onSubmit={handleEmailCheck} className="space-y-4 text-left">
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email</label>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                placeholder="tu@email.com"
+                autoFocus
+              />
+            </div>
+            
+            {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+            
+            <button 
+              type="submit"
+              className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
+            >
+              Continuar
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
+            </button>
+          </form>
+        )}
 
-        <div className="mt-6 pt-4 border-t border-[#E4E7EF]">
-          <button 
-            onClick={() => navigate('/register')}
-            className="text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
-          >
-            ¿No tienes cuenta? <span className="font-semibold">Regístrate</span>
-          </button>
-        </div>
+        {/* PASO 2a: Contraseña (usuario existente) */}
+        {step === 'password' && (
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div className="bg-[#E6FFF3] border border-[#00CA72]/30 rounded-xl p-3 mb-2">
+              <p className="text-[#008A4E] text-sm font-medium">✅ ¡Te encontramos!</p>
+              <p className="text-[#008A4E]/80 text-xs">{email}</p>
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                placeholder="TRIBU2026"
+                autoFocus
+              />
+              <p className="text-[10px] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026</p>
+            </div>
+            
+            {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+            
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50"
+            >
+              {isLoading ? 'Ingresando...' : 'Ingresar'}
+              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
+            </button>
+            
+            <button 
+              type="button"
+              onClick={() => { setStep('email'); setError(''); setPassword(''); }}
+              className="w-full text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
+            >
+              ← Cambiar email
+            </button>
+          </form>
+        )}
+
+        {/* PASO 2b: Registro (usuario nuevo) */}
+        {step === 'register' && (
+          <form onSubmit={handleRegister} className="space-y-3 text-left">
+            <div className="bg-[#6161FF]/10 border border-[#6161FF]/30 rounded-xl p-3 mb-2">
+              <p className="text-[#6161FF] text-sm font-medium">🎉 ¡Bienvenido/a a la Tribu!</p>
+              <p className="text-[#6161FF]/80 text-xs">Completa tus datos para unirte</p>
+            </div>
+            
+            <div className="bg-[#F5F7FB] rounded-xl p-2.5 text-sm text-[#434343]">
+              📧 {email}
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Tu nombre</label>
+              <input 
+                type="text" 
+                value={registerData.name}
+                onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                placeholder="María González"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Nombre de tu emprendimiento</label>
+              <input 
+                type="text" 
+                value={registerData.companyName}
+                onChange={(e) => setRegisterData({...registerData, companyName: e.target.value})}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                placeholder="Mi Empresa"
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Instagram</label>
+                <input 
+                  type="text" 
+                  value={registerData.instagram}
+                  onChange={(e) => setRegisterData({...registerData, instagram: e.target.value})}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  placeholder="@usuario"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono</label>
+                <input 
+                  type="tel" 
+                  value={registerData.phone}
+                  onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  placeholder="+56912345678"
+                />
+              </div>
+            </div>
+            
+            {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+            
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
+            >
+              {isLoading ? 'Registrando...' : '¡Unirme a la Tribu!'}
+              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
+            </button>
+            
+            <button 
+              type="button"
+              onClick={() => { setStep('email'); setError(''); }}
+              className="w-full text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
+            >
+              ← Cambiar email
+            </button>
+            
+            <p className="text-[10px] text-[#7C8193] text-center">
+              Tu contraseña inicial será: <strong>TRIBU2026</strong>
+            </p>
+          </form>
+        )}
         
         {/* Menú protegido para uso interno */}
         {!devMode ? (
@@ -830,7 +994,7 @@ const LoginScreen = () => {
                 👉 Guillermo - Elevate
               </button>
             </div>
-            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 23 Verificados</p>
+            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 107+ Usuarios</p>
           </div>
         )}
       </div>

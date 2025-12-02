@@ -729,15 +729,19 @@ const LoginScreen = () => {
     }, 500);
   };
 
-  // Paso 2b: Registro de nuevo usuario
+  // Paso 2b: Registro de nuevo usuario - CON TODOS LOS CAMPOS
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     
-    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone) {
-      setError('Por favor completa todos los campos');
+    // Validar TODOS los campos obligatorios
+    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || !registerData.category) {
+      setError('Por favor completa TODOS los campos obligatorios');
       return;
     }
+    
+    // Validar formato de Instagram
+    const instagramHandle = registerData.instagram.startsWith('@') ? registerData.instagram : `@${registerData.instagram}`;
 
     setIsLoading(true);
     
@@ -747,17 +751,19 @@ const LoginScreen = () => {
         email,
         name: registerData.name,
         companyName: registerData.companyName,
-        instagram: registerData.instagram,
+        instagram: instagramHandle,
         phone: registerData.phone,
-        category: registerData.category || 'General'
+        category: registerData.category
       });
       
       if (newUser) {
+        console.log('✅ Nuevo usuario registrado:', newUser.name, newUser.category);
         completeLogin(newUser);
       } else {
         setError('Error al registrar. Intenta de nuevo.');
       }
     } catch (err) {
+      console.error('Error en registro:', err);
       setError('Error al registrar. Intenta de nuevo.');
     }
     
@@ -921,12 +927,12 @@ const LoginScreen = () => {
           </form>
         )}
 
-        {/* PASO 2b: Registro (usuario nuevo) */}
+        {/* PASO 2b: Registro (usuario nuevo) - FORMULARIO COMPLETO */}
         {step === 'register' && (
           <form onSubmit={handleRegister} className="space-y-3 text-left">
             <div className="bg-[#6161FF]/10 border border-[#6161FF]/30 rounded-xl p-3 mb-2">
               <p className="text-[#6161FF] text-sm font-medium">🎉 ¡Bienvenido/a a la Tribu!</p>
-              <p className="text-[#6161FF]/80 text-xs">Completa tus datos para unirte</p>
+              <p className="text-[#6161FF]/80 text-xs">Completa tus datos para que podamos asignarte tu grupo 10+10</p>
             </div>
             
             <div className="bg-[#F5F7FB] rounded-xl p-2.5 text-sm text-[#434343]">
@@ -934,46 +940,76 @@ const LoginScreen = () => {
             </div>
             
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Tu nombre</label>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Tu nombre completo *</label>
               <input 
                 type="text" 
                 value={registerData.name}
                 onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                 placeholder="María González"
+                required
               />
             </div>
             
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Nombre de tu emprendimiento</label>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Nombre de tu emprendimiento *</label>
               <input 
                 type="text" 
                 value={registerData.companyName}
                 onChange={(e) => setRegisterData({...registerData, companyName: e.target.value})}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                 placeholder="Mi Empresa"
+                required
               />
+            </div>
+            
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Categoría / Rubro *</label>
+              <select 
+                value={registerData.category}
+                onChange={(e) => setRegisterData({...registerData, category: e.target.value})}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                required
+              >
+                <option value="">Selecciona tu rubro...</option>
+                <option value="Moda y Accesorios">👗 Moda y Accesorios</option>
+                <option value="Belleza y Cuidado Personal">💄 Belleza y Cuidado Personal</option>
+                <option value="Alimentación y Bebidas">🍽️ Alimentación y Bebidas</option>
+                <option value="Hogar y Decoración">🏠 Hogar y Decoración</option>
+                <option value="Salud y Bienestar">💪 Salud y Bienestar</option>
+                <option value="Tecnología y Servicios Digitales">💻 Tecnología y Servicios Digitales</option>
+                <option value="Arte y Diseño">🎨 Arte y Diseño</option>
+                <option value="Educación y Capacitación">📚 Educación y Capacitación</option>
+                <option value="Servicios Profesionales">💼 Servicios Profesionales</option>
+                <option value="Mascotas">🐾 Mascotas</option>
+                <option value="Niños y Bebés">👶 Niños y Bebés</option>
+                <option value="Eventos y Entretenimiento">🎉 Eventos y Entretenimiento</option>
+                <option value="Otro">📦 Otro</option>
+              </select>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Instagram</label>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Instagram *</label>
                 <input 
                   type="text" 
                   value={registerData.instagram}
                   onChange={(e) => setRegisterData({...registerData, instagram: e.target.value})}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                   placeholder="@usuario"
+                  required
                 />
+                <p className="text-[9px] text-[#7C8193] mt-0.5">⚠️ Debe ser público</p>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono</label>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono *</label>
                 <input 
                   type="tel" 
                   value={registerData.phone}
                   onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                   placeholder="+56912345678"
+                  required
                 />
               </div>
             </div>
@@ -982,7 +1018,7 @@ const LoginScreen = () => {
             
             <button 
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone}
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
             >
               {isLoading ? 'Registrando...' : '¡Unirme a la Tribu!'}
@@ -998,7 +1034,8 @@ const LoginScreen = () => {
             </button>
             
             <p className="text-[10px] text-[#7C8193] text-center">
-              Tu contraseña inicial será: <strong>TRIBU2026</strong>
+              Tu contraseña inicial será: <strong>TRIBU2026</strong><br/>
+              Podrás cambiarla después en tu perfil
             </p>
           </form>
         )}

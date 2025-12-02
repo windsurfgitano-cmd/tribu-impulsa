@@ -34,11 +34,27 @@ export interface PaymentRecord {
   completedAt?: string;
 }
 
-// Precio de membresía (en CLP)
+// Precio de membresía DINÁMICO (desde config del admin)
+export const getMembershipPrice = () => {
+  const savedConfig = localStorage.getItem('tribu_admin_config');
+  const defaultPrice = 20000; // $20.000 CLP por defecto
+  
+  if (savedConfig) {
+    try {
+      const config = JSON.parse(savedConfig);
+      return config.membershipPrice || defaultPrice;
+    } catch {
+      return defaultPrice;
+    }
+  }
+  return defaultPrice;
+};
+
+// Para compatibilidad con código existente
 export const MEMBERSHIP_PRICE = {
-  amount: 15000, // $15.000 CLP
+  get amount() { return getMembershipPrice(); },
   currency: 'CLP',
-  description: 'Membresía Tribu Impulsa - Acceso completo al sistema de matching tribal'
+  description: 'Membresía Tribu Impulsa - Acceso completo al Algoritmo Tribal 10+10'
 };
 
 // ===============================================

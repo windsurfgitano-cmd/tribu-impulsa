@@ -386,6 +386,86 @@ Proyecto: tribu-impulsa
 
 ---
 
+## 🔍 AUDITORÍA DE CÓDIGO (2 Dic 2025 20:15)
+
+### ✅ ERRORES ENCONTRADOS Y CORREGIDOS
+
+| # | Problema | Archivo | Solución |
+|---|----------|---------|----------|
+| 1 | **Usuarios nuevos se borraban al recargar** | `realUsersData.ts` | `forceReloadRealUsers()` ahora preserva usuarios con ID `user_*` |
+| 2 | **Usuarios no sincronizaban entre dispositivos** | `realUsersData.ts` | Agregada `syncUsersFromFirebase()` para traer registros de Firebase |
+| 3 | **Precio membresía hardcodeado $15.000** | `membershipService.ts` | Cambiado a getter dinámico `getMembershipPrice()` |
+| 4 | **WhatsApp hardcodeado en compartir perfil** | `App.tsx` línea 2979 | Usa `getAppConfig().whatsappSupport` |
+| 5 | **WhatsApp hardcodeado en reportes** | `App.tsx` línea 2478 | Usa `getAppConfig().whatsappSupport` |
+| 6 | **Error TypeScript Object.values** | `App.tsx` línea 5005 | Agregado cast explícito `as MembershipData[]` |
+| 7 | **Navegación no bloqueada para invitados** | `App.tsx` | Agregado `MemberRoute` y candados visuales |
+| 8 | **Formulario registro sin categoría** | `App.tsx` | Sistema de categorías anidadas con 17 rubros |
+
+### 🛡️ VALIDACIONES IMPLEMENTADAS
+
+```
+✅ Login verifica email en localStorage Y Firebase
+✅ Registro valida: nombre, empresa, rubro, subcategoría, Instagram, teléfono
+✅ Membresías se sincronizan: localStorage ↔ Firebase
+✅ Precio viene de tribu_admin_config (dinámico)
+✅ WhatsApp viene de tribu_admin_config (dinámico)
+✅ Usuarios nuevos se preservan al recargar
+✅ Usuarios se sincronizan desde Firebase al cargar
+✅ Rutas protegidas redirigen a /membership si no es miembro
+```
+
+### 📊 FLUJO DE DATOS CORREGIDO
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  CARGA DE APP                               │
+├─────────────────────────────────────────────────────────────┤
+│  1. initializeFirebase()                                    │
+│  2. ensureInitialized() - crear config si no existe         │
+│  3. forceReloadRealUsers():                                 │
+│     a. Leer usuarios existentes de localStorage             │
+│     b. Separar usuarios nuevos (user_*) de base             │
+│     c. Recargar 108 usuarios base                           │
+│     d. MERGE con usuarios nuevos                            │
+│     e. syncUsersFromFirebase() - traer de cloud             │
+│  4. ensureTribeAssignments()                                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                  REGISTRO NUEVO USUARIO                     │
+├─────────────────────────────────────────────────────────────┤
+│  1. Validar campos obligatorios                             │
+│  2. Generar ID: user_${timestamp}_${random}                 │
+│  3. Guardar en localStorage (tribu_users)                   │
+│  4. Guardar en Firebase (colección 'users')                 │
+│  5. Crear sesión y redirigir                                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                  CONFIGURACIÓN DINÁMICA                     │
+├─────────────────────────────────────────────────────────────┤
+│  Admin guarda → tribu_admin_config (localStorage)           │
+│                                                             │
+│  getAppConfig() retorna:                                    │
+│  {                                                          │
+│    membershipPrice: 20000,     // desde config              │
+│    whatsappSupport: '+56...',  // desde config              │
+│    matchesPerUser: 10,         // desde config              │
+│    mercadopagoMode: 'sandbox'  // desde config              │
+│  }                                                          │
+│                                                             │
+│  Usado en:                                                  │
+│  - MembershipScreen (precio)                                │
+│  - MembershipSection (precio)                               │
+│  - MembershipAdminTab (precio)                              │
+│  - WhatsAppFloat (número)                                   │
+│  - Compartir perfil (número)                                │
+│  - Reportes (número)                                        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## 🎯 RESUMEN EJECUTIVO
 
 ```

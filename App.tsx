@@ -2475,7 +2475,7 @@ const TribeAssignmentsView = () => {
                   </div>
                   <p className="text-[#434343] text-sm mb-3">{report.reason}</p>
                   <a 
-                    href={`https://wa.me/56951776005?text=${encodeURIComponent(`🚨 REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
+                    href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`🚨 REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs px-3 py-1.5 bg-[#00CA72] text-white rounded-full hover:bg-[#00B366] transition"
@@ -2976,7 +2976,7 @@ const MyProfileView = () => {
               <Instagram size={16} /> Compartir en Instagram
             </a>
             <a
-              href={`https://wa.me/56951776005?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
+              href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"
@@ -5000,12 +5000,14 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
   };
 
   // Estadísticas - USAR PRECIO DE CONFIGURACIÓN
+  type MembershipData = {status: string; paymentDate?: string; expiresAt?: string; amount?: number};
+  const membershipValues = Object.values(memberships) as MembershipData[];
   const stats = {
     total: users.length,
-    miembros: Object.values(memberships).filter(m => m.status === 'miembro').length,
-    invitados: Object.values(memberships).filter(m => m.status === 'invitado' || !m.status).length,
-    admins: Object.values(memberships).filter(m => m.status === 'admin').length,
-    ingresos: Object.values(memberships).filter(m => m.status === 'miembro' || m.status === 'admin').reduce((sum, m) => sum + (m.amount || MEMBERSHIP_PRICE), 0)
+    miembros: membershipValues.filter(m => m.status === 'miembro').length,
+    invitados: membershipValues.filter(m => m.status === 'invitado' || !m.status).length,
+    admins: membershipValues.filter(m => m.status === 'admin').length,
+    ingresos: membershipValues.filter(m => m.status === 'miembro' || m.status === 'admin').reduce((sum, m) => sum + (m.amount || MEMBERSHIP_PRICE), 0)
   };
 
   // Filtrar usuarios

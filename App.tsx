@@ -5993,19 +5993,96 @@ const AdminPanelInline = () => {
   );
 };
 
+// Componente de ruta protegida para miembros
+const MemberRoute = ({ children }: { children: React.ReactNode }) => {
+  const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const [isMember, setIsMember] = useState<boolean | null>(null);
+  
+  useEffect(() => {
+    const checkMembership = async () => {
+      if (!currentUser) {
+        navigate('/');
+        return;
+      }
+      
+      // Verificar en localStorage
+      const status = localStorage.getItem(`membership_status_${currentUser.id}`);
+      if (status === 'miembro' || status === 'admin') {
+        setIsMember(true);
+        return;
+      }
+      
+      // Verificar en Firebase
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (db) {
+          const membershipDoc = await getDoc(doc(db, 'memberships', currentUser.id));
+          if (membershipDoc.exists()) {
+            const data = membershipDoc.data();
+            if (data.status === 'miembro' || data.status === 'admin') {
+              localStorage.setItem(`membership_status_${currentUser.id}`, data.status);
+              setIsMember(true);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.log('Error verificando membresía:', err);
+      }
+      
+      // No es miembro, redirigir a membership
+      setIsMember(false);
+      navigate('/membership');
+    };
+    
+    checkMembership();
+  }, [currentUser, navigate]);
+  
+  if (isMember === null) {
+    return <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-[#6161FF] border-t-transparent rounded-full animate-spin" />
+    </div>;
+  }
+  
+  return isMember ? <>{children}</> : null;
+};
+
 // Main Layout with Navigation
 const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
   
-  // Hide nav on login, register, survey, and admin pages
-  const hiddenNavRoutes = ['/', '/register', '/survey', '/admin'];
+  // Verificar membresía para mostrar candados en navegación
+  const [isMember, setIsMember] = useState(false);
+  
+  useEffect(() => {
+    if (currentUser) {
+      const status = localStorage.getItem(`membership_status_${currentUser.id}`);
+      setIsMember(status === 'miembro' || status === 'admin');
+    }
+  }, [currentUser, location.pathname]);
+  
+  // Hide nav on login, register, survey, admin and membership pages
+  const hiddenNavRoutes = ['/', '/register', '/survey', '/admin', '/membership', '/searching'];
   const showNav = !hiddenNavRoutes.includes(location.pathname) && !location.pathname.startsWith('/admin');
   const isDashboard = location.pathname.includes('/dashboard');
   const isActivity = location.pathname.includes('/activity');
   const isProfile = location.pathname.includes('/my-profile');
   const isTribe = location.pathname.includes('/tribe');
   const isDirectory = location.pathname.includes('/directory');
+
+  // Función para navegar con verificación de membresía
+  const navigateWithCheck = (path: string, requiresMembership: boolean) => {
+    if (requiresMembership && !isMember) {
+      navigate('/membership');
+    } else {
+      navigate(path);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full text-[#181B34] font-sans bg-[#F5F7FB]">
@@ -6016,11 +6093,13 @@ const AppLayout = () => {
                 <Route path="/searching" element={<SearchingScreen />} />
                 <Route path="/survey" element={<SurveyScreen />} />
                 <Route path="/membership" element={<MembershipScreen />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/tribe" element={<TribeAssignmentsView />} />
+                {/* Rutas PROTEGIDAS - solo para MIEMBROS */}
+                <Route path="/dashboard" element={<MemberRoute><Dashboard /></MemberRoute>} />
+                <Route path="/tribe" element={<MemberRoute><TribeAssignmentsView /></MemberRoute>} />
+                <Route path="/directory" element={<MemberRoute><DirectoryView /></MemberRoute>} />
+                <Route path="/profile/:id" element={<MemberRoute><ProfileDetail /></MemberRoute>} />
+                {/* Rutas LIBRES - para todos */}
                 <Route path="/activity" element={<ActivityView />} />
-                <Route path="/directory" element={<DirectoryView />} />
-                <Route path="/profile/:id" element={<ProfileDetail />} />
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -6038,16 +6117,20 @@ const AppLayout = () => {
             }}
           >
             <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
-              {/* Inicio - Dashboard con métricas */}
+              {/* Inicio - BLOQUEADO para invitados */}
               <button 
-                onClick={() => navigate('/dashboard')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isDashboard ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
+                onClick={() => navigateWithCheck('/dashboard', true)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
+                  isDashboard ? 'text-[#6161FF]' : 
+                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+                }`}
               >
                 <Activity size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
                 <span className="text-[10px] mt-1 font-medium">Inicio</span>
+                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
               
-              {/* Actividad - Notificaciones */}
+              {/* Actividad - LIBRE para todos */}
               <button 
                 onClick={() => navigate('/activity')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isActivity ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
@@ -6056,33 +6139,45 @@ const AppLayout = () => {
                 <span className="text-[10px] mt-1 font-medium">Actividad</span>
               </button>
 
-              {/* Checklist - Centro destacado con liquid glass */}
+              {/* Checklist - BLOQUEADO para invitados */}
               <button 
-                onClick={() => navigate('/tribe')}
-                className="flex flex-col items-center justify-center -mt-4"
+                onClick={() => navigateWithCheck('/tribe', true)}
+                className="flex flex-col items-center justify-center -mt-4 relative"
               >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${isTribe ? 'bg-[#6161FF]/90' : 'bg-[#00CA72]/90'}`}
+                <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${
+                  !isMember ? 'bg-[#7C8193]/60' :
+                  isTribe ? 'bg-[#6161FF]/90' : 'bg-[#00CA72]/90'
+                }`}
                   style={{
-                    boxShadow: isTribe 
-                      ? '0 8px 32px rgba(97, 97, 255, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
-                      : '0 8px 32px rgba(0, 202, 114, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
+                    boxShadow: !isMember 
+                      ? '0 4px 16px rgba(124, 129, 147, 0.2)'
+                      : isTribe 
+                        ? '0 8px 32px rgba(97, 97, 255, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
+                        : '0 8px 32px rgba(0, 202, 114, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
                   }}
                 >
-                  <CheckCircle size={26} className="text-white" strokeWidth={2} />
+                  {!isMember ? <Lock size={24} className="text-white" /> : <CheckCircle size={26} className="text-white" strokeWidth={2} />}
                 </div>
-                <span className={`text-[10px] mt-1 font-semibold ${isTribe ? 'text-[#6161FF]' : 'text-[#00CA72]'}`}>Checklist</span>
+                <span className={`text-[10px] mt-1 font-semibold ${
+                  !isMember ? 'text-[#7C8193]' :
+                  isTribe ? 'text-[#6161FF]' : 'text-[#00CA72]'
+                }`}>Checklist</span>
               </button>
 
-              {/* Red - Directorio de emprendedores */}
+              {/* Red - BLOQUEADO para invitados */}
               <button 
-                onClick={() => navigate('/directory')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isDirectory ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
+                onClick={() => navigateWithCheck('/directory', true)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
+                  isDirectory ? 'text-[#6161FF]' : 
+                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+                }`}
               >
                 <Users size={22} strokeWidth={isDirectory ? 2.5 : 1.8} />
                 <span className="text-[10px] mt-1 font-medium">Red</span>
+                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
 
-              {/* Menu/Perfil */}
+              {/* Menu/Perfil - LIBRE para todos */}
               <button 
                 onClick={() => navigate('/my-profile')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}

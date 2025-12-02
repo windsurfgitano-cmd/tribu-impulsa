@@ -269,6 +269,12 @@ const SURVEY_REVENUE_OPTIONS = [
   '3.000.000 +'
 ];
 
+// IMPORTANTE: Todas las claves usan el userId para segregar datos por usuario
+const getUserStorageKey = (baseKey: string): string => {
+  const userId = localStorage.getItem('tribu_current_user') || 'guest';
+  return `${baseKey}_${userId}`;
+};
+
 const TRIBE_ASSIGNMENTS_KEY = 'tribeAssignmentsData';
 const TRIBE_STATUS_KEY = 'tribeAssignmentStatus';
 const TRIBE_CHECKLIST_KEY = 'tribeAssignmentsChecklist';
@@ -306,12 +312,12 @@ const buildChecklistFromAssignments = (data: TribeAssignments, existing?: Assign
 
 const stampTribeSync = () => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(TRIBE_SYNC_KEY, new Date().toLocaleString('es-CL'));
+  localStorage.setItem(getUserStorageKey(TRIBE_SYNC_KEY), new Date().toLocaleString('es-CL'));
 };
 
 const getTribeSyncedAt = (): string => {
   if (typeof window === 'undefined') return new Date().toLocaleString('es-CL');
-  return localStorage.getItem(TRIBE_SYNC_KEY) ?? new Date().toLocaleString('es-CL');
+  return localStorage.getItem(getUserStorageKey(TRIBE_SYNC_KEY)) ?? new Date().toLocaleString('es-CL');
 };
 
 const getStoredTribeAssignments = (category: string, userId?: string): TribeAssignments => {
@@ -320,7 +326,7 @@ const getStoredTribeAssignments = (category: string, userId?: string): TribeAssi
   }
 
   // Key específica por usuario para que cada uno tenga sus propias asignaciones
-  const storageKey = userId ? `${TRIBE_ASSIGNMENTS_KEY}_${userId}` : TRIBE_ASSIGNMENTS_KEY;
+  const storageKey = getUserStorageKey(TRIBE_ASSIGNMENTS_KEY);
   
   const raw = localStorage.getItem(storageKey);
   if (!raw) {
@@ -347,7 +353,7 @@ const getStoredTribeAssignments = (category: string, userId?: string): TribeAssi
 
 const persistTribeAssignments = (data: TribeAssignments) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(TRIBE_ASSIGNMENTS_KEY, JSON.stringify(data));
+  localStorage.setItem(getUserStorageKey(TRIBE_ASSIGNMENTS_KEY), JSON.stringify(data));
 };
 
 const getStoredChecklistState = (assignments: TribeAssignments): AssignmentChecklist => {
@@ -355,29 +361,30 @@ const getStoredChecklistState = (assignments: TribeAssignments): AssignmentCheck
     return buildChecklistFromAssignments(assignments);
   }
 
-  const raw = localStorage.getItem(TRIBE_CHECKLIST_KEY);
+  const storageKey = getUserStorageKey(TRIBE_CHECKLIST_KEY);
+  const raw = localStorage.getItem(storageKey);
   if (!raw) {
     const initial = buildChecklistFromAssignments(assignments);
-    localStorage.setItem(TRIBE_CHECKLIST_KEY, JSON.stringify(initial));
+    localStorage.setItem(storageKey, JSON.stringify(initial));
     return initial;
   }
 
   try {
     const parsed = JSON.parse(raw);
     const normalized = buildChecklistFromAssignments(assignments, parsed);
-    localStorage.setItem(TRIBE_CHECKLIST_KEY, JSON.stringify(normalized));
+    localStorage.setItem(storageKey, JSON.stringify(normalized));
     return normalized;
   } catch (error) {
     console.warn('Error reading checklist', error);
     const fallback = buildChecklistFromAssignments(assignments);
-    localStorage.setItem(TRIBE_CHECKLIST_KEY, JSON.stringify(fallback));
+    localStorage.setItem(storageKey, JSON.stringify(fallback));
     return fallback;
   }
 };
 
 const persistChecklistState = (data: AssignmentChecklist) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(TRIBE_CHECKLIST_KEY, JSON.stringify(data));
+  localStorage.setItem(getUserStorageKey(TRIBE_CHECKLIST_KEY), JSON.stringify(data));
 };
 
 const checklistsAreEqual = (a: AssignmentChecklist, b: AssignmentChecklist): boolean => {
@@ -392,25 +399,25 @@ const checklistsAreEqual = (a: AssignmentChecklist, b: AssignmentChecklist): boo
 
 const getStoredTribeStatus = (): TribeStatus => {
   if (typeof window === 'undefined') return 'PENDIENTE';
-  return (localStorage.getItem(TRIBE_STATUS_KEY) as TribeStatus) ?? 'PENDIENTE';
+  return (localStorage.getItem(getUserStorageKey(TRIBE_STATUS_KEY)) as TribeStatus) ?? 'PENDIENTE';
 };
 
 const persistTribeStatus = (status: TribeStatus) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(TRIBE_STATUS_KEY, status);
+  localStorage.setItem(getUserStorageKey(TRIBE_STATUS_KEY), status);
 };
 
 const resetTribeStorage = () => {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(TRIBE_ASSIGNMENTS_KEY);
-  localStorage.removeItem(TRIBE_CHECKLIST_KEY);
-  localStorage.removeItem(TRIBE_STATUS_KEY);
-  localStorage.removeItem(TRIBE_REPORTS_KEY);
+  localStorage.removeItem(getUserStorageKey(TRIBE_ASSIGNMENTS_KEY));
+  localStorage.removeItem(getUserStorageKey(TRIBE_CHECKLIST_KEY));
+  localStorage.removeItem(getUserStorageKey(TRIBE_STATUS_KEY));
+  localStorage.removeItem(getUserStorageKey(TRIBE_REPORTS_KEY));
 };
 
 const getStoredReports = (): TribeReport[] => {
   if (typeof window === 'undefined') return [];
-  const raw = localStorage.getItem(TRIBE_REPORTS_KEY);
+  const raw = localStorage.getItem(getUserStorageKey(TRIBE_REPORTS_KEY));
   if (!raw) return [];
   try {
     return JSON.parse(raw);
@@ -424,7 +431,7 @@ const persistReport = (report: TribeReport) => {
   if (typeof window === 'undefined') return;
   const current = getStoredReports();
   const next = [...current, report];
-  localStorage.setItem(TRIBE_REPORTS_KEY, JSON.stringify(next));
+  localStorage.setItem(getUserStorageKey(TRIBE_REPORTS_KEY), JSON.stringify(next));
 };
 
 const getTribeStatsSnapshot = (userCategory: string, userId?: string) => {
@@ -568,18 +575,18 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     
-    // Autenticación con contraseña universal O contraseña personal
+    // Autenticación con contraseña universal O contraseña del perfil
     setTimeout(() => {
-      // 1. Verificar con contraseña universal TRIBU2026
+      // 1. Verificar con contraseña universal TRIBU2026 (usuarios originales)
       const user = validateCredentials(email, password);
       
-      // 2. Si no funciona, verificar con contraseña personal (usuarios nuevos)
-      const userCredentials = JSON.parse(localStorage.getItem('tribu_user_credentials') || '{}');
-      const savedPassword = userCredentials[email.toLowerCase()];
+      // 2. Buscar usuario por email
       const existingUser = getUserByEmail(email);
-      const isPersonalPasswordValid = savedPassword && savedPassword === password;
       
-      if (user || (existingUser && isPersonalPasswordValid)) {
+      // 3. Verificar contraseña del perfil (usuarios nuevos)
+      const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
+      
+      if (user || (existingUser && isProfilePasswordValid)) {
         const loggedUser = user || existingUser;
         // Usuario encontrado y autenticado
         const session: UserSession = {
@@ -589,6 +596,9 @@ const LoginScreen = () => {
         };
         setStoredSession(session);
         setCurrentUser(loggedUser.id);
+        
+        // IMPORTANTE: Establecer tribu_current_user con el ID para segregar datos
+        localStorage.setItem('tribu_current_user', loggedUser.id);
         
         // Marcar survey como completado para usuarios reales (ya tienen todos sus datos)
         const surveyData = {
@@ -803,11 +813,12 @@ const RegisterScreen = () => {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
-      // Guardar en databaseService (DB real)
+      // Guardar en databaseService (DB real) - incluir contraseña en el perfil
       const newUser = createUser({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
+        password: formData.password, // Contraseña incluida en el perfil
         companyName: formData.companyName,
         city: formData.city,
         sector: formData.sector || undefined,
@@ -817,13 +828,12 @@ const RegisterScreen = () => {
         website: formData.website || undefined,
         category: formData.category,
         affinity: formData.affinity,
-        scope: formData.scope
+        scope: formData.scope,
+        whatsapp: formData.phone // WhatsApp = teléfono por defecto
       });
       
-      // Guardar contraseña del usuario (hash simple para localStorage)
-      const userCredentials = JSON.parse(localStorage.getItem('tribu_user_credentials') || '{}');
-      userCredentials[formData.email.toLowerCase()] = formData.password;
-      localStorage.setItem('tribu_user_credentials', JSON.stringify(userCredentials));
+      // Establecer usuario actual con el ID (NO email)
+      localStorage.setItem('tribu_current_user', newUser.id);
       
       // También guardar en formato antiguo para compatibilidad
       const surveyData = {
@@ -844,9 +854,6 @@ const RegisterScreen = () => {
         copyResponse: false
       };
       persistSurveyResponse(surveyData);
-      
-      // Auto-login después de registrar
-      localStorage.setItem('tribu_current_user', formData.email.toLowerCase());
       
       console.log('✅ Usuario registrado en DB:', newUser.id);
       navigate('/searching');
@@ -2958,36 +2965,37 @@ const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: n
 };
 
 // ============================================
-// SISTEMA DE ACTIVIDADES PERSISTENTE
+// SISTEMA DE ACTIVIDADES PERSISTENTE (POR USUARIO)
 // ============================================
 const ACTIVITIES_KEY = 'tribu_activities';
 const ARCHIVED_KEY = 'tribu_activities_archived';
 
-// Obtener actividades del localStorage
+// Obtener actividades del localStorage (específicas por usuario)
 const getStoredActivities = (): ActivityItem[] => {
   if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(ACTIVITIES_KEY);
+  const storageKey = getUserStorageKey(ACTIVITIES_KEY);
+  const stored = localStorage.getItem(storageKey);
   if (stored) {
     try {
       return JSON.parse(stored);
     } catch { return []; }
   }
-  // Primera vez - generar actividades iniciales
+  // Primera vez para este usuario - generar actividades iniciales
   const initial = generateInitialActivities();
-  localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(initial));
+  localStorage.setItem(storageKey, JSON.stringify(initial));
   return initial;
 };
 
-// Guardar actividades
+// Guardar actividades (específicas por usuario)
 const persistActivities = (activities: ActivityItem[]) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(activities));
+  localStorage.setItem(getUserStorageKey(ACTIVITIES_KEY), JSON.stringify(activities));
 };
 
-// Obtener actividades archivadas
+// Obtener actividades archivadas (específicas por usuario)
 const getArchivedActivities = (): ActivityItem[] => {
   if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem(ARCHIVED_KEY);
+  const stored = localStorage.getItem(getUserStorageKey(ARCHIVED_KEY));
   if (stored) {
     try { return JSON.parse(stored); } catch { return []; }
   }
@@ -2999,7 +3007,7 @@ const archiveActivity = (activity: ActivityItem) => {
   if (typeof window === 'undefined') return;
   const archived = getArchivedActivities();
   archived.push({ ...activity, archivedAt: new Date().toISOString() });
-  localStorage.setItem(ARCHIVED_KEY, JSON.stringify(archived));
+  localStorage.setItem(getUserStorageKey(ARCHIVED_KEY), JSON.stringify(archived));
 };
 
 // Restaurar actividad archivada
@@ -3008,7 +3016,7 @@ const restoreActivity = (id: string): ActivityItem | null => {
   const activity = archived.find(a => a.id === id);
   if (activity) {
     const updated = archived.filter(a => a.id !== id);
-    localStorage.setItem(ARCHIVED_KEY, JSON.stringify(updated));
+    localStorage.setItem(getUserStorageKey(ARCHIVED_KEY), JSON.stringify(updated));
     return activity;
   }
   return null;

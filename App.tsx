@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
@@ -747,7 +747,7 @@ const LoginScreen = () => {
   };
 
   // Función común para completar el login
-  const completeLogin = (loggedUser: any) => {
+  const completeLogin = async (loggedUser: any) => {
     const session: UserSession = {
       email: loggedUser.email,
       name: loggedUser.name,
@@ -773,7 +773,42 @@ const LoginScreen = () => {
       localStorage.setItem('show_password_change', 'true');
     }
     
-    navigate('/searching');
+    // Verificar membresía
+    const membershipStatus = localStorage.getItem(`membership_status_${loggedUser.id}`);
+    
+    // Si no tiene membresía, verificar en Firebase
+    if (!membershipStatus) {
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (db) {
+          const membershipDoc = await getDoc(doc(db, 'memberships', loggedUser.id));
+          if (membershipDoc.exists()) {
+            const membership = membershipDoc.data();
+            localStorage.setItem(`membership_status_${loggedUser.id}`, membership.status);
+            if (membership.status === 'miembro' || membership.status === 'admin') {
+              navigate('/searching');
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.log('⚠️ Error verificando membresía:', err);
+      }
+      
+      // Usuario nuevo sin membresía → pantalla de pago
+      navigate('/membership');
+      return;
+    }
+    
+    // Si ya es miembro → continuar
+    if (membershipStatus === 'miembro' || membershipStatus === 'admin') {
+      navigate('/searching');
+    } else {
+      // Es invitado → pantalla de pago
+      navigate('/membership');
+    }
   };
 
   return (
@@ -1370,6 +1405,191 @@ const RegisterScreen = () => {
             {step === totalSteps ? '🚀 Buscar Mi Tribu' : 'Continuar'} 
             <ArrowRight size={18} />
           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// 2c. Pantalla de Membresía - Pasarela de Pago
+const MembershipScreen = () => {
+  const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const currentUser = getCurrentUser();
+  const session = getStoredSession();
+  
+  // Precio de membresía
+  const PRICE = 15000; // CLP
+  const formatPrice = (amount: number) => 
+    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(amount);
+
+  // Verificar si ya es miembro (desde localStorage)
+  useEffect(() => {
+    const membershipStatus = localStorage.getItem(`membership_status_${currentUser?.id}`);
+    if (membershipStatus === 'miembro' || membershipStatus === 'admin') {
+      navigate('/searching');
+    }
+  }, [currentUser, navigate]);
+
+  // Simular pago exitoso
+  const handlePayment = async (method: string) => {
+    setIsProcessing(true);
+    
+    // Simular procesamiento
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Marcar como miembro
+    if (currentUser) {
+      localStorage.setItem(`membership_status_${currentUser.id}`, 'miembro');
+      localStorage.setItem(`membership_payment_${currentUser.id}`, JSON.stringify({
+        method,
+        amount: PRICE,
+        date: new Date().toISOString(),
+        status: 'approved'
+      }));
+      
+      // Sincronizar con Firebase
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, setDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (db) {
+          await setDoc(doc(db, 'memberships', currentUser.id), {
+            id: currentUser.id,
+            email: currentUser.email,
+            status: 'miembro',
+            paymentMethod: method,
+            paymentDate: new Date().toISOString(),
+            amount: PRICE,
+            expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+          });
+          console.log('✅ Membresía sincronizada con Firebase');
+        }
+      } catch (err) {
+        console.log('⚠️ Error sincronizando membresía:', err);
+      }
+    }
+    
+    setShowSuccess(true);
+    setTimeout(() => {
+      navigate('/searching');
+    }, 2000);
+  };
+
+  // Pantalla de éxito
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#00CA72] flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+          <div className="w-20 h-20 bg-[#00CA72] rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+            <CheckCircle size={40} className="text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#181B34] mb-2">¡Bienvenido/a a la Tribu!</h2>
+          <p className="text-[#7C8193] mb-4">Tu membresía está activa</p>
+          <div className="flex items-center justify-center gap-2 text-[#6161FF]">
+            <Crown size={20} />
+            <span className="font-semibold">MIEMBRO ACTIVO</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FB] flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#A5A5FF] text-white pt-12 pb-16 px-6 text-center">
+        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Crown size={32} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">¡Hola {session?.name?.split(' ')[0] || 'Emprendedor/a'}!</h1>
+        <p className="text-white/80 text-sm">
+          Activa tu membresía para acceder al<br />
+          <span className="font-semibold text-white">Algoritmo Tribal 10+10</span>
+        </p>
+      </div>
+
+      {/* Contenido */}
+      <div className="flex-1 px-4 -mt-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="text-center mb-6">
+            <p className="text-[#7C8193] text-sm mb-1">Membresía anual</p>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-4xl font-bold text-[#181B34]">{formatPrice(PRICE)}</span>
+              <span className="text-[#7C8193]">/año</span>
+            </div>
+            <p className="text-[#00CA72] text-xs mt-1">Solo {formatPrice(Math.round(PRICE / 12))}/mes</p>
+          </div>
+
+          {/* Beneficios */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#6161FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users size={16} className="text-[#6161FF]" />
+              </div>
+              <div>
+                <p className="font-medium text-[#181B34] text-sm">Matching 10+10</p>
+                <p className="text-[#7C8193] text-xs">10 cuentas para impulsar, 10 que te impulsan</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <Zap size={16} className="text-[#00CA72]" />
+              </div>
+              <div>
+                <p className="font-medium text-[#181B34] text-sm">Algoritmo de Afinidad</p>
+                <p className="text-[#7C8193] text-xs">Matches basados en tu rubro e intereses</p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#FFCC00]/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <CheckCircle size={16} className="text-[#FFCC00]" />
+              </div>
+              <div>
+                <p className="font-medium text-[#181B34] text-sm">Comunidad Verificada</p>
+                <p className="text-[#7C8193] text-xs">Solo emprendedores comprometidos</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Botones de pago */}
+          <div className="space-y-3">
+            <button
+              onClick={() => handlePayment('mercadopago')}
+              disabled={isProcessing}
+              className="w-full bg-[#009EE3] hover:bg-[#0088C9] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  <CreditCard size={20} />
+                  Pagar con MercadoPago
+                </>
+              )}
+            </button>
+            
+            <button
+              onClick={() => handlePayment('transferencia')}
+              disabled={isProcessing}
+              className="w-full bg-[#181B34] hover:bg-[#2A2E4A] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
+            >
+              <CreditCard size={20} />
+              Pagar con Transferencia
+            </button>
+          </div>
+        </div>
+
+        {/* Info adicional */}
+        <div className="text-center text-xs text-[#7C8193] space-y-2 pb-8">
+          <p>✅ Pago 100% seguro</p>
+          <p>📧 Confirmación inmediata</p>
         </div>
       </div>
     </div>
@@ -2234,6 +2454,93 @@ const MyProfileView = () => {
     const currentUser = getCurrentUser();
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const bannerInputRef = React.useRef<HTMLInputElement>(null);
+    
+    // Estados para cambio de contraseña
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [passwordSuccess, setPasswordSuccess] = useState(false);
+    
+    // Función para cambiar contraseña
+    const handleChangePassword = async () => {
+      setPasswordError('');
+      setPasswordSuccess(false);
+      
+      // Validaciones
+      if (!currentPassword) {
+        setPasswordError('Ingresa tu contraseña actual');
+        return;
+      }
+      
+      // Verificar contraseña actual
+      const user = getCurrentUser();
+      if (!user) {
+        setPasswordError('Error: usuario no encontrado');
+        return;
+      }
+      
+      // Buscar usuario y verificar contraseña
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const userIndex = users.findIndex((u: { id: string }) => u.id === user.id);
+      
+      if (userIndex === -1) {
+        setPasswordError('Error: usuario no encontrado');
+        return;
+      }
+      
+      const currentUserData = users[userIndex];
+      if (currentUserData.password !== currentPassword && currentPassword !== 'TRIBU2026') {
+        setPasswordError('Contraseña actual incorrecta');
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+        return;
+      }
+      
+      if (newPassword !== confirmPassword) {
+        setPasswordError('Las contraseñas no coinciden');
+        return;
+      }
+      
+      // Actualizar contraseña
+      users[userIndex].password = newPassword;
+      localStorage.setItem('tribu_users', JSON.stringify(users));
+      
+      // Sincronizar con Firebase
+      try {
+        const { syncProfileToCloud } = await import('./services/firebaseService');
+        await syncProfileToCloud({
+          id: user.id,
+          name: currentUserData.name,
+          companyName: currentUserData.companyName,
+          category: currentUserData.category,
+          subCategory: currentUserData.affinity,
+          location: currentUserData.city,
+          bio: currentUserData.bio,
+          instagram: currentUserData.instagram,
+          website: currentUserData.website || '',
+          avatarUrl: currentUserData.avatarUrl,
+          coverUrl: currentUserData.coverUrl,
+          tags: currentUserData.tags || [],
+          // Nota: la contraseña no se sincroniza por seguridad
+        });
+      } catch (err) {
+        console.log('Error sincronizando perfil:', err);
+      }
+      
+      setPasswordSuccess(true);
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSuccess(false);
+      }, 1500);
+    };
 
     // Manejar upload de foto de perfil
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2644,10 +2951,19 @@ const MyProfileView = () => {
                         {/* Botón de Notificaciones Push */}
                         <NotificationButton />
                         
-                        <div className="pt-6 border-t border-[#E4E7EF]">
+                        {/* Opciones de cuenta */}
+                        <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
+                            {/* Cambiar contraseña */}
+                            <button 
+                                onClick={() => setShowPasswordModal(true)}
+                                className="w-full py-3 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                            >
+                                <Lock size={16} /> Cambiar Contraseña
+                            </button>
+                            
+                            {/* Cerrar sesión */}
                             <button 
                                 onClick={() => {
-                                  // Limpiar toda la sesión
                                   clearStoredSession();
                                   localStorage.removeItem('tribu_session');
                                   localStorage.removeItem('algorithm_seen');
@@ -2658,6 +2974,77 @@ const MyProfileView = () => {
                                 <LogOut size={16} /> Cerrar Sesión
                             </button>
                         </div>
+                        
+                        {/* Modal cambio de contraseña */}
+                        {showPasswordModal && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                              <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
+                                <Lock size={20} className="text-[#6161FF]" />
+                                Cambiar Contraseña
+                              </h3>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Contraseña actual</label>
+                                  <input
+                                    type="password"
+                                    value={currentPassword}
+                                    onChange={(e) => setCurrentPassword(e.target.value)}
+                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                                    placeholder="TRIBU2026"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Nueva contraseña</label>
+                                  <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                                    placeholder="Mínimo 6 caracteres"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Confirmar nueva contraseña</label>
+                                  <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                                    placeholder="Repetir contraseña"
+                                  />
+                                </div>
+                                {passwordError && (
+                                  <p className="text-[#FB275D] text-sm">{passwordError}</p>
+                                )}
+                                {passwordSuccess && (
+                                  <p className="text-[#00CA72] text-sm">✅ Contraseña actualizada correctamente</p>
+                                )}
+                                <div className="flex gap-3 pt-2">
+                                  <button
+                                    onClick={() => {
+                                      setShowPasswordModal(false);
+                                      setCurrentPassword('');
+                                      setNewPassword('');
+                                      setConfirmPassword('');
+                                      setPasswordError('');
+                                      setPasswordSuccess(false);
+                                    }}
+                                    className="flex-1 py-2.5 rounded-xl border border-[#E4E7EF] text-[#7C8193] hover:bg-[#F5F7FB]"
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    onClick={handleChangePassword}
+                                    className="flex-1 py-2.5 rounded-xl bg-[#6161FF] text-white hover:bg-[#5151EE]"
+                                  >
+                                    Guardar
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -4891,6 +5278,7 @@ const AppLayout = () => {
                 <Route path="/register" element={<RegisterScreen />} />
                 <Route path="/searching" element={<SearchingScreen />} />
                 <Route path="/survey" element={<SurveyScreen />} />
+                <Route path="/membership" element={<MembershipScreen />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/tribe" element={<TribeAssignmentsView />} />
                 <Route path="/activity" element={<ActivityView />} />

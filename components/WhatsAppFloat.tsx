@@ -11,7 +11,7 @@ const getWhatsAppNumber = () => {
       return (parsed.whatsappSupport || '+56951776005').replace(/[^0-9]/g, '');
     }
   } catch {}
-  return '56951776005';
+  return '56951776005'; // WhatsApp oficial Tribu Impulsa
 };
 
 export const WhatsAppFloat: React.FC = () => {

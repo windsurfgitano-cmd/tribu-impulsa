@@ -635,9 +635,9 @@ const clearStoredSession = () => {
 const getAppConfig = () => {
   const savedConfig = localStorage.getItem('tribu_admin_config');
   const defaults = {
-    membershipPrice: 15000,
+    membershipPrice: 20000,
     matchesPerUser: 10,
-    whatsappSupport: '+56912345678',
+    whatsappSupport: '+56951776005',
     appName: 'Tribu Impulsa',
     mercadopagoMode: 'sandbox'
   };
@@ -1481,7 +1481,7 @@ const MembershipScreen = () => {
             paymentMethod: method,
             paymentDate: new Date().toISOString(),
             amount: PRICE,
-            expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           });
           console.log('✅ Membresía sincronizada con Firebase');
         }
@@ -1533,12 +1533,12 @@ const MembershipScreen = () => {
       <div className="flex-1 px-4 -mt-8">
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="text-center mb-6">
-            <p className="text-[#7C8193] text-sm mb-1">Membresía anual</p>
+            <p className="text-[#7C8193] text-sm mb-1">Membresía mensual</p>
             <div className="flex items-center justify-center gap-2">
               <span className="text-4xl font-bold text-[#181B34]">{formatPrice(PRICE)}</span>
-              <span className="text-[#7C8193]">/año</span>
+              <span className="text-[#7C8193]">/mes</span>
             </div>
-            <p className="text-[#00CA72] text-xs mt-1">Solo {formatPrice(Math.round(PRICE / 12))}/mes</p>
+            <p className="text-[#00CA72] text-xs mt-1">Acceso completo al Algoritmo Tribal</p>
           </div>
 
           {/* Beneficios */}
@@ -3240,7 +3240,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
             className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
           >
             <CreditCard size={18} />
-            Activar Membresía - {formatPrice(15000)}/año
+            Activar Membresía - {formatPrice(getAppConfig().membershipPrice)}/mes
           </button>
         )}
       </div>
@@ -4780,9 +4780,9 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
     if (newStatus === 'miembro') {
       const paymentData = {
         method: 'manual_admin',
-        amount: 15000,
+        amount: 20000,
         date: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       };
       localStorage.setItem(`membership_payment_${userId}`, JSON.stringify(paymentData));
     }
@@ -4799,8 +4799,8 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
           status: newStatus,
           paymentMethod: newStatus === 'miembro' ? 'manual_admin' : undefined,
           paymentDate: newStatus === 'miembro' ? new Date().toISOString() : undefined,
-          amount: newStatus === 'miembro' ? 15000 : undefined,
-          expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+          amount: newStatus === 'miembro' ? 20000 : undefined,
+          expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
           updatedBy: 'admin',
           updatedAt: new Date().toISOString()
         });
@@ -4815,8 +4815,8 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
       [userId]: {
         status: newStatus,
         paymentDate: newStatus === 'miembro' ? new Date().toISOString() : undefined,
-        expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : undefined,
-        amount: newStatus === 'miembro' ? 15000 : undefined
+        expiresAt: newStatus === 'miembro' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : undefined,
+        amount: newStatus === 'miembro' ? 20000 : undefined
       }
     }));
 
@@ -4829,7 +4829,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
     miembros: Object.values(memberships).filter(m => m.status === 'miembro').length,
     invitados: Object.values(memberships).filter(m => m.status === 'invitado' || !m.status).length,
     admins: Object.values(memberships).filter(m => m.status === 'admin').length,
-    ingresos: Object.values(memberships).filter(m => m.status === 'miembro').reduce((sum, m) => sum + (m.amount || 15000), 0)
+    ingresos: Object.values(memberships).filter(m => m.status === 'miembro').reduce((sum, m) => sum + (m.amount || 20000), 0)
   };
 
   // Filtrar usuarios
@@ -5014,9 +5014,9 @@ const AdminSettingsTab = () => {
   const savedConfig = JSON.parse(localStorage.getItem('tribu_admin_config') || '{}');
   
   const [config, setConfig] = useState({
-    membershipPrice: savedConfig.membershipPrice || 15000,
+    membershipPrice: savedConfig.membershipPrice || 20000,
     matchesPerUser: savedConfig.matchesPerUser || 10,
-    whatsappSupport: savedConfig.whatsappSupport || '+56912345678',
+    whatsappSupport: savedConfig.whatsappSupport || '+56951776005',
     appName: savedConfig.appName || 'Tribu Impulsa',
     mercadopagoMode: savedConfig.mercadopagoMode || 'sandbox'
   });
@@ -5063,7 +5063,7 @@ const AdminSettingsTab = () => {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm text-[#434343] mb-1 font-medium">Precio anual (CLP)</label>
+            <label className="block text-sm text-[#434343] mb-1 font-medium">Precio mensual (CLP)</label>
             <input 
               type="number" 
               value={config.membershipPrice}

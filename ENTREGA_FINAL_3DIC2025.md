@@ -24,11 +24,11 @@ Tribu Impulsa es una PWA completa de cross-promotion para emprendedores chilenos
 
 | Recurso | URL |
 |---------|-----|
-| **App Principal** | https://tribu-impulsa.vercel.app |
-| **App (Netlify)** | https://tribu-impulsa.netlify.app |
-| **Admin Panel** | https://tribu-impulsa.vercel.app/#/admin |
-| **Repositorio** | https://github.com/windsurfgitano-cmd/tribu-impulsa |
-| **Firebase Console** | https://console.firebase.google.com (proyecto: tribu-impulsa) |
+| **🌍 PRODUCCIÓN** | https://www.tribuimpulsa.cl |
+| **🔧 Vercel** | https://tribu-impulsa.vercel.app |
+| **👑 Admin Panel** | https://www.tribuimpulsa.cl/#/admin |
+| **📦 Repositorio** | https://github.com/windsurfgitano-cmd/tribu-impulsa |
+| **🔥 Firebase Console** | https://console.firebase.google.com (proyecto: tribu-impulsa) |
 
 ---
 

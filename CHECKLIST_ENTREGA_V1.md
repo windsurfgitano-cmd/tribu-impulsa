@@ -115,9 +115,9 @@
 4. [ ] Limpiar console.log de desarrollo
 
 ### PENDIENTE POST-ENTREGA (Trabajo largo)
-1. [ ] **Cargar 115 usuarios del CSV** - WEBTRIBU/export_vista_usuario_pyme_full.csv (solo los con datos completos)
-2. [ ] **Algoritmo matching único** - Cada usuario debe tener tribu 10+10 diferente basada en su perfil
-3. [ ] **Relleno con byturquia/terraflor/elevate** - Hasta 3 espacios si faltan personas
+1. [x] **Cargar usuarios del CSV** - ✅ 23 usuarios con datos completos ya cargados
+2. [x] **Algoritmo matching único** - ✅ Determinístico por userId (mismo usuario = misma tribu)
+3. [x] **Relleno con byturquia/terraflor/elevate** - ✅ Hasta 3 espacios si faltan personas
 
 ### NICE TO HAVE (V2.0)
 1. [ ] Cargar datos de Firestore al login

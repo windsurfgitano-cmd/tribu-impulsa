@@ -694,7 +694,7 @@ const LoginScreen = () => {
           instagram: loggedUser.instagram || '',
           city: loggedUser.city || '',
           category: loggedUser.category || '',
-          affinity: loggedUser.affinityChoices?.[0] || loggedUser.category || '',
+          affinity: loggedUser.affinity || loggedUser.category || '',
           scope: 'NACIONAL'
         };
         localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));

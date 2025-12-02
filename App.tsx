@@ -2135,6 +2135,8 @@ const MyProfileView = () => {
             avatarUrl: profile.avatarUrl,
             coverUrl: profile.coverUrl,
             tags: profile.tags,
+            category: profile.category,
+            affinity: (profile as any).affinity || profile.category,
         };
         
         // Guardar cambios localmente
@@ -2268,12 +2270,35 @@ const MyProfileView = () => {
                             </>
                         )}
                         
-                        {/* Categoría */}
-                        <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                        {/* Categoría / Giro / Afinidad */}
+                        {isEditing ? (
+                          <div className="w-full mt-4 space-y-3">
+                            <div>
+                              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block text-left">Categoría / Giro</label>
+                              <input 
+                                value={profile.category} 
+                                onChange={(e) => setProfile({...profile, category: e.target.value})}
+                                placeholder="Ej: Joyería, Marketing, Pastelería..."
+                                className="bg-[#F5F7FB] text-sm text-[#181B34] rounded-lg p-3 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block text-left">Afinidad / Intereses</label>
+                              <input 
+                                value={(profile as any).affinity || ''} 
+                                onChange={(e) => setProfile({...profile, affinity: e.target.value} as any)}
+                                placeholder="Ej: Moda, Bienestar, Emprendimiento..."
+                                className="bg-[#F5F7FB] text-sm text-[#181B34] rounded-lg p-3 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-center gap-2 mt-4 flex-wrap">
                             <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-4 py-1.5 rounded-full">
                                 {profile.category}
                             </span>
-                        </div>
+                          </div>
+                        )}
                         
                         {/* Botón Editar Perfil - Centrado debajo de categoría */}
                         <div className="mt-4">

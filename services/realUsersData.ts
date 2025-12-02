@@ -2416,11 +2416,108 @@ export const changeUserPassword = (userId: string, newPassword: string): boolean
   return false;
 };
 
-// Forzar recarga de usuarios reales (útil para debugging)
+// Forzar recarga de usuarios reales PRESERVANDO usuarios nuevos
 export const forceReloadRealUsers = (): void => {
-  localStorage.removeItem('tribu_users');
-  loadRealUsers();
-  console.log('🔄 Usuarios reales recargados');
+  const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  
+  // Identificar usuarios NUEVOS (registrados, no son de REAL_USERS)
+  const realEmails = REAL_USERS.map(u => u.email.toLowerCase());
+  const newUsers = existingUsers.filter((u: UserProfile) => 
+    !realEmails.includes(u.email.toLowerCase()) && 
+    u.id?.startsWith('user_') // IDs de usuarios registrados empiezan con 'user_'
+  );
+  
+  // Recargar usuarios base
+  const usersWithIds: (UserProfile & { firstLogin: boolean })[] = REAL_USERS.map((user, index) => ({
+    ...user,
+    id: `real_user_${index + 1}`,
+    createdAt: new Date().toISOString(),
+    password: UNIVERSAL_PASSWORD,
+    surveyCompleted: true,
+    tribeAssigned: true,
+    avatarUrl: getAvatarUrl(user.name, user.instagram)
+  }));
+  
+  // MERGE: usuarios base + usuarios nuevos registrados
+  const allUsers = [...usersWithIds, ...newUsers];
+  localStorage.setItem('tribu_users', JSON.stringify(allUsers));
+  
+  console.log(`🔄 Usuarios recargados: ${REAL_USERS.length} base + ${newUsers.length} nuevos = ${allUsers.length} total`);
+  
+  // Sincronizar con Firebase para obtener usuarios de otros dispositivos
+  syncUsersFromFirebase();
+};
+
+// Sincronizar usuarios desde Firebase (nuevos registros de otros dispositivos)
+export const syncUsersFromFirebase = async (): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, getDocs } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (!db) {
+      console.log('⚠️ Firebase no disponible para sync de usuarios');
+      return;
+    }
+    
+    const usersRef = collection(db, 'users');
+    const snapshot = await getDocs(usersRef);
+    
+    if (snapshot.empty) {
+      console.log('📭 No hay usuarios en Firebase');
+      return;
+    }
+    
+    const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    const existingEmails = existingUsers.map((u: UserProfile) => u.email.toLowerCase());
+    
+    let addedCount = 0;
+    
+    snapshot.forEach(doc => {
+      const firebaseUser = doc.data();
+      const email = (firebaseUser.email || '').toLowerCase();
+      
+      // Si el usuario no existe localmente, agregarlo
+      if (email && !existingEmails.includes(email)) {
+        const newUser: UserProfile & { firstLogin: boolean; password: string } = {
+          id: doc.id,
+          email: email,
+          name: firebaseUser.name || firebaseUser.companyName || 'Usuario',
+          companyName: firebaseUser.companyName || firebaseUser.name || 'Emprendimiento',
+          instagram: firebaseUser.instagram || '',
+          phone: firebaseUser.phone || '',
+          category: firebaseUser.category || 'General',
+          affinity: firebaseUser.subCategory || firebaseUser.category || 'Emprendimiento',
+          bio: firebaseUser.bio || '',
+          businessDescription: '',
+          city: firebaseUser.location || 'Chile',
+          avatarUrl: firebaseUser.avatarUrl || getAvatarUrl(firebaseUser.name || '', firebaseUser.instagram || ''),
+          companyLogoUrl: getLogoUrl(firebaseUser.companyName || ''),
+          coverUrl: firebaseUser.coverUrl || getCoverUrl('default'),
+          status: 'active',
+          followers: 500,
+          firstLogin: false,
+          password: UNIVERSAL_PASSWORD,
+          createdAt: firebaseUser.createdAt || new Date().toISOString(),
+          surveyCompleted: true,
+          tribeAssigned: true
+        };
+        
+        existingUsers.push(newUser);
+        existingEmails.push(email);
+        addedCount++;
+      }
+    });
+    
+    if (addedCount > 0) {
+      localStorage.setItem('tribu_users', JSON.stringify(existingUsers));
+      console.log(`☁️ ${addedCount} usuarios sincronizados desde Firebase. Total: ${existingUsers.length}`);
+    } else {
+      console.log('✅ Usuarios ya sincronizados con Firebase');
+    }
+  } catch (error) {
+    console.log('⚠️ Error sincronizando usuarios desde Firebase:', error);
+  }
 };
 
 // ===============================================
@@ -2481,24 +2578,33 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
   users.push(newUser);
   localStorage.setItem('tribu_users', JSON.stringify(users));
   
-  // Sincronizar con Firebase
+  // Sincronizar con Firebase - GUARDAR TODOS LOS DATOS
   try {
-    const { syncProfileToCloud } = await import('./firebaseService');
-    await syncProfileToCloud({
-      id: newUser.id,
-      name: newUser.name,
-      companyName: newUser.companyName,
-      category: newUser.category,
-      subCategory: newUser.affinity,
-      location: newUser.city,
-      bio: newUser.bio,
-      instagram: newUser.instagram,
-      website: '',
-      avatarUrl: newUser.avatarUrl,
-      coverUrl: newUser.coverUrl,
-      tags: [],
-    });
-    console.log('☁️ Nuevo usuario sincronizado con Firebase');
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (db) {
+      // Guardar usuario completo en Firebase
+      await setDoc(doc(db, 'users', newUser.id), {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        companyName: newUser.companyName,
+        instagram: newUser.instagram,
+        phone: newUser.phone,
+        category: newUser.category,
+        subCategory: newUser.affinity,
+        location: newUser.city,
+        bio: newUser.bio,
+        avatarUrl: newUser.avatarUrl,
+        coverUrl: newUser.coverUrl,
+        status: 'active',
+        createdAt: newUser.createdAt,
+        source: 'app_registration'
+      });
+      console.log('☁️ Nuevo usuario guardado en Firebase:', newUser.email);
+    }
   } catch (error) {
     console.log('⚠️ Error sincronizando con Firebase:', error);
   }

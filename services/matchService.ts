@@ -131,28 +131,72 @@ export const getRealUserProfiles = (): MatchProfile[] => {
   return users.map(userToMatchProfile);
 };
 
+// Función para generar número pseudo-aleatorio determinístico basado en seed
+const seededRandom = (seed: string, index: number): number => {
+  const hash = seed.split('').reduce((acc, char, i) => {
+    return acc + char.charCodeAt(0) * (i + 1) * (index + 1);
+  }, 0);
+  return (Math.sin(hash) * 10000) % 1;
+};
+
+// Mezclar array de forma determinística basada en userId
+const seededShuffle = <T>(array: T[], seed: string): T[] => {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.abs(seededRandom(seed, i)) * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
+// IDs de perfiles de relleno (byturquia, terraflor, elevate)
+const FILLER_EMAILS = [
+  'dafnafinkelstein@gmail.com',      // By Turquía - Dafna
+  'doraluz@terraflorpaisajismo.cl',  // Terraflor Paisajismo - Doraluz  
+  'guille@elevatecreativo.com'       // Elevate Agencia - Guillermo
+];
+
 export const generateTribeAssignments = (userCategory: string, currentUserId?: string): TribeAssignments => {
   // Primero intentar con usuarios reales
   const realUsers = getAllUsers();
   
   if (realUsers.length >= 10) {
     // Usar usuarios reales
-    const pool = realUsers
+    let pool = realUsers
       .filter(u => u.id !== currentUserId) // Excluir al usuario actual
       .map(userToMatchProfile);
+    
+    // Si faltan personas, agregar los perfiles de relleno (máx 3)
+    if (pool.length < 20) {
+      const fillerProfiles = realUsers
+        .filter(u => FILLER_EMAILS.includes(u.email.toLowerCase()) && u.id !== currentUserId)
+        .map(userToMatchProfile);
+      
+      // Agregar solo los que no estén ya en el pool
+      const existingIds = new Set(pool.map(p => p.id));
+      const fillersToAdd = fillerProfiles.filter(f => !existingIds.has(f.id)).slice(0, 3);
+      pool = [...pool, ...fillersToAdd];
+      
+      if (fillersToAdd.length > 0) {
+        console.log(`📌 Agregados ${fillersToAdd.length} perfiles de relleno`);
+      }
+    }
     
     // Priorizar usuarios con categorías diferentes para diversidad
     const differentCategory = pool.filter(p => !p.category.includes(userCategory.split(' ')[0]));
     const sameCategory = pool.filter(p => p.category.includes(userCategory.split(' ')[0]));
     
     const prioritized = [...differentCategory, ...sameCategory];
-    const shuffled = [...prioritized].sort(() => 0.5 - Math.random());
+    
+    // Mezclar de forma DETERMINÍSTICA basada en el userId
+    const seed = currentUserId || 'default-seed';
+    const shuffled = seededShuffle(prioritized, seed);
     
     const toShare = shuffled.slice(0, Math.min(10, shuffled.length));
     const remaining = shuffled.slice(10);
     const shareWithMe = remaining.slice(0, Math.min(10, remaining.length));
     
-    console.log(`✅ Tribu generada con ${toShare.length + shareWithMe.length} usuarios REALES`);
+    console.log(`✅ Tribu generada para ${seed}: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
     
     return { toShare, shareWithMe };
   }
@@ -162,7 +206,8 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
   const pool = [...DUMMY_DATABASE.slice(1)];
   const safePool = pool.filter(profile => profile.category !== userCategory);
   const prioritized = safePool.length >= 20 ? safePool : pool;
-  const shuffled = [...prioritized].sort(() => 0.5 - Math.random());
+  const seed = currentUserId || 'default-seed';
+  const shuffled = seededShuffle(prioritized, seed);
 
   const toShare = shuffled.slice(0, 10);
   const remaining = shuffled.slice(10).filter(profile => !toShare.find(item => item.id === profile.id));

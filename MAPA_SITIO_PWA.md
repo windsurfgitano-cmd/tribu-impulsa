@@ -511,3 +511,364 @@ Firestore:
 Storage:
 └── profiles/: ~20 archivos (avatars + banners)
 ```
+
+---
+
+## 📂 INVENTARIO COMPLETO DE ARCHIVOS
+
+### 🎯 ARCHIVOS PRINCIPALES
+
+| Archivo | Tamaño | Función |
+|---------|--------|---------|
+| `App.tsx` | 289 KB | Componente principal (6363 líneas) |
+| `index.html` | 3 KB | HTML base con meta PWA |
+| `index.css` | 11 KB | Estilos globales Tailwind |
+| `types.ts` | 2.8 KB | Interfaces TypeScript |
+| `vite.config.ts` | 580 B | Configuración Vite |
+| `vercel.json` | 536 B | Configuración deploy |
+| `firestore.rules` | 1.2 KB | Reglas seguridad Firebase |
+
+---
+
+### 🔧 SERVICIOS (13 archivos)
+
+| Servicio | Tamaño | Función Principal |
+|----------|--------|-------------------|
+| `realUsersData.ts` | 96 KB | 108 usuarios + migración Firebase |
+| `firestoreService.ts` | 24 KB | CRUD Firestore completo |
+| `databaseService.ts` | 22 KB | CRUD localStorage + sync |
+| `firebaseService.ts` | 17 KB | Init Firebase + Storage upload |
+| `matchService.ts` | 17 KB | Matching + userToMatchProfile |
+| `productionInit.ts` | 16 KB | Inicialización producción |
+| `seedFirestore.ts` | 14 KB | Seed inicial (legacy) |
+| `aiMatchingService.ts` | 13 KB | Azure OpenAI GPT-5.1 |
+| `membershipService.ts` | 10 KB | Gestión membresías |
+| `seedData.ts` | 9.9 KB | Datos seed (legacy) |
+| `tribeAlgorithm.ts` | 9.5 KB | Algoritmo 10+10 |
+| `cloudBridge.ts` | 9 KB | Puente local/cloud |
+| `dataPersistence.ts` | 7 KB | Backup + integridad |
+
+---
+
+### 🎨 COMPONENTES (6 archivos)
+
+| Componente | Tamaño | Uso |
+|------------|--------|-----|
+| `TribalLoadingAnimation.tsx` | 11.6 KB | Animación carga tribu |
+| `TribalAnimation.tsx` | 9.5 KB | Animaciones generales |
+| `PaywallScreen.tsx` | 8.6 KB | Pantalla pago membresía |
+| `CosmicLoadingAnimation.tsx` | 3.5 KB | Animación cósmica |
+| `WhatsAppFloat.tsx` | 1.2 KB | Botón flotante WA |
+| `GlassCard.tsx` | 766 B | Card con efecto glass |
+
+---
+
+### 📱 PWA ASSETS
+
+```
+public/
+├── manifest.json          → Configuración PWA
+├── sw.js                  → Service Worker (cache)
+├── firebase-messaging-sw.js → Push notifications
+├── favicon.png            → Favicon
+├── tribulogo.png          → Logo (442 KB)
+├── tribuvideo.mp4         → Video intro (1.4 MB)
+└── icons/
+    ├── icon-72.png
+    ├── icon-96.png
+    ├── icon-128.png
+    ├── icon-144.png
+    ├── icon-152.png
+    ├── icon-192.png
+    ├── icon-384.png
+    └── icon-512.png
+```
+
+---
+
+### 📚 DOCUMENTACIÓN (15 archivos)
+
+| Documento | Propósito |
+|-----------|-----------|
+| `MADRE.md` | Documento maestro del proyecto |
+| `MAPA_SITIO_PWA.md` | Este archivo - mapa completo |
+| `MAPA_CONEXIONES.md` | Diagrama conexiones |
+| `MAPA_FUNCIONAL.md` | Funcionalidades detalladas |
+| `ANALISIS_HARDCODING.md` | Análisis datos hardcodeados |
+| `CHECKLIST_ENTREGA_V1.md` | Checklist entrega |
+| `CHECKLIST_PRODUCCION.md` | Checklist producción |
+| `CREDENCIALES_GUIA.md` | Guía credenciales |
+| `PROBLEMAS_IDENTIFICADOS.md` | Bugs conocidos |
+| `PRUEBAS_LOG.md` | Log de pruebas |
+| `USO.md` | Manual de uso |
+| `plan.md` | Plan de desarrollo |
+| `Planymejoras.md` | Mejoras futuras |
+| `elevatorpitch.md` | Pitch comercial |
+| `whoiam.md` | Identidad marca |
+
+---
+
+## 🔌 CONFIGURACIÓN PWA
+
+### manifest.json
+```json
+{
+  "name": "Tribu Impulsa",
+  "short_name": "Tribu",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F5F7FB",
+  "theme_color": "#00CA72",
+  "categories": ["business", "social"],
+  "lang": "es-CL"
+}
+```
+
+### Service Worker (sw.js)
+```
+Funciones:
+├── Cache de assets estáticos
+├── Offline fallback
+├── Background sync (pendiente)
+└── Cache de API responses
+```
+
+### Firebase Messaging SW
+```
+Funciones:
+├── Recibir push notifications
+├── Mostrar notificación nativa
+└── Manejo de clicks en notif
+```
+
+---
+
+## 🗄️ ESTRUCTURA LOCALSTORAGE COMPLETA
+
+| Key | Tipo | Descripción |
+|-----|------|-------------|
+| `tribu_users` | Array | Cache usuarios (112+) |
+| `tribu_notifications` | Array | Notificaciones locales |
+| `tribu_interactions` | Array | Interacciones usuario |
+| `tribu_reports` | Array | Reportes enviados |
+| `tribu_assignments` | Object | Asignaciones tribu |
+| `tribu_assignments_updated` | String | Timestamp última actualización |
+| `tribu_checklists` | Object | Estado checklists |
+| `tribu_onboarding` | Object | Estado onboarding |
+| `tribu_admin_config` | Object | Config admin (precio, WA) |
+| `tribu_current_user` | String | ID usuario logueado |
+| `tribu_migration_complete` | Boolean | Flag migración Firebase |
+| `user_session` | Object | Datos sesión |
+| `tribe_survey_complete` | Boolean | Encuesta completada |
+| `membership_status_{id}` | Object | Estado membresía |
+| `membership_payment_{id}` | Object | Datos pago |
+| `tribeReportsLog` | Array | Log reportes (legacy) |
+| `tribe_session` | Object | Sesión legacy |
+
+---
+
+## 🔒 FIRESTORE RULES
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Perfiles - lectura pública
+    match /profiles/{profileId} {
+      allow read: if true;
+      allow write: if true; // Producción: auth != null
+    }
+    
+    // Progreso checklist - solo usuario
+    match /progress/{userId} {
+      allow read, write: if true; // Producción: auth.uid == userId
+    }
+    
+    // Interacciones - lectura pública
+    match /interactions/{interactionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Config - solo lectura
+    match /config/{configId} {
+      allow read: if true;
+      allow write: if false; // Solo admin
+    }
+  }
+}
+```
+
+---
+
+## 🎯 ALGORITMO TRIBU (tribeAlgorithm.ts)
+
+### Grupos de Competencia (NO se asignan entre sí)
+```javascript
+COMPETITION_GROUPS = [
+  ['Joyería y Accesorios', 'Moda y Estilo'],
+  ['Paisajismo y Jardinería', 'Hogar y Jardín'],
+  ['Marketing Digital', 'Tecnología y Desarrollo'],
+  ['Belleza y Estética', 'Cosméticos y Skincare', 'Manicure'],
+  ['Coaching y Bienestar', 'Salud y Kinesiología'],
+  ['Consultoría de Negocios', 'Consultoría Estratégica']
+]
+```
+
+### Afinidades Complementarias (SE benefician)
+```javascript
+COMPLEMENTARY_AFFINITIES = {
+  'Moda y Estilo': ['Belleza', 'Eventos', 'Fotografía'],
+  'Bienestar': ['Gastronomía', 'Deportes', 'Naturaleza'],
+  'Negocios': ['Tecnología', 'Educación', 'Marketing'],
+  'Hogar y Jardín': ['Arquitectura', 'Decoración', 'Construcción'],
+  'Gastronomía': ['Eventos', 'Turismo', 'Bienestar'],
+  'Eventos': ['Gastronomía', 'Fotografía', 'Moda'],
+  'Maternidad': ['Educación', 'Bienestar', 'Familia'],
+  'Tecnología': ['Negocios', 'Educación', 'Marketing']
+}
+```
+
+### Lógica de Asignación
+```
+Para cada usuario:
+  1. Obtener todos los demás usuarios
+  2. Filtrar competidores directos
+  3. Priorizar afinidades complementarias
+  4. Seleccionar 10 para "Yo comparto a ellos"
+  5. Seleccionar 10 para "Ellos me comparten"
+  6. Evitar duplicados
+  7. Guardar asignación mensual
+```
+
+---
+
+## 🤖 TRIBU X - ANÁLISIS IA
+
+### Flujo Completo
+```
+Usuario ve perfil → Click "Analizar Compatibilidad"
+    │
+    ▼
+handleGenerateAnalysis()
+    │
+    ├── Mostrar TribalLoadingAnimation (3-5 seg)
+    │
+    ├── Intentar Azure OpenAI
+    │   │
+    │   ├── Si Azure OK:
+    │   │   └── analyzeCompatibility() → GPT-5.1
+    │   │       ├── Prompt personalizado
+    │   │       ├── Insight de compatibilidad
+    │   │       ├── 3 oportunidades concretas
+    │   │       └── Mensaje icebreaker
+    │   │
+    │   └── Si Azure FAIL:
+    │       └── generateSmartAnalysis() → Fallback local
+    │           ├── Análisis basado en categorías
+    │           ├── Oportunidades genéricas
+    │           └── Icebreaker template
+    │
+    └── Mostrar resultado + Botón WhatsApp
+        │
+        └── getWhatsAppUrl()
+            └── wa.me/{phone}?text={icebreaker}
+```
+
+### Prompt GPT-5.1
+```
+Eres el "Algoritmo Tribal X" de Tribu Impulsa.
+
+CONTEXTO:
+- Plataforma de cross-promotion para emprendedores chilenos
+- Objetivo: identificar sinergias entre negocios
+
+USUARIO ACTUAL: {myProfile}
+PERFIL ANALIZADO: {targetProfile}
+
+GENERA:
+1. Insight de compatibilidad (2-3 oraciones)
+2. 3 oportunidades concretas de colaboración
+3. Mensaje icebreaker para WhatsApp
+```
+
+---
+
+## 📊 CATEGORÍAS DISPONIBLES (157 opciones)
+
+### Macro-categorías
+```
+├── Moda Mujer (17 subcategorías)
+├── Moda Hombre (3 subcategorías)
+├── Negocio (15 subcategorías)
+├── Alimentos y Gastronomía (12 subcategorías)
+├── Belleza, Estética y Bienestar (20 subcategorías)
+├── Eventos y Producción (8 subcategorías)
+├── Hogar y Jardín (10 subcategorías)
+├── Educación y Formación (8 subcategorías)
+├── Tecnología y Desarrollo (6 subcategorías)
+├── Servicios Profesionales (15 subcategorías)
+├── Mascotas (5 subcategorías)
+├── Deportes y Fitness (6 subcategorías)
+└── Otros (32 subcategorías)
+```
+
+---
+
+## 🚀 DEPLOY VERCEL
+
+### vercel.json
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    }
+  ]
+}
+```
+
+### Variables Vercel
+```
+VITE_AZURE_OPENAI_ENDPOINT = https://...cognitiveservices.azure.com/...
+VITE_AZURE_OPENAI_KEY = sk-...
+```
+
+---
+
+## 📱 COMPONENTES UI EN App.tsx
+
+### Por Líneas (aproximado)
+```
+App.tsx (6363 líneas)
+│
+├── [1-100]     Imports + Inicialización
+├── [100-400]   Helpers + Funciones globales
+├── [400-680]   LoginScreen
+├── [680-900]   RegisterScreen
+├── [900-1200]  SearchingScreen + SurveyScreen
+├── [1200-1800] Dashboard
+├── [1800-2100] MembershipScreen
+├── [2100-2500] TribeAssignmentsView
+├── [2500-3100] MyProfileView
+├── [3100-3600] ProfileDetail (parte 1)
+├── [3600-3840] MatchAnalysisSection (Tribu X)
+├── [3840-4100] ProfileDetail (parte 2)
+├── [4100-4350] ActivityView
+├── [4350-4600] DirectoryView
+├── [4600-5400] Modales + Helpers
+├── [5400-6200] AdminPanelInline
+└── [6200-6363] Router + Exports
+```

@@ -99,7 +99,7 @@ onForegroundMessage((payload: unknown) => {
   }
 });
 
-console.log('🚀 Tribu Impulsa v2.0 - 23 Emprendedores Reales');
+console.log('🚀 Tribu Impulsa v2.0 - PWA Producción');
 console.log('📊 Integridad de datos:', checkDataIntegrity());
 console.log('🔔 Estado notificaciones:', getNotificationStatus());
 
@@ -5635,7 +5635,7 @@ const AdminPanelInline = () => {
                 </h3>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {categoryDist.slice(0, 6).map((cat, i) => (
-                    <div key={cat.category} className="flex items-center gap-2">
+                    <div key={`${cat.category}-${i}`} className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-[#434343] truncate max-w-[150px]">{cat.category}</span>

@@ -2409,7 +2409,7 @@ const TribeAssignmentsView = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/profile/${profile.id}`)}
-                    className="text-[12px] px-3 py-2 rounded-lg bg-[#6161FF]/10 text-[#6161FF] font-medium"
+                    className="text-[12px] px-3 py-2 rounded-lg bg-[#E91E63]/10 text-[#E91E63] font-medium"
                   >
                     Ver perfil
                   </button>
@@ -2549,8 +2549,8 @@ const TribeAssignmentsView = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {renderList('Me impulsan a mí', '📥 Llámalos para preguntarles si ya te compartieron', assignments.shareWithMe, 'shareWithMe')}
           {renderList('Yo debo impulsar', '📤 Comparte sus cuentas en tu IG antes del día 20', assignments.toShare, 'toShare')}
-          {renderList('Me impulsan a mí', '📥 Ellos deben compartir TU cuenta en sus IGs', assignments.shareWithMe, 'shareWithMe')}
         </div>
         {reports.length > 0 && (
           <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
@@ -4508,6 +4508,12 @@ const DirectoryView = () => {
   const allUsers = getAllUsers().filter(u => u.email !== 'admin@tribuimpulsa.cl');
   const myProfile = getMyProfile();
   
+  // Obtener matches recomendados
+  const matches = useMemo(() => {
+    if (!myProfile) return [];
+    return generateMockMatches(myProfile.category, myProfile.id).slice(0, 8);
+  }, [myProfile]);
+  
   const filteredUsers = allUsers.filter(user => 
     user.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -4538,7 +4544,57 @@ const DirectoryView = () => {
         </div>
       </header>
       
-      <div className="px-4 py-4 space-y-2">
+      {/* Recomendados para ti - Al inicio */}
+      {matches.length > 0 && !searchQuery && (
+        <div className="px-4 pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold text-[#181B34]">⭐ Recomendados para ti</h2>
+            <span className="text-xs text-[#7C8193]">{matches.length} matches</span>
+          </div>
+          
+          <div className="space-y-2 mb-4">
+            {matches.map((match) => (
+              <div 
+                key={match.id} 
+                className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl p-4 border border-[#6161FF]/20 hover:border-[#6161FF] transition-colors"
+              >
+                <div className="flex gap-3 items-center">
+                  <img 
+                    src={match.targetProfile.avatarUrl} 
+                    alt={match.targetProfile.name} 
+                    className="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-[#6161FF]/30"
+                  />
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-[#181B34] truncate text-sm">{match.targetProfile.companyName}</h3>
+                        <p className="text-xs text-[#7C8193] truncate">{match.targetProfile.name}</p>
+                      </div>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${match.affinityScore > 90 ? 'bg-[#00CA72]/20 text-[#00CA72]' : 'bg-[#6161FF]/20 text-[#6161FF]'}`}>
+                        {match.affinityScore}%
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#7C8193] mt-1 truncate">{match.reason}</p>
+                    
+                    <button
+                      onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
+                      className="mt-2 text-[10px] font-semibold text-[#E91E63] bg-[#E91E63]/10 px-3 py-1 rounded-full hover:bg-[#E91E63]/20 transition-colors"
+                    >
+                      Ver perfil →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="border-b border-[#E4E7EF] mb-4"></div>
+          <h2 className="text-base font-semibold text-[#181B34] mb-3">Todos los emprendimientos</h2>
+        </div>
+      )}
+      
+      <div className={`px-4 ${matches.length > 0 && !searchQuery ? '' : 'py-4'} space-y-2`}>
         {filteredUsers.map(user => (
           <div 
             key={user.id}
@@ -4987,54 +5043,6 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Matches List - Clean design */}
-      <div className="px-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-[#181B34]">Recomendados para ti</h2>
-          <span className="text-xs text-[#7C8193]">{matches.length} matches</span>
-        </div>
-        
-        <div className="space-y-3">
-          {matches.map((match) => (
-            <div 
-              key={match.id} 
-              className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors"
-            >
-              <div className="flex gap-3 items-center">
-                <img 
-                  src={match.targetProfile.avatarUrl} 
-                  alt={match.targetProfile.name} 
-                  className="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-[#6161FF] transition-all"
-                  onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
-                />
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-[#181B34] truncate text-sm">{match.targetProfile.companyName}</h3>
-                      <p className="text-xs text-[#7C8193] truncate">{match.targetProfile.name}</p>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-                      <span className={`text-xs font-semibold ${match.affinityScore > 90 ? 'text-[#00CA72]' : 'text-[#6161FF]'}`}>
-                        {match.affinityScore}%
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-[#7C8193] mt-1 truncate">{match.reason}</p>
-                  
-                  {/* Botón Ver Perfil */}
-                  <button
-                    onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
-                    className="mt-2 text-[10px] font-semibold text-[#6161FF] bg-[#6161FF]/10 px-3 py-1 rounded-full hover:bg-[#6161FF]/20 transition-colors"
-                  >
-                    Ver perfil →
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 };

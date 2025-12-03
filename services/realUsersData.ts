@@ -2414,31 +2414,111 @@ export const changeUserPassword = (userId: string, newPassword: string): boolean
   return false;
 };
 
-// Forzar recarga de usuarios reales PRESERVANDO usuarios nuevos
+// ===============================================
+// MIGRACIÓN A FIREBASE - EJECUTAR UNA SOLA VEZ
+// ===============================================
+
+// Migrar los 108 usuarios base a Firebase (solo si no existen)
+export const migrateUsersToFirebase = async (): Promise<{ migrated: number; existing: number }> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, getDoc, collection } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (!db) {
+      console.log('⚠️ Firebase no disponible para migración');
+      return { migrated: 0, existing: 0 };
+    }
+    
+    let migrated = 0;
+    let existing = 0;
+    
+    for (let i = 0; i < REAL_USERS.length; i++) {
+      const user = REAL_USERS[i];
+      const id = `real_user_${i + 1}`;
+      
+      // Verificar si ya existe
+      const docRef = doc(db, 'users', id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        existing++;
+        continue;
+      }
+      
+      // Crear documento en Firebase
+      const userData = {
+        id,
+        email: user.email.toLowerCase(),
+        name: user.name,
+        companyName: user.companyName,
+        instagram: user.instagram || '',
+        phone: user.phone || '',
+        category: user.category || 'General',
+        subCategory: user.affinity || user.category || 'Emprendimiento',
+        location: user.city || 'Chile',
+        bio: user.bio || '',
+        businessDescription: user.businessDescription || '',
+        avatarUrl: getAvatarUrl(user.name, user.instagram),
+        coverUrl: getCoverUrl(user.category || 'default'),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        source: 'initial_migration',
+        password: UNIVERSAL_PASSWORD,
+        firstLogin: true
+      };
+      
+      await setDoc(docRef, userData);
+      migrated++;
+    }
+    
+    // Marcar migración como completa
+    localStorage.setItem('tribu_migration_complete', 'true');
+    console.log(`✅ Migración completa: ${migrated} nuevos, ${existing} ya existían`);
+    
+    return { migrated, existing };
+  } catch (error) {
+    console.error('❌ Error en migración:', error);
+    return { migrated: 0, existing: 0 };
+  }
+};
+
+// ===============================================
+// CARGA DE USUARIOS - FIREBASE ES LA FUENTE DE VERDAD
+// ===============================================
+
 export const forceReloadRealUsers = async (): Promise<void> => {
-  const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  console.log('🔄 Cargando usuarios...');
   
-  // Identificar usuarios NUEVOS (registrados, no son de REAL_USERS)
-  const realEmails = REAL_USERS.map(u => u.email.toLowerCase());
+  // PASO 1: Intentar cargar TODO desde Firebase
+  const firebaseUsers = await loadUsersFromFirebase();
   
-  // PRESERVAR: usuarios con ID 'user_*' O que no estén en REAL_USERS
-  const newUsers = existingUsers.filter((u: UserProfile) => {
-    const isNewUser = u.id?.startsWith('user_');
-    const isNotRealUser = !realEmails.includes((u.email || '').toLowerCase());
-    return isNewUser || (isNotRealUser && u.id);
-  });
+  if (firebaseUsers.length > 0) {
+    // Firebase tiene datos - usar esos
+    localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
+    console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Firebase`);
+    return;
+  }
   
-  // Eliminar duplicados por email en usuarios nuevos
-  const seenEmails = new Set<string>();
-  const uniqueNewUsers = newUsers.filter((u: UserProfile) => {
-    const email = (u.email || '').toLowerCase();
-    if (!email || seenEmails.has(email)) return false;
-    seenEmails.add(email);
-    return true;
-  });
+  // PASO 2: Firebase vacío - verificar si necesita migración
+  const migrationDone = localStorage.getItem('tribu_migration_complete');
   
-  // Recargar usuarios base
-  const usersWithIds: (UserProfile & { firstLogin: boolean })[] = REAL_USERS.map((user, index) => ({
+  if (!migrationDone) {
+    console.log('📤 Ejecutando migración inicial a Firebase...');
+    await migrateUsersToFirebase();
+    
+    // Recargar desde Firebase después de migrar
+    const usersAfterMigration = await loadUsersFromFirebase();
+    if (usersAfterMigration.length > 0) {
+      localStorage.setItem('tribu_users', JSON.stringify(usersAfterMigration));
+      console.log(`✅ ${usersAfterMigration.length} usuarios migrados y cargados`);
+      return;
+    }
+  }
+  
+  // PASO 3: Fallback - usar datos hardcodeados (solo si todo falla)
+  console.log('⚠️ Usando fallback local (Firebase no disponible)');
+  const usersWithIds = REAL_USERS.map((user, index) => ({
     ...user,
     id: `real_user_${index + 1}`,
     createdAt: new Date().toISOString(),
@@ -2447,15 +2527,55 @@ export const forceReloadRealUsers = async (): Promise<void> => {
     tribeAssigned: true,
     avatarUrl: getAvatarUrl(user.name, user.instagram)
   }));
-  
-  // MERGE: usuarios base + usuarios nuevos registrados (sin duplicados)
-  const allUsers = [...usersWithIds, ...uniqueNewUsers];
-  localStorage.setItem('tribu_users', JSON.stringify(allUsers));
-  
-  console.log(`🔄 Usuarios: ${REAL_USERS.length} base + ${uniqueNewUsers.length} nuevos = ${allUsers.length} total`);
-  
-  // Sincronizar con Firebase para obtener usuarios de otros dispositivos (AWAIT)
-  await syncUsersFromFirebase();
+  localStorage.setItem('tribu_users', JSON.stringify(usersWithIds));
+};
+
+// Cargar usuarios desde Firebase
+const loadUsersFromFirebase = async (): Promise<(UserProfile & { password: string; firstLogin: boolean })[]> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, getDocs } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (!db) return [];
+    
+    const snapshot = await getDocs(collection(db, 'users'));
+    if (snapshot.empty) return [];
+    
+    const users: (UserProfile & { password: string; firstLogin: boolean })[] = [];
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      users.push({
+        id: doc.id,
+        email: data.email || '',
+        name: data.name || '',
+        companyName: data.companyName || data.name || '',
+        instagram: data.instagram || '',
+        phone: data.phone || '',
+        category: data.category || 'General',
+        affinity: data.subCategory || data.category || 'Emprendimiento',
+        bio: data.bio || '',
+        businessDescription: data.businessDescription || '',
+        city: data.location || 'Chile',
+        avatarUrl: data.avatarUrl || getAvatarUrl(data.name || '', data.instagram || ''),
+        companyLogoUrl: getLogoUrl(data.companyName || ''),
+        coverUrl: data.coverUrl || getCoverUrl('default'),
+        status: data.status || 'active',
+        followers: data.followers || 500,
+        password: data.password || UNIVERSAL_PASSWORD,
+        firstLogin: data.firstLogin !== false,
+        createdAt: data.createdAt || new Date().toISOString(),
+        surveyCompleted: true,
+        tribeAssigned: true
+      });
+    });
+    
+    return users;
+  } catch (error) {
+    console.log('⚠️ Error cargando desde Firebase:', error);
+    return [];
+  }
 };
 
 // Sincronizar usuarios desde Firebase (nuevos registros de otros dispositivos)
@@ -2627,6 +2747,71 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
 export const getTotalUsersCount = (): number => {
   const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   return users.length;
+};
+
+// ===============================================
+// GESTIÓN DE USUARIOS - CRUD COMPLETO
+// ===============================================
+
+// Dar de baja un usuario (eliminar de Firebase y localStorage)
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  try {
+    // Eliminar de localStorage
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    const filteredUsers = users.filter((u: UserProfile) => u.id !== userId);
+    localStorage.setItem('tribu_users', JSON.stringify(filteredUsers));
+    
+    // Eliminar de Firebase
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, deleteDoc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (db) {
+      await deleteDoc(doc(db, 'users', userId));
+      console.log(`🗑️ Usuario ${userId} eliminado de Firebase`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error eliminando usuario:', error);
+    return false;
+  }
+};
+
+// Actualizar usuario en Firebase y localStorage
+export const updateUserInFirebase = async (userId: string, updates: Partial<UserProfile>): Promise<boolean> => {
+  try {
+    // Actualizar localStorage
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    const index = users.findIndex((u: UserProfile) => u.id === userId);
+    if (index !== -1) {
+      users[index] = { ...users[index], ...updates };
+      localStorage.setItem('tribu_users', JSON.stringify(users));
+    }
+    
+    // Actualizar Firebase
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (db) {
+      await updateDoc(doc(db, 'users', userId), {
+        ...updates,
+        updatedAt: serverTimestamp()
+      });
+      console.log(`✏️ Usuario ${userId} actualizado en Firebase`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando usuario:', error);
+    return false;
+  }
+};
+
+// Cambiar estado de usuario (activo/inactivo/baja)
+export const setUserStatus = async (userId: string, status: 'active' | 'inactive' | 'deleted'): Promise<boolean> => {
+  return await updateUserInFirebase(userId, { status });
 };
 
 // DIAGNÓSTICO: Ver estado de usuarios

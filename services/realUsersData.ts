@@ -2415,15 +2415,27 @@ export const changeUserPassword = (userId: string, newPassword: string): boolean
 };
 
 // Forzar recarga de usuarios reales PRESERVANDO usuarios nuevos
-export const forceReloadRealUsers = (): void => {
+export const forceReloadRealUsers = async (): Promise<void> => {
   const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   
   // Identificar usuarios NUEVOS (registrados, no son de REAL_USERS)
   const realEmails = REAL_USERS.map(u => u.email.toLowerCase());
-  const newUsers = existingUsers.filter((u: UserProfile) => 
-    !realEmails.includes(u.email.toLowerCase()) && 
-    u.id?.startsWith('user_') // IDs de usuarios registrados empiezan con 'user_'
-  );
+  
+  // PRESERVAR: usuarios con ID 'user_*' O que no estén en REAL_USERS
+  const newUsers = existingUsers.filter((u: UserProfile) => {
+    const isNewUser = u.id?.startsWith('user_');
+    const isNotRealUser = !realEmails.includes((u.email || '').toLowerCase());
+    return isNewUser || (isNotRealUser && u.id);
+  });
+  
+  // Eliminar duplicados por email en usuarios nuevos
+  const seenEmails = new Set<string>();
+  const uniqueNewUsers = newUsers.filter((u: UserProfile) => {
+    const email = (u.email || '').toLowerCase();
+    if (!email || seenEmails.has(email)) return false;
+    seenEmails.add(email);
+    return true;
+  });
   
   // Recargar usuarios base
   const usersWithIds: (UserProfile & { firstLogin: boolean })[] = REAL_USERS.map((user, index) => ({
@@ -2436,14 +2448,14 @@ export const forceReloadRealUsers = (): void => {
     avatarUrl: getAvatarUrl(user.name, user.instagram)
   }));
   
-  // MERGE: usuarios base + usuarios nuevos registrados
-  const allUsers = [...usersWithIds, ...newUsers];
+  // MERGE: usuarios base + usuarios nuevos registrados (sin duplicados)
+  const allUsers = [...usersWithIds, ...uniqueNewUsers];
   localStorage.setItem('tribu_users', JSON.stringify(allUsers));
   
-  console.log(`🔄 Usuarios recargados: ${REAL_USERS.length} base + ${newUsers.length} nuevos = ${allUsers.length} total`);
+  console.log(`🔄 Usuarios: ${REAL_USERS.length} base + ${uniqueNewUsers.length} nuevos = ${allUsers.length} total`);
   
-  // Sincronizar con Firebase para obtener usuarios de otros dispositivos
-  syncUsersFromFirebase();
+  // Sincronizar con Firebase para obtener usuarios de otros dispositivos (AWAIT)
+  await syncUsersFromFirebase();
 };
 
 // Sincronizar usuarios desde Firebase (nuevos registros de otros dispositivos)
@@ -2615,6 +2627,52 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
 export const getTotalUsersCount = (): number => {
   const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   return users.length;
+};
+
+// DIAGNÓSTICO: Ver estado de usuarios
+export const diagnoseUsers = async (): Promise<{
+  local: number;
+  firebase: number;
+  base: number;
+  nuevos: { id: string; email: string; name: string }[];
+}> => {
+  const localUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  const baseEmails = REAL_USERS.map(u => u.email.toLowerCase());
+  
+  // Usuarios nuevos (no están en la base de 108)
+  const nuevos = localUsers
+    .filter((u: UserProfile) => !baseEmails.includes((u.email || '').toLowerCase()))
+    .map((u: UserProfile) => ({ id: u.id, email: u.email, name: u.name }));
+  
+  // Contar en Firebase
+  let firebaseCount = 0;
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, getDocs } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    if (db) {
+      const snapshot = await getDocs(collection(db, 'users'));
+      firebaseCount = snapshot.size;
+    }
+  } catch (e) {
+    console.log('Error contando Firebase:', e);
+  }
+  
+  const result = {
+    local: localUsers.length,
+    firebase: firebaseCount,
+    base: REAL_USERS.length,
+    nuevos
+  };
+  
+  console.log('📊 DIAGNÓSTICO USUARIOS:');
+  console.log(`   Base hardcodeados: ${result.base}`);
+  console.log(`   En localStorage: ${result.local}`);
+  console.log(`   En Firebase: ${result.firebase}`);
+  console.log(`   Nuevos registrados: ${result.nuevos.length}`);
+  console.log('   Lista nuevos:', result.nuevos);
+  
+  return result;
 };
 
 export default REAL_USERS;

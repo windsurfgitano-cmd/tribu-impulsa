@@ -68,16 +68,22 @@ import { ensureInitialized } from './services/productionInit';
 // Inicializar Firebase y Firestore automáticamente
 initializeFirebase();
 
-// Inicializar producción (crea usuarios y config en Firestore si no existen)
-ensureInitialized().then(() => {
-  console.log('✅ Producción inicializada');
-}).catch(console.error);
-
-// Cargar usuarios REALES al iniciar (fallback local)
-forceReloadRealUsers();
-
-// Generar asignaciones de tribu si es necesario
-ensureTribeAssignments();
+// Inicializar producción y cargar usuarios
+(async () => {
+  try {
+    await ensureInitialized();
+    console.log('✅ Producción inicializada');
+    
+    // Cargar usuarios REALES + sincronizar con Firebase
+    await forceReloadRealUsers();
+    console.log('✅ Usuarios cargados y sincronizados');
+    
+    // Generar asignaciones de tribu si es necesario
+    ensureTribeAssignments();
+  } catch (err) {
+    console.error('❌ Error inicializando:', err);
+  }
+})();
 
 // Habilitar auto-backup
 enableAutoBackup();

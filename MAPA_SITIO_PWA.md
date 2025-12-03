@@ -237,7 +237,7 @@ Llaves:
 | Tribu X (IA) | ✅ OK | Azure GPT en producción |
 | WhatsApp | ✅ OK | Usa phone del perfil |
 | Tribu Asignaciones | ✅ OK | Algoritmo local |
-| Checklist | ⚠️ Revisar | Solo localStorage |
+| Checklist | ✅ OK | **Firebase sync bidireccional** |
 
 ---
 
@@ -1481,3 +1481,93 @@ Markdown:               15 archivos
 ─────────────────────────────────
 TOTAL:                  52+ archivos
 ```
+
+---
+
+## ✅ CHECKLIST - PERSISTENCIA FIREBASE
+
+### Flujo Completo
+```
+Usuario abre /tribe
+    │
+    ▼
+TribeAssignmentsView monta
+    │
+    ▼
+useEffect → loadChecklistFromFirebase(userId)
+    │
+    ├── GET Firestore: /progress/{userId}
+    │
+    ├── Si existe:
+    │   ├── Lee: { completed, total, items }
+    │   ├── Merge con checklist local
+    │   └── setChecklist(merged)
+    │
+    └── Si no existe:
+        └── Usa checklist local (inicial)
+
+Usuario marca checkbox
+    │
+    ▼
+handleToggle(list, profileId)
+    │
+    ├── Actualiza estado local
+    ├── persistChecklistState(next)      → localStorage
+    └── syncChecklistToCloud(userId, next) → Firebase
+        │
+        └── SET Firestore: /progress/{userId}
+            ├── completed: number
+            ├── total: number
+            ├── items: { [profileId]: boolean }
+            └── updatedAt: serverTimestamp()
+```
+
+### Estructura Firestore
+```
+/progress/{userId}
+├── completed: 12          # Items marcados
+├── total: 20              # Total items
+├── items: {
+│   "real_user_5": true,
+│   "real_user_12": false,
+│   "real_user_23": true,
+│   ...
+│ }
+└── updatedAt: Timestamp   # Última actualización
+```
+
+### Funciones
+```typescript
+// Guardar progreso
+syncChecklistProgress(userId, {
+  completed: number,
+  total: number,
+  items: Record<string, boolean>
+}) → Promise<boolean>
+
+// Cargar progreso
+loadChecklistFromFirebase(userId) → Promise<{
+  completed: number,
+  total: number,
+  items: Record<string, boolean>
+} | null>
+```
+
+---
+
+## 📊 RESUMEN PERSISTENCIA COMPLETA
+
+| Dato | Local | Firebase | Sync |
+|------|-------|----------|------|
+| Usuarios | ✅ | ✅ | Bidireccional |
+| Membresías | ✅ | ✅ | Bidireccional |
+| Notificaciones | ✅ | ✅ | Bidireccional |
+| Checklist | ✅ | ✅ | **Bidireccional** |
+| Fotos/Banner | ❌ | ✅ | Solo Firebase |
+| Pagos | ❌ | ✅ | Solo Firebase |
+| Config Admin | ✅ | ⚠️ | Solo local |
+| Asignaciones | ✅ | ⚠️ | Solo local |
+
+### TODO: Pendiente de sincronizar
+- `tribu_admin_config` → Debería ir a Firebase
+- `tribe_assignments` → Podría ir a Firebase

@@ -4989,14 +4989,14 @@ const Dashboard = () => {
           {matches.map((match) => (
             <div 
               key={match.id} 
-              onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
-              className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors cursor-pointer"
+              className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors"
             >
               <div className="flex gap-3 items-center">
                 <img 
                   src={match.targetProfile.avatarUrl} 
                   alt={match.targetProfile.name} 
-                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                  className="w-12 h-12 rounded-full object-cover flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-[#6161FF] transition-all"
+                  onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
                 />
                 
                 <div className="flex-1 min-w-0">
@@ -5009,10 +5009,17 @@ const Dashboard = () => {
                       <span className={`text-xs font-semibold ${match.affinityScore > 90 ? 'text-[#00CA72]' : 'text-[#6161FF]'}`}>
                         {match.affinityScore}%
                       </span>
-                      <ChevronRight size={16} className="text-[#7C8193]" />
                     </div>
                   </div>
                   <p className="text-[11px] text-[#7C8193] mt-1 truncate">{match.reason}</p>
+                  
+                  {/* Botón Ver Perfil */}
+                  <button
+                    onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
+                    className="mt-2 text-[10px] font-semibold text-[#6161FF] bg-[#6161FF]/10 px-3 py-1 rounded-full hover:bg-[#6161FF]/20 transition-colors"
+                  >
+                    Ver perfil →
+                  </button>
                 </div>
               </div>
             </div>

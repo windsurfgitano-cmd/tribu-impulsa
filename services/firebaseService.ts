@@ -194,6 +194,58 @@ export const getAllProfilesFromCloud = async (): Promise<ProfileData[]> => {
   }
 };
 
+// Sincronizar fotos de perfil desde Firebase a localStorage
+export const syncPhotosFromFirebase = async (): Promise<number> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return 0;
+
+  try {
+    // Obtener usuarios de Firebase
+    const usersRef = collection(firestore, 'users');
+    const snapshot = await getDocs(usersRef);
+    
+    // Leer usuarios locales
+    const localUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    let updatedCount = 0;
+    
+    snapshot.forEach(docSnap => {
+      const firebaseUser = docSnap.data();
+      const localIndex = localUsers.findIndex((u: { id: string }) => u.id === docSnap.id);
+      
+      if (localIndex !== -1) {
+        // Actualizar avatarUrl si existe en Firebase y es diferente
+        if (firebaseUser.avatarUrl && firebaseUser.avatarUrl !== localUsers[localIndex].avatarUrl) {
+          localUsers[localIndex].avatarUrl = firebaseUser.avatarUrl;
+          updatedCount++;
+        }
+        // Actualizar coverUrl si existe en Firebase y es diferente
+        if (firebaseUser.coverUrl && firebaseUser.coverUrl !== localUsers[localIndex].coverUrl) {
+          localUsers[localIndex].coverUrl = firebaseUser.coverUrl;
+          updatedCount++;
+        }
+        // Actualizar website si existe en Firebase
+        if (firebaseUser.website && !localUsers[localIndex].website) {
+          localUsers[localIndex].website = firebaseUser.website;
+        }
+        // Actualizar contraseña si existe en Firebase (para persistencia entre dispositivos)
+        if (firebaseUser.password && firebaseUser.password !== 'TRIBU2026') {
+          localUsers[localIndex].password = firebaseUser.password;
+        }
+      }
+    });
+    
+    if (updatedCount > 0) {
+      localStorage.setItem('tribu_users', JSON.stringify(localUsers));
+      console.log(`✅ ${updatedCount} fotos sincronizadas desde Firebase`);
+    }
+    
+    return updatedCount;
+  } catch (error) {
+    console.error('❌ Error sincronizando fotos:', error);
+    return 0;
+  }
+};
+
 // Sincronizar foto de perfil (URL)
 export const syncProfilePhoto = async (profileId: string, photoUrl: string): Promise<boolean> => {
   return updateProfileField(profileId, 'avatarUrl', photoUrl);
@@ -779,5 +831,7 @@ export default {
   getImageConfig,
   // Password
   updateUserPassword,
-  verifyUserPassword
+  verifyUserPassword,
+  // Sync
+  syncPhotosFromFirebase
 };

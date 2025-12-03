@@ -83,6 +83,17 @@ initializeFirebase();
     await forceReloadRealUsers();
     console.log('✅ Usuarios cargados y sincronizados');
     
+    // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
+    try {
+      const { syncPhotosFromFirebase } = await import('./services/firebaseService');
+      const photosUpdated = await syncPhotosFromFirebase();
+      if (photosUpdated > 0) {
+        console.log(`✅ ${photosUpdated} fotos actualizadas desde Firebase`);
+      }
+    } catch (photoErr) {
+      console.log('⚠️ Sync de fotos pendiente');
+    }
+    
     // Generar asignaciones de tribu si es necesario
     ensureTribeAssignments();
   } catch (err) {
@@ -884,7 +895,14 @@ const LoginScreen = () => {
     };
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
     
-    if ((loggedUser as { firstLogin?: boolean }).firstLogin) {
+    // Solo mostrar popup de cambio de contraseña si:
+    // 1. Es firstLogin Y
+    // 2. La contraseña actual es TRIBU2026 (no la ha cambiado)
+    // 3. No ha cambiado su contraseña previamente
+    const hasDefaultPassword = (loggedUser as { password?: string }).password === 'TRIBU2026';
+    const hasChangedPassword = localStorage.getItem(`password_changed_${loggedUser.id}`) === 'true';
+    
+    if ((loggedUser as { firstLogin?: boolean }).firstLogin && hasDefaultPassword && !hasChangedPassword) {
       localStorage.setItem('show_password_change', 'true');
     }
     
@@ -2705,6 +2723,9 @@ const MyProfileView = () => {
       // Actualizar contraseña en localStorage
       users[userIndex].password = newPassword;
       localStorage.setItem('tribu_users', JSON.stringify(users));
+      
+      // Marcar que ya cambió su contraseña (nunca más mostrar popup)
+      localStorage.setItem(`password_changed_${user.id}`, 'true');
       
       // Sincronizar contraseña con Firebase (persistente entre dispositivos)
       try {
@@ -4836,9 +4857,19 @@ const Dashboard = () => {
     setShowOnboarding(false);
   };
   
-  const handlePasswordChange = (newPassword: string) => {
+  const handlePasswordChange = async (newPassword: string) => {
     if (currentUser) {
       changeUserPassword(currentUser.id, newPassword);
+      // Marcar que ya cambió su contraseña (nunca más mostrar el popup)
+      localStorage.setItem(`password_changed_${currentUser.id}`, 'true');
+      
+      // Sincronizar con Firebase
+      try {
+        const { updateUserPassword } = await import('./services/firebaseService');
+        await updateUserPassword(currentUser.id, newPassword);
+      } catch (err) {
+        console.log('⚠️ Contraseña guardada localmente');
+      }
     }
     localStorage.removeItem('show_password_change');
     setShowPasswordChange(false);

@@ -2490,33 +2490,35 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
 export const forceReloadRealUsers = async (): Promise<void> => {
   console.log('🔄 Cargando usuarios...');
   
-  // PASO 1: Intentar cargar TODO desde Firebase
+  // PASO 1: Cargar desde Firebase
   const firebaseUsers = await loadUsersFromFirebase();
+  console.log(`📊 Firebase tiene ${firebaseUsers.length} usuarios`);
   
+  // PASO 2: Verificar si necesita migración (menos de 100 usuarios = no migrado)
+  const MIN_USERS_EXPECTED = 100; // Los 108 usuarios base
+  
+  if (firebaseUsers.length < MIN_USERS_EXPECTED) {
+    console.log(`📤 Migración necesaria: ${firebaseUsers.length} < ${MIN_USERS_EXPECTED}`);
+    console.log('📤 Ejecutando migración de usuarios base a Firebase...');
+    
+    const result = await migrateUsersToFirebase();
+    console.log(`✅ Migración: ${result.migrated} nuevos, ${result.existing} existentes`);
+    
+    // Recargar desde Firebase después de migrar
+    const usersAfterMigration = await loadUsersFromFirebase();
+    localStorage.setItem('tribu_users', JSON.stringify(usersAfterMigration));
+    console.log(`✅ ${usersAfterMigration.length} usuarios totales cargados`);
+    return;
+  }
+  
+  // PASO 3: Firebase tiene suficientes usuarios - usar esos
   if (firebaseUsers.length > 0) {
-    // Firebase tiene datos - usar esos
     localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
     console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Firebase`);
     return;
   }
   
-  // PASO 2: Firebase vacío - verificar si necesita migración
-  const migrationDone = localStorage.getItem('tribu_migration_complete');
-  
-  if (!migrationDone) {
-    console.log('📤 Ejecutando migración inicial a Firebase...');
-    await migrateUsersToFirebase();
-    
-    // Recargar desde Firebase después de migrar
-    const usersAfterMigration = await loadUsersFromFirebase();
-    if (usersAfterMigration.length > 0) {
-      localStorage.setItem('tribu_users', JSON.stringify(usersAfterMigration));
-      console.log(`✅ ${usersAfterMigration.length} usuarios migrados y cargados`);
-      return;
-    }
-  }
-  
-  // PASO 3: Fallback - usar datos hardcodeados (solo si todo falla)
+  // PASO 4: Fallback - usar datos hardcodeados (solo si todo falla)
   console.log('⚠️ Usando fallback local (Firebase no disponible)');
   const usersWithIds = REAL_USERS.map((user, index) => ({
     ...user,

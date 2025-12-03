@@ -2335,3 +2335,317 @@ git push → Vercel autodeploy
 /config/admin       ✅
 /tribe_assignments  ✅
 ```
+
+---
+
+## 🖼️ ICONOS PWA
+
+### public/icons/
+```
+Archivo                    Tamaño      Uso
+────────────────────────────────────────────────
+icon-72.png                3.7 KB      Android pequeño
+icon-96.png                5.7 KB      Android mediano
+icon-128.png               8.8 KB      Desktop
+icon-144.png               10.9 KB     Android grande
+icon-152.png               11.9 KB     iPad
+icon-192.png               17.5 KB     Android maskable
+icon-384.png               59.9 KB     Splash screen
+icon-512.png               99.8 KB     Store / Splash
+────────────────────────────────────────────────
+apple-touch-icon.png       15.4 KB     iOS home
+apple-touch-icon-120.png   7.9 KB      iPhone
+apple-touch-icon-152.png   11.9 KB     iPad
+apple-touch-icon-167.png   14.1 KB     iPad Pro
+```
+
+### Total Assets
+```
+Iconos totales:     12 archivos
+Peso total:         ~268 KB
+Formato:            PNG optimizado
+Color principal:    #6161FF (púrpura)
+```
+
+---
+
+## 📝 FORMULARIOS DE LA APP
+
+### Login (LoginScreen)
+```
+Campo               Validación
+────────────────────────────────
+Email              required, email format
+Password           required, min 4 chars
+```
+
+### Registro (RegisterScreen)
+```
+Campo               Validación
+────────────────────────────────
+Email              pre-llenado
+Nombre             required
+Empresa            required
+Teléfono           required, +56...
+Instagram          required, @...
+Ciudad             required
+Categoría          required (select)
+Afinidad           required (select)
+Bio                optional, max 200
+```
+
+### Editar Perfil (MyProfileView)
+```
+Campo               Validación
+────────────────────────────────
+Nombre             required
+Empresa            required
+Teléfono           required
+Instagram          required
+Ciudad             required
+Bio                max 200 chars
+Website            optional, URL
+Facebook           optional, @...
+TikTok             optional, @...
+Avatar             image, max 2MB
+Cover              image, max 2MB
+```
+
+### Pago Membresía (PaywallScreen)
+```
+Campo               Validación
+────────────────────────────────
+Email              required, email
+Nombre tarjeta     required
+Número tarjeta     required, 16 digits (simulated)
+Expiry             required, MM/YY
+CVV                required, 3-4 digits
+```
+
+---
+
+## 🎭 ESTADOS DE UI
+
+### Botones
+```css
+/* Normal */
+bg-[#6161FF] text-white
+
+/* Hover */
+hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)]
+
+/* Disabled */
+disabled:opacity-50 disabled:cursor-not-allowed
+
+/* Loading */
+opacity-50 + spinner
+
+/* Success (verde) */
+bg-gradient-to-r from-[#00CA72] to-[#4AE698]
+
+/* Danger (rojo) */
+bg-[#FB275D] hover:bg-[#C11243]
+```
+
+### Cards
+```css
+/* Normal */
+bg-white rounded-xl border border-[#E4E7EF] p-4
+
+/* Hover */
+hover:shadow-md hover:border-[#6161FF]/30
+
+/* Selected */
+border-2 border-[#6161FF] bg-[#6161FF]/5
+
+/* Glassmorphism */
+bg-white/10 backdrop-blur-xl border-white/20
+```
+
+### Inputs
+```css
+/* Normal */
+bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3
+
+/* Focus */
+focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]
+
+/* Error */
+border-[#FB275D] bg-[#FFF0F5]
+
+/* Disabled */
+bg-[#E4E7EF] cursor-not-allowed
+```
+
+### Badges/Tags
+```css
+/* Categoría */
+bg-[#6161FF]/10 text-[#6161FF] px-2 py-1 rounded-full text-xs
+
+/* Status Active */
+bg-[#E6FFF3] text-[#008A4E] border-[#00CA72]
+
+/* Status Pending */
+bg-[#FFF8E6] text-[#9D6B00] border-[#FFCC00]
+
+/* Status Error */
+bg-[#FFF0F5] text-[#C11243] border-[#FB275D]
+```
+
+---
+
+## 🔔 TOASTS Y ALERTAS
+
+### Tipos
+```typescript
+showToast({
+  type: 'success',  // Verde con ✅
+  type: 'error',    // Rojo con ❌
+  type: 'warning',  // Amarillo con ⚠️
+  type: 'info',     // Azul con ℹ️
+  message: string,
+  duration: 3000    // ms
+});
+```
+
+### Implementación
+```jsx
+// Toast state
+const [toast, setToast] = useState<{type, message} | null>(null);
+
+// Mostrar toast
+setToast({ type: 'success', message: '¡Guardado!' });
+setTimeout(() => setToast(null), 3000);
+
+// Render
+{toast && (
+  <div className="fixed bottom-20 left-1/2 -translate-x-1/2 
+                  bg-white shadow-lg rounded-xl px-4 py-3 
+                  flex items-center gap-2 z-50">
+    {toast.type === 'success' && <CheckCircle className="text-[#00CA72]" />}
+    {toast.message}
+  </div>
+)}
+```
+
+---
+
+## 📊 ESTRUCTURA ESTADO GLOBAL
+
+### localStorage Keys Summary
+```
+AUTH:
+├── tribu_auth_session          → Usuario actual
+├── tribu_current_user_id       → ID usuario
+
+DATOS:
+├── tribu_users                 → Cache usuarios
+├── tribu_memberships           → Cache membresías
+├── tribu_notifications         → Cache notificaciones
+
+TRIBU:
+├── tribeAssignmentsData_{id}   → Asignaciones 10+10
+├── tribeAssignmentsChecklist_{id} → Progreso checklist
+├── tribeAssignmentStatus_{id}  → Estado tribu
+├── tribeReportsLog_{id}        → Reportes enviados
+
+CONFIG:
+├── tribu_admin_config          → Configuración admin
+├── tribu_onboarding_{email}    → Survey completado
+├── tribu_fcm_token             → Token push
+```
+
+### React State (App.tsx)
+```typescript
+// Global
+const [currentUser, setCurrentUser] = useState<UserProfile | null>();
+
+// TribeAssignmentsView
+const [assignments, setAssignments] = useState<TribeAssignments>();
+const [checklist, setChecklist] = useState<AssignmentChecklist>();
+const [status, setStatus] = useState<TribeStatus>();
+
+// AdminPanel
+const [users, setUsers] = useState<UserProfile[]>();
+const [memberships, setMemberships] = useState<Membership[]>();
+const [stats, setStats] = useState<DashboardStats>();
+```
+
+---
+
+## 🌐 URLs Y ENDPOINTS
+
+### Internos (React Router)
+```
+/                    → Login
+/register            → Registro (redirect)
+/searching           → Loading cósmico
+/survey              → Onboarding
+/membership          → Paywall
+/dashboard           → Home miembro
+/tribe               → Asignaciones 10+10
+/directory           → Directorio usuarios
+/profile/:id         → Perfil + Tribu X
+/activity            → Actividad
+/my-profile          → Mi perfil
+/admin               → Panel admin
+```
+
+### Externos
+```
+Firebase Firestore:
+https://firestore.googleapis.com/v1/projects/tribu-impulsa/...
+
+Firebase Storage:
+https://firebasestorage.googleapis.com/v0/b/tribu-impulsa.firebasestorage.app/...
+
+Azure OpenAI:
+https://{resource}.openai.azure.com/openai/deployments/gpt-51-chat/...
+
+WhatsApp:
+https://wa.me/{phone}?text={encoded_message}
+
+Instagram:
+https://instagram.com/{username}
+```
+
+---
+
+## 📅 TIMESTAMPS
+
+### Formatos Usados
+```typescript
+// ISO (almacenamiento)
+new Date().toISOString()
+// "2025-01-03T06:30:00.000Z"
+
+// Mes (asignaciones)
+new Date().toISOString().slice(0, 7)
+// "2025-01"
+
+// Display Chile
+new Date().toLocaleString('es-CL')
+// "03-01-2025 03:30"
+
+// Relative
+"Hace 2 horas"
+"Ayer"
+"3 días atrás"
+```
+
+---
+
+## ✅ DOCUMENTO COMPLETO
+
+```
+📄 MAPA_SITIO_PWA.md
+├── 2,500+ líneas
+├── 40+ secciones
+├── 100% documentado
+└── Actualizado: 3 Dic 2024 03:40 AM
+
+🏆 Logros sesión: 13
+🔥 Firebase: 8 colecciones sync
+📱 PWA: Completa e instalable
+🤖 IA: Azure GPT-5.1 integrado
+```

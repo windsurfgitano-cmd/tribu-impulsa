@@ -5043,6 +5043,105 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Tip del Día */}
+      <div className="px-4 mb-4">
+        <div className="bg-gradient-to-r from-[#F5F7FB] to-white rounded-xl p-4 border border-[#E4E7EF]">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#FFCC00]/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">💡</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-[#7C8193] mb-1">TIP DEL DÍA</p>
+              <p className="text-sm text-[#181B34] leading-relaxed">
+                {(() => {
+                  const tips = [
+                    "Los emprendedores que comparten 3+ veces por semana crecen un 40% más rápido en redes.",
+                    "Una story mencionando a otro emprendedor genera 2x más engagement que una publicación normal.",
+                    "El mejor horario para compartir en Chile es entre 12:00 y 14:00 hrs.",
+                    "Agregar una recomendación genuina al compartir aumenta la credibilidad de ambos.",
+                    "Los emprendedores con checklist completo reciben 60% más shares de vuelta.",
+                    "Responder stories de tu tribu fortalece la relación y genera reciprocidad.",
+                    "Un mensaje de agradecimiento después de ser compartido genera conexiones duraderas."
+                  ];
+                  const dayIndex = new Date().getDate() % tips.length;
+                  return tips[dayIndex];
+                })()}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Logros y Gamificación */}
+      <div className="px-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-[#181B34]">Tus Logros</h2>
+          <span className="text-xs text-[#7C8193]">Nivel {Math.min(5, Math.floor(tribeStats.completed / 4) + 1)}</span>
+        </div>
+        
+        {/* Progress Bar */}
+        <div className="bg-white rounded-xl p-4 border border-[#E4E7EF] mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-[#7C8193]">Progreso mensual</span>
+            <span className="text-xs font-semibold text-[#6161FF]">{Math.round((tribeStats.completed / Math.max(tribeStats.total, 1)) * 100)}%</span>
+          </div>
+          <div className="h-2 bg-[#E4E7EF] rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-500"
+              style={{ width: `${(tribeStats.completed / Math.max(tribeStats.total, 1)) * 100}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-[#7C8193] mt-2">
+            {tribeStats.total - tribeStats.completed > 0 
+              ? `${tribeStats.total - tribeStats.completed} acciones más para completar este mes`
+              : '¡Felicidades! Completaste todas las acciones'}
+          </p>
+        </div>
+
+        {/* Badges Grid */}
+        <div className="grid grid-cols-4 gap-2">
+          {/* Badge 1: Primera acción */}
+          <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 1 ? 'bg-[#00CA72]/10' : 'bg-[#F5F7FB]'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 1 ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'}`}>
+              <span className="text-lg">{tribeStats.completed >= 1 ? '🚀' : '🔒'}</span>
+            </div>
+            <span className={`text-[9px] text-center ${tribeStats.completed >= 1 ? 'text-[#00CA72] font-semibold' : 'text-[#B3B8C6]'}`}>
+              Primera acción
+            </span>
+          </div>
+          
+          {/* Badge 2: 5 shares */}
+          <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 5 ? 'bg-[#6161FF]/10' : 'bg-[#F5F7FB]'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 5 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`}>
+              <span className="text-lg">{tribeStats.completed >= 5 ? '⭐' : '🔒'}</span>
+            </div>
+            <span className={`text-[9px] text-center ${tribeStats.completed >= 5 ? 'text-[#6161FF] font-semibold' : 'text-[#B3B8C6]'}`}>
+              5 shares
+            </span>
+          </div>
+          
+          {/* Badge 3: 10 shares */}
+          <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 10 ? 'bg-[#E91E63]/10' : 'bg-[#F5F7FB]'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 10 ? 'bg-[#E91E63]' : 'bg-[#E4E7EF]'}`}>
+              <span className="text-lg">{tribeStats.completed >= 10 ? '🔥' : '🔒'}</span>
+            </div>
+            <span className={`text-[9px] text-center ${tribeStats.completed >= 10 ? 'text-[#E91E63] font-semibold' : 'text-[#B3B8C6]'}`}>
+              En llamas
+            </span>
+          </div>
+          
+          {/* Badge 4: Tribu perfecta */}
+          <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]/10' : 'bg-[#F5F7FB]'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]' : 'bg-[#E4E7EF]'}`}>
+              <span className="text-lg">{tribeStats.pending === 0 && tribeStats.completed >= 20 ? '👑' : '🔒'}</span>
+            </div>
+            <span className={`text-[9px] text-center ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'text-[#FFCC00] font-semibold' : 'text-[#B3B8C6]'}`}>
+              Tribu perfecta
+            </span>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 };

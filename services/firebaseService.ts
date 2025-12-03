@@ -220,6 +220,33 @@ export const syncChecklistProgress = async (
   }
 };
 
+// Cargar progreso del checklist desde Firebase
+export const loadChecklistFromFirebase = async (
+  userId: string
+): Promise<{ completed: number; total: number; items: Record<string, boolean> } | null> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return null;
+
+  try {
+    const progressRef = doc(firestore, 'progress', userId);
+    const progressDoc = await getDoc(progressRef);
+    
+    if (progressDoc.exists()) {
+      const data = progressDoc.data();
+      console.log('☁️ Checklist cargado desde Firebase:', data.completed, '/', data.total);
+      return {
+        completed: data.completed || 0,
+        total: data.total || 0,
+        items: data.items || {}
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Error cargando checklist:', error);
+    return null;
+  }
+};
+
 // Registrar interacción (para analytics)
 export const logInteraction = async (
   userId: string,
@@ -573,6 +600,7 @@ export default {
   getAllProfilesFromCloud,
   syncProfilePhoto,
   syncChecklistProgress,
+  loadChecklistFromFirebase,
   logInteraction,
   // Storage
   uploadProfileImage,

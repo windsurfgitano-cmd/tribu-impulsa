@@ -56,6 +56,7 @@ import {
   getProfileFromCloud,
   getAllProfilesFromCloud,
   syncChecklistProgress,
+  loadChecklistFromFirebase,
   getFirestoreInstance,
   logInteraction
 } from './services/firebaseService';
@@ -2131,6 +2132,30 @@ const TribeAssignmentsView = () => {
   const [showShareModal, setShowShareModal] = useState<{profile: MatchProfile, type: 'shared_to' | 'received_from'} | null>(null);
   const [shareUrl, setShareUrl] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Cargar checklist desde Firebase al iniciar (sincronización entre dispositivos)
+  useEffect(() => {
+    const loadFromFirebase = async () => {
+      const firebaseData = await loadChecklistFromFirebase(myProfile.id);
+      if (firebaseData && firebaseData.items) {
+        // Merge con el checklist local
+        setChecklist(prev => {
+          const merged: AssignmentChecklist = {
+            toShare: { ...prev.toShare },
+            shareWithMe: { ...prev.shareWithMe }
+          };
+          // Aplicar items de Firebase
+          Object.entries(firebaseData.items).forEach(([id, value]) => {
+            if (id in merged.toShare) merged.toShare[id] = value as boolean;
+            if (id in merged.shareWithMe) merged.shareWithMe[id] = value as boolean;
+          });
+          return merged;
+        });
+        console.log('✅ Checklist sincronizado desde Firebase');
+      }
+    };
+    loadFromFirebase();
+  }, [myProfile.id]);
 
   useEffect(() => {
     persistTribeAssignments(assignments);

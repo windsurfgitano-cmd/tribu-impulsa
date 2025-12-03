@@ -2115,3 +2115,223 @@ Desde Firebase:
 - [ ] IA personalizada por usuario
 - [ ] Marketplace de servicios
 - [ ] Eventos presenciales integrados
+
+---
+
+## 📦 DEPENDENCIAS EXACTAS
+
+### package.json
+```json
+{
+  "name": "tribu-impulsa-mvp",
+  "version": "0.0.0",
+  "type": "module",
+  
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "firebase": "^12.6.0",
+    "lucide-react": "^0.554.0",
+    "three": "^0.181.2",
+    "@types/three": "^0.181.0"
+  },
+  
+  "devDependencies": {
+    "vite": "^6.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "@types/node": "^22.14.0",
+    "sharp": "^0.34.5"
+  }
+}
+```
+
+### Versiones Clave
+```
+React:            19.2.0   (última estable)
+React Router:     7.9.6    (v7 con hooks)
+Firebase:         12.6.0   (v12 modular)
+Vite:             6.2.0    (bundler rápido)
+TypeScript:       5.8.2    (tipos estrictos)
+Lucide:           0.554.0  (iconos SVG)
+Three.js:         0.181.2  (animaciones 3D)
+Sharp:            0.34.5   (procesamiento imágenes)
+```
+
+---
+
+## ⚙️ TSCONFIG
+
+### tsconfig.json
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./*"]
+    }
+  }
+}
+```
+
+### Características Habilitadas
+```
+ES2022:               Módulos nativos, top-level await
+DOM:                  APIs del navegador
+JSX React:            Sin import React explícito
+Path aliases:         @/ mapea a raíz del proyecto
+No emit:              Vite maneja el build
+```
+
+---
+
+## 🔍 ICONOS LUCIDE USADOS
+
+### Navegación
+```
+Home, Users, Activity, User, Settings, LogOut
+```
+
+### Acciones
+```
+Plus, Check, X, Edit, Trash2, Search, Filter
+MessageCircle, Phone, Mail, ExternalLink, Copy
+```
+
+### Estados
+```
+CheckCircle, AlertCircle, Clock, Star, Heart
+Award, TrendingUp, TrendingDown
+```
+
+### Redes Sociales
+```
+Instagram, Facebook, Globe, MessageSquare (WhatsApp)
+```
+
+### Admin
+```
+Shield, Lock, CreditCard, BarChart3, PieChart
+UserCheck, UserX, RefreshCw, Download, Upload
+```
+
+---
+
+## 📱 RESPONSIVE BREAKPOINTS
+
+### Tailwind (usado via CDN)
+```css
+sm:   640px    /* Móviles grandes */
+md:   768px    /* Tablets */
+lg:   1024px   /* Laptops */
+xl:   1280px   /* Desktop */
+2xl:  1536px   /* Pantallas grandes */
+```
+
+### Uso Común en App
+```jsx
+// Grid responsivo
+className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+
+// Padding responsivo
+className="p-4 md:p-6 lg:p-8"
+
+// Texto responsivo
+className="text-lg md:text-xl lg:text-2xl"
+
+// Ocultar en móvil
+className="hidden md:block"
+```
+
+---
+
+## 🔊 LOGS DE CONSOLA
+
+### Emojis por Tipo
+```
+✅  Éxito           console.log('✅ Usuario guardado')
+❌  Error           console.error('❌ Error:', err)
+⚠️  Warning         console.warn('⚠️ Sin conexión')
+☁️  Firebase        console.log('☁️ Sync completado')
+📊  Data            console.log('📊 Stats:', data)
+🔄  Loading         console.log('🔄 Cargando...')
+🚀  Inicio          console.log('🚀 App iniciada')
+🔐  Auth            console.log('🔐 Login exitoso')
+💰  Pagos           console.log('💰 Pago procesado')
+🎯  Tribu           console.log('🎯 Asignación generada')
+```
+
+### Ejemplo Real
+```javascript
+console.log('🚀 Tribu Impulsa v1.0.5 - Producción');
+console.log('☁️ Firebase inicializado');
+console.log('📊 Usuarios cargados:', users.length);
+console.log('✅ App lista');
+```
+
+---
+
+## 📄 ARCHIVOS README
+
+### README.md (principal)
+```markdown
+# Tribu Impulsa PWA
+
+Red de networking para emprendedores chilenos.
+
+## Stack
+- React 19 + TypeScript
+- Firebase (Firestore + Storage + Auth)
+- Azure OpenAI (Tribu X)
+- Vite + Vercel
+
+## Desarrollo
+npm install
+npm run dev
+
+## Deploy
+git push → Vercel autodeploy
+```
+
+---
+
+## 🎉 RESUMEN FINAL
+
+### MAPA_SITIO_PWA.md
+```
+📄 Líneas totales:    2,200+
+📋 Secciones:         30+
+🏆 Logros sesión:     13
+✅ Todo documentado:  SÍ
+```
+
+### PWA Completa
+```
+👥 Usuarios:          112 activos
+💳 Membresías:        Sync Firebase
+📱 PWA:               Instalable
+🤖 IA:                Azure GPT-5.1
+📊 Analytics:         Firebase
+🔒 Seguridad:         Básica (mejorable)
+```
+
+### Firebase 100% Sync
+```
+/users              ✅
+/memberships        ✅
+/notifications      ✅
+/payment_history    ✅
+/interactions       ✅
+/progress           ✅
+/config/admin       ✅
+/tribe_assignments  ✅
+```

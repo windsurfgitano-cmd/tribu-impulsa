@@ -1,6 +1,6 @@
 # 🗺️ MAPA DEL SITIO - TRIBU IMPULSA PWA
 
-**Última actualización:** 3 Dic 2024 02:30 AM
+**Última actualización:** 3 Dic 2024 03:10 AM
 
 ---
 
@@ -18,6 +18,9 @@
 | 8 | **Precio membresía dinámico** | Configurable desde admin |
 | 9 | **WhatsApp soporte configurable** | No más hardcoding |
 | 10 | **Avatares con iniciales** | Sin dependencia de Instagram |
+| 11 | **Checklist sync Firebase** | Progreso persiste entre dispositivos ✨ |
+| 12 | **Config Admin sync Firebase** | Precio/WA accesible desde cualquier lado ✨ |
+| 13 | **Asignaciones Tribu sync Firebase** | Los 10+10 en la nube ✨ |
 
 ---
 
@@ -1562,12 +1565,62 @@ loadChecklistFromFirebase(userId) → Promise<{
 | Usuarios | ✅ | ✅ | Bidireccional |
 | Membresías | ✅ | ✅ | Bidireccional |
 | Notificaciones | ✅ | ✅ | Bidireccional |
-| Checklist | ✅ | ✅ | **Bidireccional** |
+| Checklist | ✅ | ✅ | Bidireccional |
 | Fotos/Banner | ❌ | ✅ | Solo Firebase |
 | Pagos | ❌ | ✅ | Solo Firebase |
-| Config Admin | ✅ | ⚠️ | Solo local |
-| Asignaciones | ✅ | ⚠️ | Solo local |
+| Config Admin | ✅ | ✅ | **Bidireccional** ✨ |
+| Asignaciones | ✅ | ✅ | **Bidireccional** ✨ |
 
-### TODO: Pendiente de sincronizar
-- `tribu_admin_config` → Debería ir a Firebase
-- `tribe_assignments` → Podría ir a Firebase
+### ✅ TODO SINCRONIZADO A FIREBASE
+- ✅ `tribu_admin_config` → `/config/admin`
+- ✅ `tribe_assignments` → `/tribe_assignments/{userId}`
+
+---
+
+## 🔥 COLECCIONES FIREBASE ACTUALIZADAS
+
+```
+Firestore Database
+├── /users/{userId}              # Perfiles usuarios
+├── /memberships/{email}         # Estados membresía  
+├── /notifications/{notifId}     # Notificaciones
+├── /payment_history/{payId}     # Historial pagos
+├── /interactions/{intId}        # Logs interacciones
+├── /progress/{userId}           # ✨ Checklist progreso
+├── /config/admin                # ✨ Config admin global
+└── /tribe_assignments/{userId}  # ✨ Asignaciones 10+10
+```
+
+### /config/admin
+```typescript
+{
+  membershipPrice: 20000,
+  matchesPerUser: 10,
+  whatsappSupport: '+56951776005',
+  appName: 'Tribu Impulsa',
+  mercadopagoMode: 'sandbox',
+  updatedAt: Timestamp
+}
+```
+
+### /tribe_assignments/{userId}
+```typescript
+{
+  toShareIds: ['real_user_5', 'real_user_12', ...],     // 10 IDs
+  shareWithMeIds: ['real_user_8', 'real_user_23', ...], // 10 IDs
+  month: '2025-01',
+  updatedAt: Timestamp
+}
+```
+
+---
+
+## 🔄 FUNCIONES FIREBASE SYNC
+
+| Función | Guarda | Carga |
+|---------|--------|-------|
+| Checklist | `syncChecklistProgress()` | `loadChecklistFromFirebase()` |
+| Config Admin | `syncAdminConfig()` | `loadAdminConfig()` |
+| Asignaciones | `syncTribeAssignments()` | `loadTribeAssignments()` |
+| Perfiles | `syncProfileToCloud()` | `getProfileFromCloud()` |
+| Membresías | `saveMembership()` | `getMembership()` |

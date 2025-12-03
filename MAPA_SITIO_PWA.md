@@ -1,6 +1,6 @@
 # 🗺️ MAPA DEL SITIO - TRIBU IMPULSA PWA
 
-**Última actualización:** 3 Dic 2024 09:55 AM
+**Última actualización:** 3 Dic 2024 01:20 PM
 
 ---
 
@@ -24,6 +24,12 @@
 | 14 | **IG Tribu Impulsa flotante** | Acceso directo al IG oficial 📱 |
 | 15 | **Icono Instagram rosado gradiente** | Estilo oficial IG en perfiles 🎨 |
 | 16 | **Explicaciones checklist mejoradas** | "Comparte en tu IG" / "Ellos comparten TU cuenta" 📝 |
+| 17 | **Enlaces siempre visibles** | No más about:blank - muestra "no registrado" 🔗 |
+| 18 | **Email en perfiles públicos** | Contacto directo por email ✉️ |
+| 19 | **Contraseña persistente Firebase** | Cambio de contraseña sincronizado 🔐 |
+| 20 | **Popup contraseña inteligente** | Solo si tiene TRIBU2026 y no la ha cambiado 🧠 |
+| 21 | **Sync fotos Firebase al inicio** | Avatares actualizados automáticamente 📸 |
+| 22 | **Flag password_changed** | Evita popup repetitivo de contraseña ✅ |
 
 ---
 
@@ -1842,7 +1848,7 @@ Funciones sync:       10
 Componentes UI:       6
 Categorías negocio:   157
 Usuarios migrados:    112
-Logros esta sesión:   16
+Logros esta sesión:   22
 ```
 
 ---
@@ -2638,17 +2644,105 @@ new Date().toLocaleString('es-CL')
 
 ---
 
+## 🔐 SISTEMA DE CONTRASEÑAS
+
+### Lógica del Popup "Bienvenido a Tribu"
+```typescript
+// El popup de cambio de contraseña SOLO aparece si:
+// 1. Es firstLogin === true
+// 2. La contraseña actual es 'TRIBU2026'
+// 3. NO existe flag password_changed_{userId} en localStorage
+
+const hasDefaultPassword = user.password === 'TRIBU2026';
+const hasChangedPassword = localStorage.getItem(`password_changed_${user.id}`) === 'true';
+
+if (firstLogin && hasDefaultPassword && !hasChangedPassword) {
+  showPasswordChangePopup();
+}
+```
+
+### Persistencia de Contraseña
+```
+1. Usuario cambia contraseña
+2. Se guarda en localStorage (tribu_users)
+3. Se guarda flag: password_changed_{userId} = 'true'
+4. Se sincroniza a Firebase: users/{userId}/password
+5. Al iniciar en otro dispositivo, Firebase sobrescribe localStorage
+```
+
+### Funciones Firebase
+- `updateUserPassword(userId, password)` → Actualiza en Firebase
+- `verifyUserPassword(userId, password)` → Verifica desde Firebase
+
+---
+
+## 📸 SINCRONIZACIÓN DE FOTOS
+
+### Al Iniciar la App
+```typescript
+// Se ejecuta automáticamente al cargar App.tsx
+syncPhotosFromFirebase();
+```
+
+### Qué Sincroniza
+```
+Firebase → localStorage:
+├── avatarUrl    (foto de perfil)
+├── coverUrl     (banner de perfil)
+├── website      (si existe en Firebase)
+└── password     (si fue cambiada desde otro dispositivo)
+```
+
+### Cuándo Se Suben Fotos
+```
+1. Usuario edita perfil → uploadProfileImage()
+2. Se comprime la imagen automáticamente
+3. Se sube a Firebase Storage
+4. Se actualiza URL en Firebase Firestore
+5. Al próximo inicio, otros dispositivos la verán
+```
+
+---
+
+## 🔗 ENLACES EN PERFILES
+
+### Vista de Perfil Público (ProfileDetail)
+```
+Siempre se muestran 3 enlaces:
+
+1. SITIO WEB
+   - Si existe: Link clickeable al website
+   - Si no existe: "Sitio web no registrado" (gris, no clickeable)
+
+2. INSTAGRAM  
+   - Si existe: Link a instagram.com/{handle}
+   - Si no existe: "Instagram no registrado" (gris)
+
+3. EMAIL
+   - Si existe: Link mailto:{email}
+   - Si no existe: "Email no registrado" (gris)
+```
+
+### Problema Solucionado
+```
+ANTES: Si no tenía website, el link iba a about:blank
+AHORA: Muestra texto gris "no registrado" sin ser clickeable
+```
+
+---
+
 ## ✅ DOCUMENTO COMPLETO
 
 ```
 📄 MAPA_SITIO_PWA.md
-├── 2,500+ líneas
-├── 40+ secciones
+├── 2,700+ líneas
+├── 50+ secciones
 ├── 100% documentado
-└── Actualizado: 3 Dic 2024 03:40 AM
+└── Actualizado: 3 Dic 2024 01:20 PM
 
-🏆 Logros sesión: 16
-🔥 Firebase: 8 colecciones sync
+🏆 Logros sesión: 22
+🔥 Firebase: 8 colecciones sync + fotos
 📱 PWA: Completa e instalable
 🤖 IA: Azure GPT-5.1 integrado
+🔐 Contraseñas: Persistentes en Firebase
 ```

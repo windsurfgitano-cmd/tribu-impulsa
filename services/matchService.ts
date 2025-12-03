@@ -115,13 +115,15 @@ const userToMatchProfile = (user: UserProfile): MatchProfile => {
     avatarUrl,
     companyLogoUrl,
     coverUrl,
-    whatsapp: user.whatsapp || user.phone,
+    whatsapp: user.whatsapp || user.phone || '',
+    phone: user.phone || user.whatsapp || '',  // Para WhatsApp directo en Tribu X
     location: user.city + (user.sector ? `, ${user.sector}` : ''),
     website: user.website || '',
     bio,
     tags: [mainCategory.split(' ')[0], subCategory.split(' ')[0], user.city].filter(Boolean).slice(0, 3),
     foundingYear: 2020,
-    instagram: user.instagram
+    instagram: user.instagram,
+    email: user.email || ''
   };
 };
 

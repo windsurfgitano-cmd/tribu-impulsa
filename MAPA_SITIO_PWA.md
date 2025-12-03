@@ -1,17 +1,38 @@
 # 🗺️ MAPA DEL SITIO - TRIBU IMPULSA PWA
 
+**Última actualización:** 3 Dic 2024 02:30 AM
+
+---
+
+## 🏆 LOGROS DE ESTA SESIÓN
+
+| # | Logro | Impacto |
+|---|-------|---------|
+| 1 | **Firebase como fuente de verdad** | Usuarios ya no se sobreescriben |
+| 2 | **Migración automática 108 usuarios** | 112 usuarios en Firebase |
+| 3 | **WhatsApp links con teléfono real** | Tribu X envía al número correcto |
+| 4 | **CRUD usuarios completo** | Crear, editar, eliminar persiste |
+| 5 | **Notificaciones sync Firebase** | Llegan a todos los dispositivos |
+| 6 | **Firebase Storage para fotos** | Avatar + banner con compresión |
+| 7 | **Historial de pagos** | Revenue tracking en Firebase |
+| 8 | **Precio membresía dinámico** | Configurable desde admin |
+| 9 | **WhatsApp soporte configurable** | No más hardcoding |
+| 10 | **Avatares con iniciales** | Sin dependencia de Instagram |
+
+---
+
 ## 📱 RUTAS Y PANTALLAS
 
 ```
 /                    → LoginScreen          (Público)
-/register            → RegisterScreen       (Público)
+/register            → RegisterScreen       (Público)  
 /searching           → SearchingScreen      (Post-login)
 /survey              → SurveyScreen         (Onboarding)
 /membership          → MembershipScreen     (Pago membresía)
 /dashboard           → Dashboard            (🔒 Solo miembros)
 /tribe               → TribeAssignmentsView (🔒 Solo miembros)
 /directory           → DirectoryView        (🔒 Solo miembros)
-/profile/:id         → ProfileDetail        (🔒 Solo miembros)
+/profile/:id         → ProfileDetail        (🔒 Solo miembros) + Tribu X
 /activity            → ActivityView         (Libre)
 /my-profile          → MyProfileView        (Libre)
 /admin               → AdminPanelInline     (Solo admin)
@@ -213,5 +234,280 @@ Llaves:
 | Fotos/Banners | ✅ OK | Firebase Storage |
 | Directorio | ✅ OK | Carga desde Firebase |
 | Admin | ✅ OK | CRUD usuarios |
-| Tribu | ⚠️ Revisar | Algoritmo local |
+| Tribu X (IA) | ✅ OK | Azure GPT en producción |
+| WhatsApp | ✅ OK | Usa phone del perfil |
+| Tribu Asignaciones | ✅ OK | Algoritmo local |
 | Checklist | ⚠️ Revisar | Solo localStorage |
+
+---
+
+## 🔬 BIOPSIA COMPLETA - CONEXIONES
+
+### 📁 ARQUITECTURA DE ARCHIVOS
+
+```
+tribu-impulsa/
+├── App.tsx                    # Componente principal (6363 líneas)
+│   ├── LoginScreen            # Líneas 440-680
+│   ├── RegisterScreen         # Líneas 680-900
+│   ├── Dashboard              # Líneas 1200-1800
+│   ├── TribeAssignmentsView   # Líneas 2100-2500
+│   ├── DirectoryView          # Líneas 4350-4600
+│   ├── ProfileDetail          # Líneas 3840-4100
+│   ├── MyProfileView          # Líneas 2550-3100
+│   ├── MatchAnalysisSection   # Líneas 3615-3840 (Tribu X)
+│   └── AdminPanelInline       # Líneas 5400-6200
+│
+├── services/
+│   ├── firebaseService.ts     # Firebase init + Storage upload
+│   ├── databaseService.ts     # CRUD localStorage + notificaciones
+│   ├── realUsersData.ts       # 108 usuarios + migración Firebase
+│   ├── matchService.ts        # Matching + userToMatchProfile
+│   ├── membershipService.ts   # Gestión membresías
+│   ├── aiMatchingService.ts   # Azure OpenAI GPT-5.1
+│   ├── tribeAlgorithm.ts      # Asignación 10+10
+│   └── dataPersistence.ts     # Auto-backup + integridad
+│
+├── types.ts                   # Interfaces TypeScript
+├── .env.local                 # Variables locales (dev)
+└── .env.example               # Template variables
+```
+
+---
+
+### 🔗 MAPA DE CONEXIONES POR SERVICIO
+
+#### 1. `firebaseService.ts` → NÚCLEO
+```
+firebaseService.ts
+    ├── initializeFirebase()      → App.tsx (línea 69)
+    ├── getFirestoreInstance()    → realUsersData.ts, databaseService.ts
+    ├── uploadProfileImage()      → App.tsx (MyProfileView)
+    ├── compressImage()           → Interno
+    └── Firebase Config           → tribu-impulsa.firebasestorage.app
+        
+Conecta con:
+    → Firebase Firestore (users, memberships, notifications)
+    → Firebase Storage (profiles/{userId}/)
+    → Firebase Cloud Messaging (notificaciones push)
+```
+
+#### 2. `realUsersData.ts` → USUARIOS
+```
+realUsersData.ts
+    ├── REAL_USERS[108]           → Datos base hardcodeados (fallback)
+    ├── forceReloadRealUsers()    → App.tsx (línea 78)
+    │   └── loadUsersFromFirebase()
+    │   └── migrateUsersToFirebase()
+    ├── registerNewUser()         → RegisterScreen
+    ├── validateCredentials()     → LoginScreen
+    ├── changeUserPassword()      → MyProfileView
+    ├── deleteUser()              → AdminPanelInline
+    ├── updateUserInFirebase()    → MyProfileView
+    └── syncUsersFromFirebase()   → Al cargar app
+
+Conecta con:
+    → Firebase Firestore (colección 'users')
+    → localStorage ('tribu_users')
+    → databaseService.ts (getAllUsers)
+```
+
+#### 3. `databaseService.ts` → CRUD LOCAL
+```
+databaseService.ts
+    ├── getAllUsers()             → matchService.ts, DirectoryView
+    ├── getUserById()             → ProfileDetail
+    ├── updateUser()              → MyProfileView
+    ├── createNotification()      → Notificaciones + Firebase sync
+    ├── syncNotificationsFromFirebase() → App.tsx (login)
+    ├── getMembershipStatus()     → MembershipScreen
+    └── getAllReports()           → AdminPanelInline
+
+Conecta con:
+    → localStorage (tribu_users, tribu_notifications)
+    → Firebase Firestore (notifications)
+```
+
+#### 4. `matchService.ts` → MATCHING
+```
+matchService.ts
+    ├── userToMatchProfile()      → Convierte UserProfile → MatchProfile
+    │   └── Incluye: phone, email, whatsapp ← ARREGLADO HOY
+    ├── generateTribeAssignments()→ TribeAssignmentsView
+    ├── getProfileById()          → ProfileDetail
+    ├── getMyProfile()            → MatchAnalysisSection
+    └── getRealUserProfiles()     → DirectoryView
+
+Conecta con:
+    → databaseService.ts (getAllUsers)
+    → types.ts (MatchProfile interface)
+    → App.tsx (múltiples componentes)
+```
+
+#### 5. `aiMatchingService.ts` → TRIBU X (IA)
+```
+aiMatchingService.ts
+    ├── getAzureConfig()          → Lee VITE_AZURE_OPENAI_*
+    ├── isAzureConfigured()       → Verifica si hay API key
+    ├── analyzeCompatibility()    → MatchAnalysisSection
+    │   └── Si Azure OK → GPT-5.1 análisis
+    │   └── Si no → Fallback local inteligente
+    └── generateMatchInsight()    → Prompt engineering
+
+Conecta con:
+    → Azure OpenAI (GPT-5.1-chat) en PRODUCCIÓN
+    → Variables Vercel (VITE_AZURE_OPENAI_ENDPOINT/KEY)
+    → App.tsx líneas 3706-3740
+```
+
+#### 6. `membershipService.ts` → MEMBRESÍAS
+```
+membershipService.ts
+    ├── getMembershipPrice()      → Dinámico desde admin config
+    ├── checkMembershipStatus()   → MemberRoute (protección)
+    ├── saveMembershipPayment()   → MembershipScreen
+    └── getMembershipStatus()     → Dashboard, AdminPanel
+
+Conecta con:
+    → localStorage (membership_status_{id})
+    → Firebase Firestore (memberships, payment_history)
+    → tribu_admin_config (precio dinámico)
+```
+
+---
+
+### 📞 FLUJO WHATSAPP (ARREGLADO)
+
+```
+Antes (roto):
+ProfileDetail → MatchAnalysisSection → getWhatsAppUrl()
+    └── profileData.phone = undefined ❌
+    └── wa.me/?text=... (sin número)
+
+Ahora (arreglado):
+ProfileDetail → MatchAnalysisSection → getWhatsAppUrl()
+    └── matchService.ts → userToMatchProfile()
+        └── phone: user.phone || user.whatsapp ✅
+    └── wa.me/56912345678?text=... (con número)
+```
+
+---
+
+### 🔐 FLUJO AUTENTICACIÓN
+
+```
+Usuario ingresa email
+    │
+    ▼
+LoginScreen → validateCredentials()
+    │         (realUsersData.ts)
+    │
+    ├── Email no existe → /register
+    │   └── registerNewUser() → Firebase + localStorage
+    │
+    └── Email existe → Pide password
+        │
+        ├── Password OK → completeLogin()
+        │   ├── setCurrentUser() (localStorage)
+        │   ├── syncNotificationsFromFirebase()
+        │   └── Redirige según membresía:
+        │       ├── Es miembro → /dashboard
+        │       └── No miembro → /membership
+        │
+        └── Password MAL → "Credenciales incorrectas"
+```
+
+---
+
+### 📸 FLUJO UPLOAD IMÁGENES
+
+```
+MyProfileView → Click avatar/banner
+    │
+    ▼
+handlePhotoUpload() / handleBannerUpload()
+    │
+    ├── Validar: < 2MB, tipo imagen
+    │
+    ├── Comprimir: max 500x500, 80% JPEG
+    │   └── compressImage() (firebaseService.ts)
+    │
+    ├── Subir a Firebase Storage
+    │   └── profiles/{userId}/avatar_{timestamp}.jpg
+    │
+    ├── Obtener URL pública
+    │
+    └── Actualizar perfil:
+        ├── localStorage (tribu_users)
+        └── Firebase Firestore (users/{userId})
+```
+
+---
+
+### 🔔 FLUJO NOTIFICACIONES
+
+```
+Admin envía recordatorio
+    │
+    ▼
+createNotification() (databaseService.ts)
+    │
+    ├── Guarda en localStorage (tribu_notifications)
+    │
+    └── Guarda en Firebase Firestore (notifications)
+        
+Usuario abre app en otro dispositivo
+    │
+    ▼
+completeLogin() → syncNotificationsFromFirebase()
+    │
+    └── Merge notificaciones Firebase + localStorage
+        │
+        └── Usuario ve TODAS sus notificaciones
+```
+
+---
+
+### 💳 FLUJO MEMBRESÍA
+
+```
+/membership → MembershipScreen
+    │
+    ├── getMembershipPrice() → Desde tribu_admin_config
+    │   └── Default: $20.000 CLP
+    │
+    ├── Click "Pagar" → Genera código único
+    │
+    └── Admin aprueba → handleMembershipChange()
+        │
+        ├── Actualiza localStorage (membership_status_{id})
+        ├── Actualiza Firebase (memberships)
+        └── Registra en payment_history (revenue tracking)
+```
+
+---
+
+### 🌐 VARIABLES DE ENTORNO
+
+| Variable | Local | Producción (Vercel) |
+|----------|-------|---------------------|
+| `VITE_AZURE_OPENAI_ENDPOINT` | ❌ No | ✅ Configurado |
+| `VITE_AZURE_OPENAI_KEY` | ❌ No | ✅ Configurado |
+| Firebase Config | Hardcoded | Hardcoded |
+
+**Nota:** Azure solo funciona en producción. En localhost usa fallback local.
+
+---
+
+### 📊 MÉTRICAS FIREBASE
+
+```
+Firestore:
+├── users: 112 documentos
+├── memberships: ~50 documentos
+├── notifications: ~200 documentos
+└── payment_history: ~30 documentos
+
+Storage:
+└── profiles/: ~20 archivos (avatars + banners)
+```

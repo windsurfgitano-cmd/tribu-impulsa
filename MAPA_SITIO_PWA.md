@@ -872,3 +872,358 @@ App.tsx (6363 líneas)
 ├── [5400-6200] AdminPanelInline
 └── [6200-6363] Router + Exports
 ```
+
+---
+
+## 🧬 INTERFACES TYPESCRIPT
+
+### UserProfile (databaseService.ts)
+```typescript
+interface UserProfile {
+  // Identificación
+  id: string;
+  createdAt: string;
+  updatedAt?: string;
+  
+  // Datos personales
+  name: string;
+  email: string;
+  phone: string;
+  password?: string;
+  
+  // Emprendimiento
+  companyName: string;
+  city: string;
+  sector?: string;
+  bio?: string;
+  businessDescription?: string;
+  
+  // Redes sociales
+  instagram: string;
+  facebook?: string;
+  tiktok?: string;
+  website?: string;
+  whatsapp?: string;
+  
+  // Clasificación
+  category: string;    // Giro/Rubro
+  affinity: string;    // Con quién conectar
+  scope?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
+  
+  // Visual
+  avatarUrl?: string;
+  companyLogoUrl?: string;
+  coverUrl?: string;
+  
+  // Métricas
+  followers?: number;
+  revenue?: string;
+  
+  // Estado
+  status: 'pending' | 'active' | 'suspended';
+  surveyCompleted?: boolean;
+  tribeAssigned?: boolean;
+}
+```
+
+### MatchProfile (types.ts)
+```typescript
+interface MatchProfile {
+  id: string;
+  name: string;
+  companyName: string;
+  category: string;
+  subCategory: string;
+  avatarUrl: string;
+  companyLogoUrl: string;
+  coverUrl: string;
+  whatsapp: string;
+  phone?: string;      // ← ARREGLADO HOY
+  email?: string;      // ← ARREGLADO HOY
+  location: string;
+  website: string;
+  bio: string;
+  tags: string[];
+  foundingYear: number;
+  instagram: string;
+}
+```
+
+### Notification
+```typescript
+interface Notification {
+  id: string;
+  userId: string;
+  type: 'tribe_assigned' | 'report_received' | 'match_new' | 'reminder' | 'system';
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, unknown>;
+}
+```
+
+### UserMembership
+```typescript
+interface UserMembership {
+  id: string;
+  email: string;
+  status: 'invitado' | 'miembro' | 'admin';
+  paymentId?: string;
+  paymentDate?: string;
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+---
+
+## ⚙️ SERVICE WORKERS
+
+### sw.js (Cache Principal)
+```javascript
+CACHE_NAME = 'tribu-impulsa-v1'
+
+STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
+]
+
+Eventos:
+├── install    → Cache assets estáticos
+├── activate   → Limpiar caches viejos
+└── fetch      → Network first, cache fallback
+```
+
+### firebase-messaging-sw.js (Push Notifications)
+```javascript
+Eventos:
+├── onBackgroundMessage → Mostrar notificación nativa
+└── notificationclick   → Abrir/enfocar app
+
+Opciones notificación:
+├── icon: '/icons/icon-192.png'
+├── badge: '/icons/icon-72.png'
+├── tag: 'tribu-notification'
+└── actions: ['Ver', 'Cerrar']
+```
+
+---
+
+## 🔌 FUNCIONES AZURE OPENAI
+
+### analyzeCompatibility()
+```
+Input:
+├── user1: UserProfile (quien busca)
+└── user2: UserProfile (potencial match)
+
+Output (JSON):
+├── score: number (70-98)
+├── analysis: string (insight 2-3 oraciones)
+├── opportunities: string[] (3 acciones concretas)
+└── icebreaker: string (mensaje WA <280 chars)
+```
+
+### generateShareSuggestions()
+```
+Input:
+├── sharer: UserProfile (quien comparte)
+└── target: UserProfile (a quien promociona)
+
+Output:
+└── suggestions: string[] (3 ideas de contenido)
+```
+
+### getAIMatches()
+```
+Input:
+├── targetUser: UserProfile
+├── candidates: UserProfile[]
+└── topN: number (cuántos retornar)
+
+Output:
+├── matches: MatchResult[]
+│   ├── userId: string
+│   ├── score: number
+│   ├── reason: string
+│   └── synergies: string[]
+├── insights: string
+└── processingTime: number (ms)
+```
+
+---
+
+## 📊 FIREBASE CONFIG
+
+### Proyecto
+```
+Project ID:       tribu-impulsa
+Storage Bucket:   tribu-impulsa.firebasestorage.app
+Messaging ID:     348097115578
+App ID:           1:348097115578:web:115960bb81563050d01983
+Region:           us-central1 (default)
+Plan:             Blaze (pay-as-you-go)
+```
+
+### Colecciones Firestore
+```
+/users/{userId}
+  ├── id, email, name, companyName
+  ├── phone, instagram, category
+  ├── avatarUrl, coverUrl
+  ├── status, createdAt
+  └── source: 'initial_migration' | 'app_registration'
+
+/memberships/{userId}
+  ├── id, email, status
+  ├── paymentId, paymentDate
+  └── createdAt, updatedAt
+
+/notifications/{notifId}
+  ├── userId, type, title, message
+  ├── read, createdAt
+  └── data (metadata)
+
+/payment_history/{paymentId}
+  ├── userId, userEmail, amount
+  ├── action: 'approved' | 'revoked'
+  ├── adminId, reason
+  └── timestamp, revenue
+
+/interactions/{interactionId}
+  ├── fromUserId, toUserId
+  ├── type, status
+  └── createdAt, note
+```
+
+### Storage Structure
+```
+/profiles/{userId}/
+  ├── avatar_{timestamp}.jpg  (max 500x500, 80% JPEG)
+  └── cover_{timestamp}.jpg   (max 500x500, 80% JPEG)
+```
+
+---
+
+## 🛡️ SEGURIDAD Y VALIDACIONES
+
+### Validación Upload Imágenes
+```javascript
+validateImageFile(file):
+├── Tamaño máximo: 2 MB
+├── Tipos permitidos: image/jpeg, image/png, image/gif, image/webp
+└── Error: Muestra toast con mensaje
+
+compressImage(file):
+├── Dimensión máxima: 500x500 px
+├── Calidad: 80% JPEG
+└── Output: Blob comprimido
+```
+
+### Validación Registro
+```javascript
+registerNewUser(userData):
+├── Email único (verifica en localStorage + Firebase)
+├── Nombre requerido
+├── Instagram requerido
+├── Categoría requerida
+└── Password default: 'tribu2024'
+```
+
+### Protección Rutas
+```javascript
+MemberRoute component:
+├── Verifica membresía activa
+├── Si no miembro → /membership
+└── Si miembro → render children
+```
+
+---
+
+## 📈 MÉTRICAS ADMIN PANEL
+
+### Dashboard Stats
+```javascript
+getDashboardStats():
+├── totalUsers: number
+├── activeMembers: number
+├── invitados: number
+├── totalRevenue: number (calculado)
+├── conversionRate: string (%)
+└── categoryDistribution: array
+```
+
+### Compliance Stats
+```javascript
+getComplianceStats():
+├── onTrack: number (>80% completado)
+├── needsAttention: number (50-80%)
+├── atRisk: number (<50%)
+└── averageProgress: number
+```
+
+---
+
+## 🎨 PALETA DE COLORES
+
+```css
+/* Primarios */
+--tribu-purple: #6161FF    /* Botones, acentos */
+--tribu-green: #00CA72     /* Éxito, WhatsApp */
+
+/* Secundarios */
+--tribu-dark: #181B34      /* Textos principales */
+--tribu-gray: #434343      /* Textos secundarios */
+--tribu-light-gray: #7C8193 /* Subtextos */
+
+/* Backgrounds */
+--bg-main: #F5F7FB         /* Fondo principal */
+--bg-white: #FFFFFF        /* Cards */
+--bg-card: #E4E7EF         /* Bordes */
+
+/* Estados */
+--success: #00CA72
+--warning: #F59E0B
+--error: #EF4444
+--info: #3B82F6
+
+/* WhatsApp */
+--whatsapp: #25D366
+--whatsapp-hover: #20BA5C
+```
+
+---
+
+## 📦 DEPENDENCIAS PRINCIPALES
+
+### package.json
+```json
+{
+  "dependencies": {
+    "react": "^18.x",
+    "react-dom": "^18.x",
+    "react-router-dom": "^6.x",
+    "firebase": "^10.x",
+    "lucide-react": "^0.x",
+    "tailwindcss": "^3.x (CDN)"
+  },
+  "devDependencies": {
+    "vite": "^5.x",
+    "typescript": "^5.x",
+    "@types/react": "^18.x"
+  }
+}
+```
+
+### Tamaño Bundle (dist/)
+```
+Total:           ~1.1 MB (gzip: ~275 KB)
+├── index.js     1,084 KB (gzip: 274 KB)
+├── index.css    8.3 KB (gzip: 2 KB)
+└── ai-service   2.5 KB (gzip: 1.4 KB)
+```

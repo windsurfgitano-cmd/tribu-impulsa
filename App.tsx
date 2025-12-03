@@ -2522,8 +2522,8 @@ const TribeAssignmentsView = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {renderList('Yo debo impulsar', 'Comparte antes del día 20', assignments.toShare, 'toShare')}
-          {renderList('Me impulsan a mí', 'Verifica que te compartan', assignments.shareWithMe, 'shareWithMe')}
+          {renderList('Yo debo impulsar', '📤 Comparte sus cuentas en tu IG antes del día 20', assignments.toShare, 'toShare')}
+          {renderList('Me impulsan a mí', '📥 Ellos deben compartir TU cuenta en sus IGs', assignments.shareWithMe, 'shareWithMe')}
         </div>
         {reports.length > 0 && (
           <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">

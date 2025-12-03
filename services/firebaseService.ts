@@ -709,6 +709,48 @@ export const getImageConfig = () => ({
   allowedFormats: 'JPG, PNG, WebP'
 });
 
+// Actualizar contraseña en Firebase
+export const updateUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
+  try {
+    const database = getFirestoreInstance();
+    if (!database) {
+      console.log('⚠️ Firebase no disponible para actualizar contraseña');
+      return false;
+    }
+    
+    const userRef = doc(database, 'users', userId);
+    await updateDoc(userRef, {
+      password: newPassword,
+      passwordUpdatedAt: serverTimestamp()
+    });
+    
+    console.log('✅ Contraseña actualizada en Firebase');
+    return true;
+  } catch (error) {
+    console.error('❌ Error actualizando contraseña en Firebase:', error);
+    return false;
+  }
+};
+
+// Verificar contraseña desde Firebase
+export const verifyUserPassword = async (userId: string, password: string): Promise<boolean> => {
+  try {
+    const database = getFirestoreInstance();
+    if (!database) return false;
+    
+    const userRef = doc(database, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) return false;
+    
+    const userData = userDoc.data();
+    return userData.password === password;
+  } catch (error) {
+    console.error('❌ Error verificando contraseña:', error);
+    return false;
+  }
+};
+
 export default {
   initializeFirebase,
   isFirebaseConfigured,
@@ -734,5 +776,8 @@ export default {
   // Storage
   uploadProfileImage,
   validateImageFile,
-  getImageConfig
+  getImageConfig,
+  // Password
+  updateUserPassword,
+  verifyUserPassword
 };

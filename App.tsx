@@ -2702,30 +2702,19 @@ const MyProfileView = () => {
         return;
       }
       
-      // Actualizar contraseña
+      // Actualizar contraseña en localStorage
       users[userIndex].password = newPassword;
       localStorage.setItem('tribu_users', JSON.stringify(users));
       
-      // Sincronizar con Firebase
+      // Sincronizar contraseña con Firebase (persistente entre dispositivos)
       try {
-        const { syncProfileToCloud } = await import('./services/firebaseService');
-        await syncProfileToCloud({
-          id: user.id,
-          name: currentUserData.name,
-          companyName: currentUserData.companyName,
-          category: currentUserData.category,
-          subCategory: currentUserData.affinity,
-          location: currentUserData.city,
-          bio: currentUserData.bio,
-          instagram: currentUserData.instagram,
-          website: currentUserData.website || '',
-          avatarUrl: currentUserData.avatarUrl,
-          coverUrl: currentUserData.coverUrl,
-          tags: currentUserData.tags || [],
-          // Nota: la contraseña no se sincroniza por seguridad
-        });
+        const { updateUserPassword } = await import('./services/firebaseService');
+        const synced = await updateUserPassword(user.id, newPassword);
+        if (synced) {
+          console.log('✅ Contraseña sincronizada con Firebase');
+        }
       } catch (err) {
-        console.log('Error sincronizando perfil:', err);
+        console.log('⚠️ Contraseña guardada localmente (Firebase no disponible):', err);
       }
       
       setPasswordSuccess(true);
@@ -3981,7 +3970,8 @@ const ProfileDetail = () => {
              <div>
                 <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Enlaces</h3>
                 <div className="flex flex-col gap-3">
-                  {profile.website && (
+                  {/* Sitio Web - siempre visible */}
+                  {profile.website ? (
                     <a 
                       href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
                       target="_blank"
@@ -3991,8 +3981,15 @@ const ProfileDetail = () => {
                       <Globe size={20} className="text-[#6161FF] group-hover:scale-110 transition-transform"/> 
                       <span className="font-medium text-sm truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
                     </a>
+                  ) : (
+                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                      <Globe size={20} className="text-[#B3B8C6]"/> 
+                      <span className="font-medium text-sm italic">Sitio web no registrado</span>
+                    </div>
                   )}
-                  {profile.instagram && (
+                  
+                  {/* Instagram - siempre visible */}
+                  {profile.instagram ? (
                     <a 
                       href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
                       target="_blank"
@@ -4004,6 +4001,37 @@ const ProfileDetail = () => {
                       </div>
                       <span className="font-medium text-sm">{profile.instagram}</span>
                     </a>
+                  ) : (
+                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                      <div className="bg-[#E4E7EF] p-2 rounded-lg">
+                        <Instagram size={18} className="text-[#B3B8C6]"/> 
+                      </div>
+                      <span className="font-medium text-sm italic">Instagram no registrado</span>
+                    </div>
+                  )}
+                  
+                  {/* Email de contacto - siempre visible */}
+                  {profile.email ? (
+                    <a 
+                      href={`mailto:${profile.email}`}
+                      className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
+                    >
+                      <div className="bg-[#6161FF]/10 p-2 rounded-lg">
+                        <svg className="w-5 h-5 text-[#6161FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-sm truncate">{profile.email}</span>
+                    </a>
+                  ) : (
+                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                      <div className="bg-[#E4E7EF] p-2 rounded-lg">
+                        <svg className="w-5 h-5 text-[#B3B8C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-sm italic">Email no registrado</span>
+                    </div>
                   )}
                 </div>
              </div>

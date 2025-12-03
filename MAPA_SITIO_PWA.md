@@ -1227,3 +1227,257 @@ Total:           ~1.1 MB (gzip: ~275 KB)
 ├── index.css    8.3 KB (gzip: 2 KB)
 └── ai-service   2.5 KB (gzip: 1.4 KB)
 ```
+
+---
+
+## 🎨 SISTEMA DE COLORES COMPLETO (index.css)
+
+### Danger (Rojo) - Alertas
+```css
+--color-danger-050: #FFF0F5;
+--color-danger-100: #FFD5E1;
+--color-danger-300: #FF8EA9;
+--color-danger-500: #FB275D;  /* Principal */
+--color-danger-700: #C11243;
+--color-danger-900: #7A0F2C;
+```
+
+### Warning (Amarillo) - Working
+```css
+--color-warning-050: #FFF8E1;
+--color-warning-100: #FFEDB3;
+--color-warning-300: #FFE066;
+--color-warning-500: #FFCC00;  /* Principal */
+--color-warning-700: #E0A800;
+--color-warning-900: #8C6400;
+```
+
+### Success (Verde) - Done
+```css
+--color-success-050: #E6FFF3;
+--color-success-100: #C1F8DF;
+--color-success-300: #4AE698;
+--color-success-500: #00CA72;  /* Principal */
+--color-success-700: #008C4F;
+--color-success-900: #005432;
+```
+
+### Accent (Purple) - Tribu
+```css
+--color-accent-050: #F3F3FF;
+--color-accent-100: #DCDCFD;
+--color-accent-300: #A4A4FF;
+--color-accent-500: #6161FF;  /* Principal */
+--color-accent-700: #2C2CA0;
+--color-accent-900: #1B1B66;
+```
+
+### Lila Pastel - Especiales
+```css
+--color-lila-050: #FAF5FF;
+--color-lila-100: #E8D5FF;
+--color-lila-300: #C9A8FF;
+--color-lila-500: #A78BFA;  /* Principal */
+--color-lila-700: #7C3AED;
+--color-lila-900: #5B21B6;
+```
+
+### Fucsia Pastel - Highlights
+```css
+--color-fucsia-050: #FDF2F8;
+--color-fucsia-100: #FFD5E5;
+--color-fucsia-300: #FF9EC4;
+--color-fucsia-500: #EC4899;  /* Principal */
+--color-fucsia-700: #BE185D;
+--color-fucsia-900: #831843;
+```
+
+### Neutrales
+```css
+--neutral-000: #FFFFFF;   /* Cards */
+--neutral-050: #F5F7FB;   /* Background */
+--neutral-100: #E4E7EF;   /* Borders light */
+--neutral-300: #B3B8C6;   /* Borders */
+--neutral-500: #7C8193;   /* Text secondary */
+--neutral-700: #434343;   /* Text primary */
+--neutral-900: #181B34;   /* Dark */
+```
+
+### Gradientes
+```css
+--gradient-tribe: linear-gradient(135deg, #181B34 0%, #1B1B66 45%, #6161FF 100%);
+--gradient-hero: linear-gradient(160deg, #181B34 0%, #1B1B66 55%, #6161FF 100%);
+--gradient-success: linear-gradient(135deg, #005432 0%, #00CA72 100%);
+--gradient-cta: linear-gradient(135deg, #00CA72 0%, #4AE698 100%);
+```
+
+---
+
+## 📱 SAFE AREAS iOS
+
+```css
+/* Clases utilitarias para iPhone notch */
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+.pl-safe { padding-left: env(safe-area-inset-left); }
+.pr-safe { padding-right: env(safe-area-inset-right); }
+.px-safe { padding-left/right: env(safe-area-inset-*); }
+.py-safe { padding-top/bottom: env(safe-area-inset-*); }
+.p-safe  { padding: env(safe-area-inset-*); }
+.safe-area-container { min-height: 100vh; all safe areas; }
+```
+
+---
+
+## 🛠️ SCRIPTS DE UTILIDAD
+
+### scripts/
+| Script | Función |
+|--------|---------|
+| `generateIcons.cjs` | Genera iconos PWA en múltiples tamaños |
+| `downloadAvatars.cjs` | Descarga avatares de usuarios |
+| `parseCSVUsers.cjs` | Parsea CSV de usuarios a JSON/TS |
+| `generated_users.ts` | Usuarios generados automáticamente |
+
+### generateIcons.cjs
+```javascript
+Input: Logo 512x512
+Output:
+├── icon-72.png
+├── icon-96.png
+├── icon-128.png
+├── icon-144.png
+├── icon-152.png
+├── icon-192.png
+├── icon-384.png
+└── icon-512.png
+```
+
+### parseCSVUsers.cjs
+```javascript
+Input: export_vista_usuario_pyme_full.csv
+Process:
+├── Lee CSV con encoding UTF-8
+├── Parsea columnas: nombre, email, empresa, categoría
+├── Normaliza teléfonos (+56)
+├── Genera IDs únicos
+└── Output: generated_users.ts
+```
+
+---
+
+## 📋 CONVENCIONES DE CÓDIGO
+
+### Naming
+```
+Componentes:    PascalCase    (LoginScreen, DirectoryView)
+Funciones:      camelCase     (handleLogin, getUserById)
+Constantes:     UPPER_SNAKE   (CACHE_NAME, DB_KEYS)
+Archivos TS:    camelCase     (matchService.ts)
+Archivos CSS:   kebab-case    (index.css)
+```
+
+### Estructura Componentes
+```typescript
+// 1. Imports
+import React from 'react';
+import { Icon } from 'lucide-react';
+
+// 2. Interfaces
+interface Props { ... }
+
+// 3. Componente
+const MyComponent: React.FC<Props> = ({ prop1, prop2 }) => {
+  // 4. Estado
+  const [state, setState] = useState();
+  
+  // 5. Effects
+  useEffect(() => { ... }, []);
+  
+  // 6. Handlers
+  const handleClick = () => { ... };
+  
+  // 7. Render helpers
+  const renderItem = () => { ... };
+  
+  // 8. Return JSX
+  return <div>...</div>;
+};
+
+export default MyComponent;
+```
+
+### Logging
+```javascript
+// Éxito
+console.log('✅ Acción completada');
+
+// Warning
+console.log('⚠️ Advertencia');
+
+// Error
+console.error('❌ Error:', error);
+
+// Info
+console.log('📊 Data:', data);
+console.log('🔄 Cargando...');
+console.log('☁️ Firebase sync');
+console.log('🚀 Iniciando...');
+```
+
+---
+
+## 🔄 FLUJO DE DESARROLLO
+
+### Comandos
+```bash
+npm run dev      # Desarrollo (localhost:3000)
+npm run build    # Build producción (dist/)
+npm run preview  # Preview build local
+npm run lint     # Verificar errores TS
+```
+
+### Deploy
+```bash
+git add -A
+git commit -m "tipo: descripción"
+git push
+# Vercel deploya automáticamente
+```
+
+### Commits (Conventional)
+```
+feat:     Nueva funcionalidad
+fix:      Corrección de bug
+docs:     Documentación
+style:    Formato, no afecta código
+refactor: Refactorización
+test:     Tests
+chore:    Mantenimiento
+```
+
+---
+
+## 📊 ESTADÍSTICAS DEL PROYECTO
+
+### Líneas de Código (aproximado)
+```
+App.tsx:              6,363 líneas
+realUsersData.ts:     2,864 líneas
+services/ (total):    ~8,000 líneas
+components/:          ~1,200 líneas
+styles:               ~500 líneas
+─────────────────────────────────
+TOTAL:               ~18,000+ líneas
+```
+
+### Archivos por Tipo
+```
+TypeScript (.ts/.tsx):  25 archivos
+JavaScript (.js/.cjs):   6 archivos
+CSS:                     1 archivo
+JSON:                    5 archivos
+Markdown:               15 archivos
+─────────────────────────────────
+TOTAL:                  52+ archivos
+```

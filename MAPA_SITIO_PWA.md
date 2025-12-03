@@ -1841,3 +1841,277 @@ Categorías negocio:   157
 Usuarios migrados:    112
 Logros esta sesión:   13
 ```
+
+---
+
+## 🎯 ALGORITMO TRIBAL DETALLADO
+
+### Archivo: services/tribeAlgorithm.ts (273 líneas)
+
+### Grupos de Competencia (NO se asignan entre sí)
+```typescript
+const COMPETITION_GROUPS = [
+  ['Joyería y Accesorios', 'Moda y Estilo'],
+  ['Paisajismo y Jardinería', 'Hogar y Jardín'],
+  ['Marketing Digital', 'Tecnología y Desarrollo'],
+  ['Belleza y Estética', 'Cosméticos y Skincare', 'Manicure y Pedicure'],
+  ['Coaching y Bienestar', 'Salud y Kinesiología'],
+  ['Consultoría de Negocios', 'Consultoría Estratégica', 'Educación Financiera'],
+];
+```
+
+### Afinidades Complementarias (BONUS)
+```typescript
+const COMPLEMENTARY_AFFINITIES = {
+  'Moda y Estilo':    ['Belleza', 'Eventos', 'Fotografía'],
+  'Bienestar':        ['Gastronomía', 'Deportes', 'Naturaleza'],
+  'Negocios':         ['Tecnología', 'Educación', 'Marketing'],
+  'Hogar y Jardín':   ['Arquitectura', 'Decoración', 'Construcción'],
+  'Gastronomía':      ['Eventos', 'Turismo', 'Bienestar'],
+  'Eventos':          ['Gastronomía', 'Fotografía', 'Moda'],
+  'Maternidad':       ['Educación', 'Bienestar', 'Familia'],
+  'Tecnología':       ['Negocios', 'Educación', 'Marketing'],
+};
+```
+
+### Cálculo de Score de Compatibilidad
+```
+Base score:                  50 puntos
+─────────────────────────────────────────
+Si son competidores:        -100 puntos  → ELIMINADO
+Afinidad complementaria:    +30 puntos
+Misma ciudad:               +15 puntos
+Seguidores similares:       +10 puntos
+Variación random:           +0-10 puntos
+─────────────────────────────────────────
+Score final:                0-115 puntos
+```
+
+### Proceso de Asignación
+```
+1. Filtrar usuarios activos (status === 'active')
+2. Calcular score para cada par
+3. Eliminar competidores (score < 0)
+4. Ordenar por score descendente
+5. Seleccionar top 10 para "Yo comparto"
+6. Seleccionar otros 10 para "Me comparten"
+7. Evitar duplicados y balance
+8. Guardar en localStorage + Firebase
+```
+
+---
+
+## ⚙️ CONFIGURACIÓN VITE
+
+### vite.config.ts
+```typescript
+{
+  server: {
+    port: 3000,
+    host: '0.0.0.0'  // Acceso desde red local
+  },
+  plugins: [react()],
+  define: {
+    'process.env.GEMINI_API_KEY': env.GEMINI_API_KEY
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, '.')
+    }
+  }
+}
+```
+
+### Scripts package.json
+```json
+{
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "preview": "vite preview",
+  "lint": "eslint . --ext ts,tsx"
+}
+```
+
+---
+
+## 🔐 VARIABLES DE ENTORNO
+
+### Desarrollo (.env.local)
+```bash
+# No configurado localmente (usa fallbacks)
+```
+
+### Producción (Vercel)
+```bash
+VITE_AZURE_OPENAI_ENDPOINT=https://xxx.openai.azure.com/...
+VITE_AZURE_OPENAI_KEY=xxx
+VITE_AZURE_DEPLOYMENT=gpt-51-chat
+# Firebase ya hardcodeado en código
+```
+
+### Detección de Entorno
+```typescript
+const isProduction = import.meta.env.PROD;
+const isDevelopment = import.meta.env.DEV;
+
+// Azure solo funciona en producción
+if (isProduction && azureConfig.endpoint && azureConfig.key) {
+  // Usar Azure OpenAI
+} else {
+  // Usar fallback local
+}
+```
+
+---
+
+## 📱 PWA MANIFEST COMPLETO
+
+### public/manifest.json
+```json
+{
+  "name": "Tribu Impulsa",
+  "short_name": "Tribu",
+  "description": "Tu tribu de emprendedores",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#6161FF",
+  "background_color": "#F5F7FB",
+  "categories": ["business", "social"],
+  "lang": "es-CL",
+  "icons": [
+    { "src": "/icons/icon-72.png",  "sizes": "72x72" },
+    { "src": "/icons/icon-96.png",  "sizes": "96x96" },
+    { "src": "/icons/icon-128.png", "sizes": "128x128" },
+    { "src": "/icons/icon-144.png", "sizes": "144x144" },
+    { "src": "/icons/icon-152.png", "sizes": "152x152" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192" },
+    { "src": "/icons/icon-384.png", "sizes": "384x384" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/home.png", "sizes": "1080x1920" },
+    { "src": "/screenshots/tribe.png", "sizes": "1080x1920" }
+  ]
+}
+```
+
+---
+
+## 🔧 SCRIPTS DE MIGRACIÓN
+
+### seedFirestore.ts
+```typescript
+// Migración única de usuarios base a Firebase
+const UNIVERSAL_PASSWORD = 'TRIBU2026';
+
+// 23 usuarios fundadores
+const REAL_USERS = [
+  { email: "dafna@...", role: "admin", ... },
+  { email: "doraluz@...", role: "admin", ... },
+  ...
+];
+
+// Proceso:
+1. Crear usuario en Firebase Auth
+2. Crear documento en /users/{id}
+3. Crear membresía en /memberships/{email}
+```
+
+### realUsersData.ts - Migración Automática
+```typescript
+// Se ejecuta si Firebase tiene < 100 usuarios
+if (firebaseUsers.length < 100) {
+  await migrateBaseUsersToFirebase();
+}
+
+// Combina:
+├── 108 usuarios hardcodeados
+├── Usuarios de Firebase
+└── Deduplica por email
+```
+
+---
+
+## 🛡️ SEGURIDAD ACTUAL
+
+### Autenticación
+```
+Método:           Email + Password (localStorage)
+Password default: 'tribu2024' (nuevos usuarios)
+Admin password:   Verificado contra lista de admins
+Sesión:           localStorage (tribu_auth_session)
+Expiración:       No implementada
+```
+
+### Firebase Rules (firestore.rules)
+```javascript
+// DESARROLLO - Permisivo
+allow read: if true;
+allow write: if true;
+
+// PRODUCCIÓN (recomendado)
+allow read: if request.auth != null;
+allow write: if request.auth.uid == userId;
+```
+
+### Protección de Rutas
+```typescript
+// MemberRoute wrapper
+if (!isMember) {
+  return <Navigate to="/membership" />;
+}
+
+// AdminRoute wrapper  
+if (!isAdmin) {
+  return <Navigate to="/dashboard" />;
+}
+```
+
+---
+
+## 📈 ANALYTICS Y TRACKING
+
+### Interacciones Logueadas
+```typescript
+logInteraction(userId, action, details):
+├── 'profile_view'     → Ver perfil
+├── 'share_completed'  → Completar compartida
+├── 'report_sent'      → Enviar reporte
+├── 'whatsapp_click'   → Click en WhatsApp
+├── 'ai_analysis'      → Generar análisis IA
+└── 'membership_paid'  → Pagar membresía
+```
+
+### Métricas Calculables
+```
+Desde Firebase:
+├── Usuarios activos por mes
+├── Tasa de conversión invitado→miembro
+├── Revenue mensual
+├── Progreso promedio checklist
+├── Categorías más populares
+└── Interacciones por usuario
+```
+
+---
+
+## 🚀 ROADMAP SUGERIDO
+
+### Corto Plazo
+- [ ] Implementar expiración de sesión
+- [ ] Mejorar Firebase Rules para producción
+- [ ] Agregar verificación de email
+- [ ] Dashboard de analytics real
+
+### Mediano Plazo
+- [ ] Integración real MercadoPago/Fintoc
+- [ ] Notificaciones push programadas
+- [ ] Chat entre usuarios
+- [ ] Gamificación (badges, puntos)
+
+### Largo Plazo
+- [ ] App nativa (React Native)
+- [ ] IA personalizada por usuario
+- [ ] Marketplace de servicios
+- [ ] Eventos presenciales integrados

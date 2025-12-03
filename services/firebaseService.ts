@@ -247,6 +247,131 @@ export const loadChecklistFromFirebase = async (
   }
 };
 
+// ============================================
+// ADMIN CONFIG - PERSISTENCIA FIREBASE
+// ============================================
+
+// Guardar configuración admin en Firebase
+export const syncAdminConfig = async (
+  config: {
+    membershipPrice: number;
+    matchesPerUser: number;
+    whatsappSupport: string;
+    appName: string;
+    mercadopagoMode: string;
+  }
+): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return false;
+
+  try {
+    const configRef = doc(firestore, 'config', 'admin');
+    await setDoc(configRef, {
+      ...config,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    console.log('☁️ Config admin sincronizada a Firebase');
+    return true;
+  } catch (error) {
+    console.error('❌ Error sincronizando config:', error);
+    return false;
+  }
+};
+
+// Cargar configuración admin desde Firebase
+export const loadAdminConfig = async (): Promise<{
+  membershipPrice: number;
+  matchesPerUser: number;
+  whatsappSupport: string;
+  appName: string;
+  mercadopagoMode: string;
+} | null> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return null;
+
+  try {
+    const configRef = doc(firestore, 'config', 'admin');
+    const configDoc = await getDoc(configRef);
+    
+    if (configDoc.exists()) {
+      const data = configDoc.data();
+      console.log('☁️ Config admin cargada desde Firebase');
+      return {
+        membershipPrice: data.membershipPrice || 20000,
+        matchesPerUser: data.matchesPerUser || 10,
+        whatsappSupport: data.whatsappSupport || '+56951776005',
+        appName: data.appName || 'Tribu Impulsa',
+        mercadopagoMode: data.mercadopagoMode || 'sandbox'
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Error cargando config:', error);
+    return null;
+  }
+};
+
+// ============================================
+// TRIBE ASSIGNMENTS - PERSISTENCIA FIREBASE
+// ============================================
+
+// Guardar asignaciones de tribu en Firebase
+export const syncTribeAssignments = async (
+  userId: string,
+  assignments: {
+    toShareIds: string[];
+    shareWithMeIds: string[];
+    month: string;
+  }
+): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return false;
+
+  try {
+    const assignRef = doc(firestore, 'tribe_assignments', userId);
+    await setDoc(assignRef, {
+      ...assignments,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    console.log('☁️ Asignaciones tribu sincronizadas');
+    return true;
+  } catch (error) {
+    console.error('❌ Error sincronizando asignaciones:', error);
+    return false;
+  }
+};
+
+// Cargar asignaciones de tribu desde Firebase
+export const loadTribeAssignments = async (
+  userId: string
+): Promise<{
+  toShareIds: string[];
+  shareWithMeIds: string[];
+  month: string;
+} | null> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) return null;
+
+  try {
+    const assignRef = doc(firestore, 'tribe_assignments', userId);
+    const assignDoc = await getDoc(assignRef);
+    
+    if (assignDoc.exists()) {
+      const data = assignDoc.data();
+      console.log('☁️ Asignaciones tribu cargadas desde Firebase');
+      return {
+        toShareIds: data.toShareIds || [],
+        shareWithMeIds: data.shareWithMeIds || [],
+        month: data.month || ''
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Error cargando asignaciones:', error);
+    return null;
+  }
+};
+
 // Registrar interacción (para analytics)
 export const logInteraction = async (
   userId: string,
@@ -601,6 +726,10 @@ export default {
   syncProfilePhoto,
   syncChecklistProgress,
   loadChecklistFromFirebase,
+  syncAdminConfig,
+  loadAdminConfig,
+  syncTribeAssignments,
+  loadTribeAssignments,
   logInteraction,
   // Storage
   uploadProfileImage,

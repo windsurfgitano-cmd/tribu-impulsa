@@ -57,6 +57,10 @@ import {
   getAllProfilesFromCloud,
   syncChecklistProgress,
   loadChecklistFromFirebase,
+  syncAdminConfig,
+  loadAdminConfig,
+  syncTribeAssignments,
+  loadTribeAssignments,
   getFirestoreInstance,
   logInteraction
 } from './services/firebaseService';
@@ -434,9 +438,19 @@ const getStoredTribeAssignments = (category: string, userId?: string): TribeAssi
   }
 };
 
-const persistTribeAssignments = (data: TribeAssignments) => {
+const persistTribeAssignments = async (data: TribeAssignments, userId?: string) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(getUserStorageKey(TRIBE_ASSIGNMENTS_KEY), JSON.stringify(data));
+  
+  // Sincronizar a Firebase
+  if (userId) {
+    const month = new Date().toISOString().slice(0, 7); // "2025-01"
+    await syncTribeAssignments(userId, {
+      toShareIds: data.toShare.map(p => p.id),
+      shareWithMeIds: data.shareWithMe.map(p => p.id),
+      month
+    });
+  }
 };
 
 const getStoredChecklistState = (assignments: TribeAssignments): AssignmentChecklist => {
@@ -656,6 +670,22 @@ const getAppConfig = () => {
     return defaults;
   }
 };
+
+// Cargar config desde Firebase y sincronizar con localStorage
+const initAppConfigFromFirebase = async () => {
+  try {
+    const firebaseConfig = await loadAdminConfig();
+    if (firebaseConfig) {
+      localStorage.setItem('tribu_admin_config', JSON.stringify(firebaseConfig));
+      console.log('☁️ Config admin cargada desde Firebase');
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudo cargar config desde Firebase, usando local');
+  }
+};
+
+// Ejecutar al cargar la app
+initAppConfigFromFirebase();
 
 // 1. Login / Landing - FLUJO UNIFICADO SEAMLESS
 const LoginScreen = () => {
@@ -2158,8 +2188,8 @@ const TribeAssignmentsView = () => {
   }, [myProfile.id]);
 
   useEffect(() => {
-    persistTribeAssignments(assignments);
-  }, [assignments]);
+    persistTribeAssignments(assignments, myProfile.id);
+  }, [assignments, myProfile.id]);
 
   useEffect(() => {
     persistChecklistState(checklist);
@@ -5313,21 +5343,12 @@ const AdminSettingsTab = () => {
     // Guardar en localStorage
     localStorage.setItem('tribu_admin_config', JSON.stringify(config));
 
-    // Sincronizar con Firebase
-    try {
-      const { getFirestoreInstance } = await import('./services/firebaseService');
-      const { doc, setDoc } = await import('firebase/firestore');
-      const db = getFirestoreInstance();
-      if (db) {
-        await setDoc(doc(db, 'config', 'app_settings'), {
-          ...config,
-          updatedAt: new Date().toISOString(),
-          updatedBy: 'admin'
-        });
-      }
-      setSaveMessage('✅ Configuración guardada correctamente');
-    } catch (err) {
-      console.log('Error sincronizando config:', err);
+    // Sincronizar con Firebase usando función centralizada
+    const synced = await syncAdminConfig(config);
+    
+    if (synced) {
+      setSaveMessage('✅ Configuración guardada y sincronizada con Firebase');
+    } else {
       setSaveMessage('✅ Guardado localmente (Firebase no disponible)');
     }
 

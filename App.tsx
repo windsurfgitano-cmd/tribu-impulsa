@@ -2405,6 +2405,15 @@ const TribeAssignmentsView = () => {
                     </>
                   )}
                   
+                  {/* Ver perfil */}
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/profile/${profile.id}`)}
+                    className="text-[12px] px-3 py-2 rounded-lg bg-[#6161FF]/10 text-[#6161FF] font-medium"
+                  >
+                    Ver perfil
+                  </button>
+                  
                   {/* Reportar */}
                   <button
                     type="button"
@@ -6416,22 +6425,18 @@ const AppLayout = () => {
                 className="flex flex-col items-center justify-center -mt-4 relative"
               >
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${
-                  !isMember ? 'bg-[#7C8193]/60' :
-                  isTribe ? 'bg-[#6161FF]/90' : 'bg-[#00CA72]/90'
+                  !isMember ? 'bg-[#7C8193]/60' : 'bg-[#E91E63]/90'
                 }`}
                   style={{
                     boxShadow: !isMember 
                       ? '0 4px 16px rgba(124, 129, 147, 0.2)'
-                      : isTribe 
-                        ? '0 8px 32px rgba(97, 97, 255, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
-                        : '0 8px 32px rgba(0, 202, 114, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
+                      : '0 8px 32px rgba(233, 30, 99, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
                   }}
                 >
                   {!isMember ? <Lock size={24} className="text-white" /> : <CheckCircle size={26} className="text-white" strokeWidth={2} />}
                 </div>
                 <span className={`text-[10px] mt-1 font-semibold ${
-                  !isMember ? 'text-[#7C8193]' :
-                  isTribe ? 'text-[#6161FF]' : 'text-[#00CA72]'
+                  !isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
                 }`}>Checklist</span>
               </button>
 

@@ -120,17 +120,6 @@ export const WhatsAppFloat: React.FC = () => {
           )}
         </button>
         
-        {/* Label lateral cuando está cerrado */}
-        {!isOpen && (
-          <div 
-            className="absolute top-1/2 -translate-y-1/2 right-full mr-1 pointer-events-none"
-            style={{ marginTop: '24px' }}
-          >
-            <span className="bg-white/90 backdrop-blur-sm text-[#6161FF] text-[9px] font-bold px-1.5 py-0.5 rounded-lg shadow-sm whitespace-nowrap animate-pulse">
-              ¿Ayuda?
-            </span>
-          </div>
-        )}
       </div>
     </>
   );

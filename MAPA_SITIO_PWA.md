@@ -1,6 +1,6 @@
 # 🗺️ MAPA DEL SITIO - TRIBU IMPULSA PWA
 
-**Última actualización:** 3 Dic 2024 03:10 AM
+**Última actualización:** 3 Dic 2024 09:55 AM
 
 ---
 
@@ -21,6 +21,9 @@
 | 11 | **Checklist sync Firebase** | Progreso persiste entre dispositivos ✨ |
 | 12 | **Config Admin sync Firebase** | Precio/WA accesible desde cualquier lado ✨ |
 | 13 | **Asignaciones Tribu sync Firebase** | Los 10+10 en la nube ✨ |
+| 14 | **IG Tribu Impulsa flotante** | Acceso directo al IG oficial 📱 |
+| 15 | **Icono Instagram rosado gradiente** | Estilo oficial IG en perfiles 🎨 |
+| 16 | **Explicaciones checklist mejoradas** | "Comparte en tu IG" / "Ellos comparten TU cuenta" 📝 |
 
 ---
 
@@ -1839,7 +1842,7 @@ Funciones sync:       10
 Componentes UI:       6
 Categorías negocio:   157
 Usuarios migrados:    112
-Logros esta sesión:   13
+Logros esta sesión:   16
 ```
 
 ---
@@ -2644,7 +2647,7 @@ new Date().toLocaleString('es-CL')
 ├── 100% documentado
 └── Actualizado: 3 Dic 2024 03:40 AM
 
-🏆 Logros sesión: 13
+🏆 Logros sesión: 16
 🔥 Firebase: 8 colecciones sync
 📱 PWA: Completa e instalable
 🤖 IA: Azure GPT-5.1 integrado

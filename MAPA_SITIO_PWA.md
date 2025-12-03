@@ -1624,3 +1624,112 @@ Firestore Database
 | Asignaciones | `syncTribeAssignments()` | `loadTribeAssignments()` |
 | Perfiles | `syncProfileToCloud()` | `getProfileFromCloud()` |
 | Membresías | `saveMembership()` | `getMembership()` |
+
+---
+
+## 🎨 COMPONENTES UI DETALLADOS
+
+### TribalLoadingAnimation.tsx (327 líneas)
+```
+Animación Canvas 2D para Tribu X (análisis IA)
+
+Fases:
+├── chaos         → Partículas dispersas
+├── converging    → Se acercan al centro
+├── crystallizing → Forman patrón tribal
+└── complete      → Análisis listo
+
+Mensajes:
+├── "Conectando con la tribu..."
+├── "Analizando perfiles..."
+├── "Calculando sinergias..."
+└── "¡Análisis completo!"
+
+Colores: #6161FF, #00CA72, #FFCC00, #FB275D, #00D4FF
+```
+
+### CosmicLoadingAnimation.tsx (116 líneas)
+```
+Animación CSS para búsqueda inicial
+
+Mensajes rotativos:
+├── "Conectando con tu tribu..."
+├── "Escaneando emprendedores..."
+├── "Analizando perfiles..."
+├── "Calculando afinidades..."
+├── "Formando conexiones..."
+├── "Optimizando tu tribu..."
+└── "¡Tu tribu está lista!"
+
+Duración: 6000ms (configurable)
+```
+
+### GlassCard.tsx (34 líneas)
+```
+Componente glassmorphism reutilizable
+
+Estilos:
+├── bg-white/10
+├── backdrop-blur-xl
+├── border-white/20
+├── shadow-[0_8px_32px_0_rgba(31,38,135,0.37)]
+└── rounded-2xl
+
+Props:
+├── children: ReactNode
+├── className?: string
+└── padding?: string (default "p-6")
+```
+
+### WhatsAppFloat.tsx (34 líneas)
+```
+Botón flotante de soporte WhatsApp
+
+Posición: fixed bottom-20 right-4
+Color: #25D366 (WhatsApp green)
+Número: Carga de localStorage ('tribu_admin_config')
+Fallback: +56951776005
+```
+
+### PaywallScreen.tsx (300+ líneas)
+```
+Pantalla de pago membresía
+
+Flujo:
+├── Muestra precio (desde membershipService)
+├── Simula pago MercadoPago/Fintoc
+├── Valida campos (email, nombre)
+├── onPaymentSuccess() → actualiza membresía
+└── Redirige a /dashboard
+
+Precio formateado: $20.000 CLP
+```
+
+---
+
+## 🔢 CONTADORES Y MÉTRICAS
+
+### Admin Dashboard
+```
+Usuarios totales:     count(users)
+Miembros activos:     count(memberships where status='miembro')
+Invitados:            count(memberships where status='invitado')
+Revenue total:        sum(payment_history.amount)
+Conversión:           (miembros / total) * 100
+```
+
+### Compliance Tribu
+```
+On Track (>80%):      count(progress where completion>80)
+Needs Attention:      count(progress where completion 50-80)
+At Risk (<50%):       count(progress where completion<50)
+Promedio:             avg(progress.completion)
+```
+
+### Por Usuario
+```
+Checklist:            completed / total items
+Interacciones:        count(interactions where userId)
+Reportes:             count(reports where userId)
+Asignaciones:         toShare.length + shareWithMe.length
+```

@@ -2677,36 +2677,92 @@ const MyProfileView = () => {
       }, 1500);
     };
 
-    // Manejar upload de foto de perfil
+    // Manejar upload de foto de perfil - SUBE A FIREBASE STORAGE
     const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
+      if (!file || !currentUser) return;
       
       try {
-        setSaveMessage('📷 Procesando foto...');
-        const compressed = await compressImage(file, 400);
-        setProfile({...profile, avatarUrl: compressed});
-        setSaveMessage('✅ Foto de perfil lista');
-        setTimeout(() => setSaveMessage(null), 2000);
-      } catch {
-        setSaveMessage('❌ Error al procesar imagen');
+        setSaveMessage('📷 Subiendo foto a la nube...');
+        
+        const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+        
+        // Validar archivo
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+          setSaveMessage(`❌ ${validation.error}`);
+          setTimeout(() => setSaveMessage(null), 3000);
+          return;
+        }
+        
+        // Subir a Firebase Storage (ya comprime automáticamente)
+        const result = await uploadProfileImage(currentUser.id, file, 'avatar');
+        
+        if (result.success && result.url) {
+          setProfile({...profile, avatarUrl: result.url});
+          
+          // También actualizar en localStorage
+          const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+          const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+          if (userIndex !== -1) {
+            users[userIndex].avatarUrl = result.url;
+            localStorage.setItem('tribu_users', JSON.stringify(users));
+          }
+          
+          setSaveMessage('✅ Foto subida correctamente');
+        } else {
+          setSaveMessage(`❌ ${result.error || 'Error al subir foto'}`);
+        }
+        
+        setTimeout(() => setSaveMessage(null), 3000);
+      } catch (err) {
+        console.error('Error upload foto:', err);
+        setSaveMessage('❌ Error al subir imagen');
         setTimeout(() => setSaveMessage(null), 3000);
       }
     };
 
-    // Manejar upload de banner/cover
+    // Manejar upload de banner/cover - SUBE A FIREBASE STORAGE
     const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file) return;
+      if (!file || !currentUser) return;
       
       try {
-        setSaveMessage('🖼️ Procesando banner...');
-        const compressed = await compressImage(file, 1200); // Mayor resolución para banner
-        setProfile({...profile, coverUrl: compressed});
-        setSaveMessage('✅ Banner listo para guardar');
-        setTimeout(() => setSaveMessage(null), 2000);
-      } catch {
-        setSaveMessage('❌ Error al procesar banner');
+        setSaveMessage('🖼️ Subiendo banner a la nube...');
+        
+        const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+        
+        // Validar archivo
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+          setSaveMessage(`❌ ${validation.error}`);
+          setTimeout(() => setSaveMessage(null), 3000);
+          return;
+        }
+        
+        // Subir a Firebase Storage
+        const result = await uploadProfileImage(currentUser.id, file, 'cover');
+        
+        if (result.success && result.url) {
+          setProfile({...profile, coverUrl: result.url});
+          
+          // También actualizar en localStorage
+          const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+          const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+          if (userIndex !== -1) {
+            users[userIndex].coverUrl = result.url;
+            localStorage.setItem('tribu_users', JSON.stringify(users));
+          }
+          
+          setSaveMessage('✅ Banner subido correctamente');
+        } else {
+          setSaveMessage(`❌ ${result.error || 'Error al subir banner'}`);
+        }
+        
+        setTimeout(() => setSaveMessage(null), 3000);
+      } catch (err) {
+        console.error('Error upload banner:', err);
+        setSaveMessage('❌ Error al subir banner');
         setTimeout(() => setSaveMessage(null), 3000);
       }
     };

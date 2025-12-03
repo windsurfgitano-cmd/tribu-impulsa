@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   Firestore 
 } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 // Configuración de Firebase - Tribu Impulsa
 // Nota: Las API keys de Firebase son seguras para exponer en el frontend
@@ -419,6 +420,143 @@ export const sendPushToAll = (title: string, body: string): number => {
   return sent;
 };
 
+// ============================================
+// FIREBASE STORAGE - UPLOAD DE IMÁGENES
+// ============================================
+
+// Configuración de límites
+const IMAGE_CONFIG = {
+  maxSizeBytes: 2 * 1024 * 1024, // 2MB máximo
+  maxWidth: 500,
+  maxHeight: 500,
+  quality: 0.8, // 80% calidad JPEG
+  allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
+};
+
+// Comprimir y redimensionar imagen
+const compressImage = (file: File): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let { width, height } = img;
+        
+        // Redimensionar si es muy grande
+        if (width > IMAGE_CONFIG.maxWidth || height > IMAGE_CONFIG.maxHeight) {
+          const ratio = Math.min(IMAGE_CONFIG.maxWidth / width, IMAGE_CONFIG.maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No se pudo crear canvas'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              console.log(`📸 Imagen comprimida: ${Math.round(blob.size / 1024)}KB (${width}x${height})`);
+              resolve(blob);
+            } else {
+              reject(new Error('Error al comprimir imagen'));
+            }
+          },
+          'image/jpeg',
+          IMAGE_CONFIG.quality
+        );
+      };
+      img.onerror = () => reject(new Error('Error al cargar imagen'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Error al leer archivo'));
+    reader.readAsDataURL(file);
+  });
+};
+
+// Validar archivo antes de subir
+export const validateImageFile = (file: File): { valid: boolean; error?: string } => {
+  if (!IMAGE_CONFIG.allowedTypes.includes(file.type)) {
+    return { valid: false, error: 'Solo se permiten imágenes JPG, PNG o WebP' };
+  }
+  if (file.size > IMAGE_CONFIG.maxSizeBytes) {
+    return { valid: false, error: `Imagen muy grande. Máximo ${IMAGE_CONFIG.maxSizeBytes / 1024 / 1024}MB` };
+  }
+  return { valid: true };
+};
+
+// Subir imagen de perfil a Firebase Storage
+export const uploadProfileImage = async (
+  userId: string, 
+  file: File,
+  type: 'avatar' | 'cover' = 'avatar'
+): Promise<{ success: boolean; url?: string; error?: string }> => {
+  try {
+    // Validar
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+    
+    // Inicializar Firebase si no está
+    if (!app) initializeFirebase();
+    if (!app) {
+      return { success: false, error: 'Firebase no disponible' };
+    }
+    
+    // Comprimir imagen
+    const compressedBlob = await compressImage(file);
+    
+    // Subir a Storage
+    const storage = getStorage(app);
+    const fileName = `${type}_${userId}_${Date.now()}.jpg`;
+    const storageRef = ref(storage, `profiles/${userId}/${fileName}`);
+    
+    await uploadBytes(storageRef, compressedBlob, {
+      contentType: 'image/jpeg',
+      customMetadata: {
+        uploadedBy: userId,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString()
+      }
+    });
+    
+    // Obtener URL pública
+    const downloadUrl = await getDownloadURL(storageRef);
+    
+    // Actualizar perfil en Firestore
+    if (db) {
+      const field = type === 'avatar' ? 'avatarUrl' : 'coverUrl';
+      await updateDoc(doc(db, 'users', userId), {
+        [field]: downloadUrl,
+        updatedAt: serverTimestamp()
+      });
+    }
+    
+    console.log(`✅ Imagen ${type} subida para usuario ${userId}`);
+    return { success: true, url: downloadUrl };
+    
+  } catch (error) {
+    console.error('❌ Error subiendo imagen:', error);
+    return { success: false, error: 'Error al subir imagen. Intenta de nuevo.' };
+  }
+};
+
+// Obtener configuración de imágenes (para mostrar en UI)
+export const getImageConfig = () => ({
+  maxSizeMB: IMAGE_CONFIG.maxSizeBytes / 1024 / 1024,
+  maxDimensions: `${IMAGE_CONFIG.maxWidth}x${IMAGE_CONFIG.maxHeight}`,
+  allowedFormats: 'JPG, PNG, WebP'
+});
+
 export default {
   initializeFirebase,
   isFirebaseConfigured,
@@ -435,5 +573,9 @@ export default {
   getAllProfilesFromCloud,
   syncProfilePhoto,
   syncChecklistProgress,
-  logInteraction
+  logInteraction,
+  // Storage
+  uploadProfileImage,
+  validateImageFile,
+  getImageConfig
 };

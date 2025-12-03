@@ -3092,7 +3092,7 @@ const MyProfileView = () => {
               href={`https://www.instagram.com/${profile.instagram.replace('@', '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E91E63] via-[#C13584] to-[#F77737] text-white font-semibold hover:opacity-90 transition shadow-md"
             >
               <Instagram size={16} /> Compartir en Instagram
             </a>
@@ -3997,9 +3997,11 @@ const ProfileDetail = () => {
                       href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#E91E63]"
+                      className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-gradient-to-r from-[#F5F7FB] to-[#FFF0F5] p-4 rounded-2xl border border-[#E91E63]/30 group hover:border-[#E91E63]"
                     >
-                      <Instagram size={20} className="text-[#E91E63] group-hover:scale-110 transition-transform"/> 
+                      <div className="bg-gradient-to-br from-[#E91E63] via-[#C13584] to-[#F77737] p-2 rounded-lg">
+                        <Instagram size={18} className="text-white group-hover:scale-110 transition-transform"/> 
+                      </div>
                       <span className="font-medium text-sm">{profile.instagram}</span>
                     </a>
                   )}

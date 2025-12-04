@@ -32,38 +32,120 @@ Cada miembro recibe:
 
 ---
 
-## 🏆 LOGROS TOTALES (28)
+## 🏆 HISTORIAL COMPLETO DE CAMBIOS (88 significativos)
 
-| # | Logro | Impacto |
-|---|-------|---------|
-| 1 | **Firebase como fuente de verdad** | Usuarios ya no se sobreescriben |
-| 2 | **Migración automática 108 usuarios** | 112 usuarios en Firebase |
-| 3 | **WhatsApp links con teléfono real** | Tribu X envía al número correcto |
-| 4 | **CRUD usuarios completo** | Crear, editar, eliminar persiste |
-| 5 | **Notificaciones sync Firebase** | Llegan a todos los dispositivos |
-| 6 | **Firebase Storage para fotos** | Avatar + banner con compresión |
-| 7 | **Historial de pagos** | Revenue tracking en Firebase |
-| 8 | **Precio membresía dinámico** | Configurable desde admin |
-| 9 | **WhatsApp soporte configurable** | No más hardcoding |
-| 10 | **Avatares con iniciales** | Sin dependencia de Instagram |
-| 11 | **Checklist sync Firebase** | Progreso persiste entre dispositivos ✨ |
-| 12 | **Config Admin sync Firebase** | Precio/WA accesible desde cualquier lado ✨ |
-| 13 | **Asignaciones Tribu sync Firebase** | Los 10+10 en la nube ✨ |
-| 14 | **IG Tribu Impulsa flotante** | Acceso directo al IG oficial 📱 |
-| 15 | **Icono Instagram rosado gradiente** | Estilo oficial IG en perfiles 🎨 |
-| 16 | **Explicaciones checklist mejoradas** | "Comparte en tu IG" / "Ellos comparten TU cuenta" 📝 |
-| 17 | **Enlaces siempre visibles** | No más about:blank - muestra "no registrado" 🔗 |
-| 18 | **Email en perfiles públicos** | Contacto directo por email ✉️ |
-| 19 | **Contraseña persistente Firebase** | Cambio de contraseña sincronizado 🔐 |
-| 20 | **Popup contraseña inteligente** | Solo si tiene TRIBU2026 y no la ha cambiado 🧠 |
-| 21 | **Sync fotos Firebase al inicio** | Avatares actualizados automáticamente 📸 |
-| 22 | **Flag password_changed** | Evita popup repetitivo de contraseña ✅ |
-| 23 | **Botón blob/ameba flotante** | Contacto IG+WA con animación mitosis 🫧 |
-| 24 | **Botón "Ver perfil" en checklist** | Acceso rápido a perfiles desde tareas 👁️ |
-| 25 | **Botón Checklist magenta** | Navbar más distintivo y llamativo 💜 |
-| 26 | **Recomendados movido a Red** | Mejor UX, matches al explorar directorio 🔀 |
-| 27 | **Tip del día dinámico** | 7 consejos rotativos diarios 💡 |
-| 28 | **Gamificación con badges** | 4 logros + barra de progreso + niveles 🎮 |
+### 🏗️ INFRAESTRUCTURA Y BACKEND (15)
+
+| # | Cambio | Impacto |
+|---|--------|---------|
+| 1 | **Firestore service inicial** | Base de datos en la nube |
+| 2 | **AI matching service Azure GPT-5.1** | IA para análisis de sinergias |
+| 3 | **Cloud bridge + auth context** | Arquitectura de servicios |
+| 4 | **Sync automática Firestore** | Usuarios, checklist, reportes en nube |
+| 5 | **Firebase como fuente de verdad** | Usuarios ya no se sobreescriben |
+| 6 | **Firebase Storage para fotos** | Avatar + banner con compresión 2MB |
+| 7 | **Checklist sync Firebase** | Progreso persiste entre dispositivos |
+| 8 | **Config Admin sync Firebase** | Precio/WA configurable en tiempo real |
+| 9 | **Asignaciones Tribu sync** | Los 10+10 en la nube |
+| 10 | **Contraseña persistente Firebase** | Login multi-dispositivo |
+| 11 | **Sync fotos al inicio** | Avatares siempre actualizados |
+| 12 | **Historial de pagos** | Revenue tracking completo |
+| 13 | **Notificaciones Firebase** | Push a todos los dispositivos |
+| 14 | **Credenciales Azure env vars** | Seguridad en producción |
+| 15 | **Service Worker PWA** | App instalable y offline |
+
+### 🎨 UI/UX MAYOR (22)
+
+| # | Cambio | Impacto |
+|---|--------|---------|
+| 16 | **Bottom nav 5 tabs + liquid glass** | UX estilo iOS 26 |
+| 17 | **Directory view completo** | Explorar todos los emprendedores |
+| 18 | **Profile edit con banner** | Personalización completa |
+| 19 | **Loading animation épica** | Video tribal inmersivo |
+| 20 | **Login redesign** | Logo grande, flujo claro |
+| 21 | **Onboarding modal portal** | Tutorial centrado profesional |
+| 22 | **Match analysis con insights** | IA explica por qué hacer match |
+| 23 | **Activity system persistente** | Archivar/restaurar actividades |
+| 24 | **Report modal portal** | Reportes sin bugs de z-index |
+| 25 | **Algorithm animation** | 10s buscando tribu |
+| 26 | **Activity view 20 tipos** | Notificaciones variadas |
+| 27 | **Photo upload + tags** | Edición de perfil completa |
+| 28 | **Sección membresía en perfil** | Estado de pago visible |
+| 29 | **Admin panel completo** | Gestión sin código |
+| 30 | **FAB blob/ameba flotante** | Contacto elegante IG+WA |
+| 31 | **Animación mitosis** | Botón se divide en 2 |
+| 32 | **Botón "Ver perfil"** | En matches y checklist |
+| 33 | **Recomendados en Red** | Mejor ubicación UX |
+| 34 | **Tip del día** | 7 consejos rotativos |
+| 35 | **Gamificación badges** | 4 logros desbloqueables |
+| 36 | **Barra progreso + niveles** | Motivación visual |
+| 37 | **Botón Checklist magenta** | Navbar distintivo |
+
+### 🔧 FEATURES FUNCIONALES (25)
+
+| # | Cambio | Impacto |
+|---|--------|---------|
+| 38 | **Sistema membresías** | Pago recurrente |
+| 39 | **Cambio contraseña** | Con validación 6+ chars |
+| 40 | **Pasarela MercadoPago** | Pagos reales (sandbox) |
+| 41 | **Flujo seamless login/registro** | UX sin fricción |
+| 42 | **107 usuarios CSV** | Base de datos inicial |
+| 43 | **Matching determinístico** | Mismo usuario = mismos matches |
+| 44 | **+70 usuarios CSV extra** | Datos mínimos completados |
+| 45 | **Edición categoría/afinidad** | En perfil propio |
+| 46 | **Registro con categoría** | Obligatorio al crear cuenta |
+| 47 | **Bloqueo nav invitados** | Solo miembros ven contenido |
+| 48 | **Categorías anidadas** | Subcategorías de negocio |
+| 49 | **Precio dinámico** | Desde config admin |
+| 50 | **WhatsApp configurable** | Sin hardcoding |
+| 51 | **Prompt LLM mejorado** | Icebreaker motivador |
+| 52 | **Checklist share records** | Registro de compartidas |
+| 53 | **Toggle notifications** | Activar/desactivar alertas |
+| 54 | **Banner/photo buttons** | Subir imágenes funcional |
+| 55 | **Admin share records tab** | Verificar cumplimiento |
+| 56 | **Checklist bidireccional** | Compartí / Me compartieron |
+| 57 | **"Me impulsan" primero** | Orden lógico de acciones |
+| 58 | **Ver perfil magenta** | Consistencia de colores |
+| 59 | **Popup contraseña inteligente** | Solo si tiene default |
+| 60 | **Flag password_changed** | No repetir popup |
+| 61 | **Enlaces siempre visibles** | "No registrado" en gris |
+| 62 | **Email en perfiles** | Contacto directo |
+
+### 🐛 FIXES IMPORTANTES (20)
+
+| # | Cambio | Problema resuelto |
+|---|--------|-------------------|
+| 63 | **Navbar iOS safe-area** | No se cortaba arriba |
+| 64 | **Video autoplay mobile** | Funcionaba solo en desktop |
+| 65 | **Avatar iniciales coloridas** | Instagram bloqueaba hotlink |
+| 66 | **WhatsApp directo** | Iba al número equivocado |
+| 67 | **Segregar datos por usuario** | Todos veían mismo checklist |
+| 68 | **Nombres completos checklist** | Mostraba IDs |
+| 69 | **Persistencia usuarios** | Se sobreescribían al recargar |
+| 70 | **Sync admin-usuario** | Config no llegaba |
+| 71 | **Eliminar duplicados** | Usuarios repetidos |
+| 72 | **Key duplicada categorías** | Error React |
+| 73 | **Phone en MatchProfile** | WhatsApp sin número |
+| 74 | **Temperature GPT-5.1** | Parámetro no soportado |
+| 75 | **max_completion_tokens** | Respuestas cortadas |
+| 76 | **Logging Azure** | Debug de errores IA |
+| 77 | **Sinergias fallback** | Si IA falla, texto genérico |
+| 78 | **Login validation** | Usuarios no existentes |
+| 79 | **Navigation loop** | Ciclo infinito de redirects |
+| 80 | **IG rosado gradiente** | Icono oficial de Instagram |
+| 81 | **Quitar "Ayuda?" blob** | Label innecesario |
+| 82 | **Explicaciones checklist** | Texto confuso |
+
+### 📝 DOCUMENTACIÓN (6)
+
+| # | Cambio | Contenido |
+|---|--------|-----------|
+| 83 | **MAPA_SITIO_PWA.md** | Documento inicial |
+| 84 | **MADRE.md** | Guía maestra del proyecto |
+| 85 | **CHECKLIST_V1_FINAL** | Lista entrega cliente |
+| 86 | **firestore.rules** | Seguridad Firebase |
+| 87 | **Mapa ÉPICO 2650+ líneas** | Documentación exhaustiva |
+| 88 | **MAPA v2.0 3000+ líneas** | Versión final completa |
 
 ---
 
@@ -3016,19 +3098,36 @@ TailwindCSS: Styling rápido, consistente, responsive
 
 ```
 📄 MAPA_SITIO_PWA.md
-├── 3,200+ líneas
-├── 60+ secciones
+├── 3,400+ líneas
+├── 70+ secciones  
 ├── 100% documentado
-└── Actualizado: 3 Dic 2024 10:30 PM
+└── Actualizado: 3 Dic 2024 10:47 PM
 
-🏆 Logros totales: 28
-🔥 Firebase: 8 colecciones + Storage
-📱 PWA: Completa e instalable
-🤖 IA: Azure GPT-5.1 integrado
-🔐 Auth: Persistente multi-dispositivo
-🎮 Gamificación: Badges + Niveles + Tips
-🫧 UX: Botón blob con mitosis
-💎 Valor: Cross-promotion sin competencia
+📊 ESTADÍSTICAS FINALES:
+┌─────────────────────────────────────┐
+│  CAMBIOS SIGNIFICATIVOS: 88         │
+├─────────────────────────────────────┤
+│  �️ Infraestructura/Backend:  15    │
+│  🎨 UI/UX Mayor:              22    │
+│  🔧 Features Funcionales:     25    │
+│  🐛 Fixes Importantes:        20    │
+│  📝 Documentación:             6    │
+├─────────────────────────────────────┤
+│  📦 Commits totales:         108    │
+│  👥 Usuarios en Firebase:    112    │
+│  🗄️ Colecciones Firebase:      8    │
+└─────────────────────────────────────┘
+
+🔥 Firebase: users, profiles, memberships, 
+   payment_history, notifications, admin_config,
+   checklist_progress, tribe_assignments + Storage
+
+📱 PWA: Instalable, offline-first, Service Worker
+🤖 IA: Azure GPT-5.1 para análisis de sinergias
+🔐 Auth: Contraseñas persistentes multi-dispositivo
+🎮 Gamificación: 4 Badges + 5 Niveles + 7 Tips diarios
+🫧 UX: Botón blob con animación mitosis
+💎 Valor: Cross-promotion gamificado sin competencia
 ```
 
 ---

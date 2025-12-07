@@ -1,5 +1,5 @@
 /**
- * Script para generar iconos PWA desde tribulogo.PNG
+ * Script para generar iconos PWA desde Logo-Tribu_.png
  * 
  * Requisitos:
  * npm install sharp
@@ -12,7 +12,7 @@ const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
 
-const SOURCE_LOGO = path.join(__dirname, '..', 'tribulogo.PNG');
+const SOURCE_LOGO = path.join(__dirname, '..', 'LogoTribuImpulsa.png');
 const OUTPUT_DIR = path.join(__dirname, '..', 'public', 'icons');
 
 const ICON_SIZES = [

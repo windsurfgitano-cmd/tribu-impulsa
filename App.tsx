@@ -956,7 +956,7 @@ const LoginScreen = () => {
       {/* Logo grande */}
       <div className="mb-4 flex justify-center">
         <img 
-          src="/LogoTribuImpulsa.png" 
+          src="/NuevoLogo.jpeg" 
           alt="Tribu Impulsa" 
           className="w-[90%] max-w-[380px] object-contain"
         />
@@ -1365,7 +1365,7 @@ const RegisterScreen = () => {
         {step === 1 && (
           <div className="space-y-5 animate-fadeIn">
             <div className="text-center mb-6">
-              <img src="/Logo-Tribu_.png" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
+              <img src="/NuevoLogo.jpeg" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl font-bold text-[#181B34]">¡Bienvenido/a!</h2>
               <p className="text-[#7C8193] text-sm mt-1">Cuéntanos sobre ti</p>
             </div>
@@ -1936,7 +1936,7 @@ const SurveyScreen = () => {
 
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
           <header className="mb-8 text-center">
-            <img src="/Logo-Tribu_.png" alt="Tribu Impulsa" className="w-20 h-20 mx-auto mb-4 object-contain" />
+            <img src="/NuevoLogo.jpeg" alt="Tribu Impulsa" className="w-20 h-20 mx-auto mb-4 object-contain" />
             <p className="text-xs uppercase tracking-[0.35em] text-[#6161FF] mb-2 font-medium">Tu producto o servicio en manos que impulsan</p>
             <h1 className="text-4xl font-bold text-[#181B34] mb-2">Inscripción</h1>
             <p className="text-[#7C8193]">Responde esta encuesta para activar tu experiencia en Tribu Impulsa.</p>

@@ -64,7 +64,6 @@ import {
   getFirestoreInstance,
   logInteraction
 } from './services/firebaseService';
-import { AcademiaView } from './components/academia/AcademiaView';
 import { ensureInitialized } from './services/productionInit';
 
 // ============================================
@@ -6490,8 +6489,6 @@ const AppLayout = () => {
                 <Route path="/activity" element={<ActivityView />} />
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
-                {/* Laboratorio interno Santander Academia (no visible en navegación) */}
-                <Route path="/santander-lab" element={<AcademiaView onNavigateBack={() => window.history.back()} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </div>

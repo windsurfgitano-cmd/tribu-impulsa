@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
@@ -1600,19 +1600,12 @@ const RegisterScreen = () => {
   );
 };
 
-// 2c. Pantalla de Membresía - Pasarela de Pago
+// 2c. Pantalla de Membresía - BETA PÚBLICA (Mes Gratis)
 const MembershipScreen = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const currentUser = getCurrentUser();
   const session = getStoredSession();
-  
-  // Obtener precio desde configuración del admin
-  const appConfig = getAppConfig();
-  const PRICE = appConfig.membershipPrice;
-  const formatPrice = (amount: number) => 
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(amount);
 
   // Verificar si ya es miembro (desde localStorage)
   useEffect(() => {
@@ -1622,21 +1615,22 @@ const MembershipScreen = () => {
     }
   }, [currentUser, navigate]);
 
-  // Simular pago exitoso
-  const handlePayment = async (method: string) => {
+  // Canjear mes gratis
+  const handleRedeemFreeMonth = async () => {
     setIsProcessing(true);
     
     // Simular procesamiento
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Marcar como miembro
+    // Marcar como miembro con mes gratis
     if (currentUser) {
       localStorage.setItem(`membership_status_${currentUser.id}`, 'miembro');
       localStorage.setItem(`membership_payment_${currentUser.id}`, JSON.stringify({
-        method,
-        amount: PRICE,
+        method: 'beta_publica',
+        amount: 0,
         date: new Date().toISOString(),
-        status: 'approved'
+        status: 'free_month',
+        plan: 'Círculo Emprendedor Tribu Impulsa'
       }));
       
       // Sincronizar con Firebase
@@ -1649,138 +1643,94 @@ const MembershipScreen = () => {
             id: currentUser.id,
             email: currentUser.email,
             status: 'miembro',
-            paymentMethod: method,
+            paymentMethod: 'beta_publica',
             paymentDate: new Date().toISOString(),
-            amount: PRICE,
+            amount: 0,
+            plan: 'Círculo Emprendedor Tribu Impulsa',
             expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
           });
-          console.log('✅ Membresía sincronizada con Firebase');
+          console.log('✅ Mes gratis activado en Firebase');
         }
       } catch (err) {
         console.log('⚠️ Error sincronizando membresía:', err);
       }
     }
     
-    setShowSuccess(true);
-    setTimeout(() => {
-      navigate('/searching');
-    }, 2000);
+    // Ir directo al loading/searching
+    navigate('/searching');
   };
 
-  // Pantalla de éxito
-  if (showSuccess) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#00CA72] flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
-          <div className="w-20 h-20 bg-[#00CA72] rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-            <CheckCircle size={40} className="text-white" />
-          </div>
-          <h2 className="text-2xl font-bold text-[#181B34] mb-2">¡Bienvenido/a a la Tribu!</h2>
-          <p className="text-[#7C8193] mb-4">Tu membresía está activa</p>
-          <div className="flex items-center justify-center gap-2 text-[#6161FF]">
-            <Crown size={20} />
-            <span className="font-semibold">MIEMBRO ACTIVO</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#F5F7FB] flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#A5A5FF] text-white pt-12 pb-16 px-6 text-center">
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Crown size={32} className="text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#00CA72] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+        {/* Icono de regalo/celebración */}
+        <div className="w-20 h-20 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <Gift size={40} className="text-white" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">¡Hola {session?.name?.split(' ')[0] || 'Emprendedor/a'}!</h1>
-        <p className="text-white/80 text-sm">
-          Activa tu membresía para acceder al<br />
-          <span className="font-semibold text-white">Algoritmo Tribal 10+10</span>
+        
+        {/* Título principal */}
+        <h1 className="text-2xl font-bold text-[#181B34] mb-2">
+          ¡Bienvenido/a a la Beta Pública!
+        </h1>
+        <h2 className="text-xl font-bold text-[#6161FF] mb-4">
+          TRIBU IMPULSA
+        </h2>
+        
+        {/* Mensaje de selección */}
+        <div className="bg-gradient-to-r from-[#6161FF]/10 to-[#00CA72]/10 rounded-2xl p-4 mb-6 border border-[#6161FF]/20">
+          <p className="text-[#181B34] font-medium mb-2">
+            🎉 ¡Hola {session?.name?.split(' ')[0] || 'Emprendedor/a'}!
+          </p>
+          <p className="text-[#434343] text-sm leading-relaxed">
+            Has sido <span className="font-bold text-[#6161FF]">seleccionado/a entre cientos de personas</span> para disfrutar <span className="font-bold text-[#00CA72]">1 MES GRATIS</span> del Círculo Emprendedor.
+          </p>
+        </div>
+        
+        {/* Beneficios */}
+        <div className="space-y-3 mb-6 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle size={16} className="text-[#00CA72]" />
+            </div>
+            <p className="text-sm text-[#434343]">Acceso completo al <strong>Algoritmo Tribal 10+10</strong></p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle size={16} className="text-[#00CA72]" />
+            </div>
+            <p className="text-sm text-[#434343]">Conexiones con <strong>emprendedores verificados</strong></p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle size={16} className="text-[#00CA72]" />
+            </div>
+            <p className="text-sm text-[#434343]">Cross-promotion <strong>sin costo por 30 días</strong></p>
+          </div>
+        </div>
+        
+        {/* Botón de canjear */}
+        <button
+          onClick={handleRedeemFreeMonth}
+          disabled={isProcessing}
+          className="w-full bg-gradient-to-r from-[#00CA72] to-[#00B366] hover:from-[#00B366] hover:to-[#009A56] text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+        >
+          {isProcessing ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Activando tu mes gratis...
+            </>
+          ) : (
+            <>
+              <Sparkles size={20} />
+              ¡Canjear Mi Mes Gratis!
+            </>
+          )}
+        </button>
+        
+        {/* Nota */}
+        <p className="text-xs text-[#7C8193] mt-4">
+          Sin tarjeta de crédito • Sin compromisos • Cancela cuando quieras
         </p>
-      </div>
-
-      {/* Contenido */}
-      <div className="flex-1 px-4 -mt-8">
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-center mb-6">
-            <p className="text-[#7C8193] text-sm mb-1">Membresía mensual</p>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-4xl font-bold text-[#181B34]">{formatPrice(PRICE)}</span>
-              <span className="text-[#7C8193]">/mes</span>
-            </div>
-            <p className="text-[#00CA72] text-xs mt-1">Acceso completo al Algoritmo Tribal</p>
-          </div>
-
-          {/* Beneficios */}
-          <div className="space-y-3 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#6161FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users size={16} className="text-[#6161FF]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Matching 10+10</p>
-                <p className="text-[#7C8193] text-xs">10 cuentas para impulsar, 10 que te impulsan</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Zap size={16} className="text-[#00CA72]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Algoritmo de Afinidad</p>
-                <p className="text-[#7C8193] text-xs">Matches basados en tu rubro e intereses</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#FFCC00]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <CheckCircle size={16} className="text-[#FFCC00]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Comunidad Verificada</p>
-                <p className="text-[#7C8193] text-xs">Solo emprendedores comprometidos</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Botones de pago */}
-          <div className="space-y-3">
-            <button
-              onClick={() => handlePayment('mercadopago')}
-              disabled={isProcessing}
-              className="w-full bg-[#009EE3] hover:bg-[#0088C9] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
-            >
-              {isProcessing ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <CreditCard size={20} />
-                  Pagar con MercadoPago
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={() => handlePayment('transferencia')}
-              disabled={isProcessing}
-              className="w-full bg-[#181B34] hover:bg-[#2A2E4A] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
-            >
-              <CreditCard size={20} />
-              Pagar con Transferencia
-            </button>
-          </div>
-        </div>
-
-        {/* Info adicional */}
-        <div className="text-center text-xs text-[#7C8193] space-y-2 pb-8">
-          <p>✅ Pago 100% seguro</p>
-          <p>📧 Confirmación inmediata</p>
-        </div>
       </div>
     </div>
   );
@@ -2872,6 +2822,7 @@ const MyProfileView = () => {
             companyName: profile.companyName,
             bio: profile.bio,
             instagram: profile.instagram,
+            tiktok: (profile as any).tiktok || '',
             website: profile.website,
             city: profile.location?.split(',')[0]?.trim() || '',
             avatarUrl: profile.avatarUrl,
@@ -3085,6 +3036,15 @@ const MyProfileView = () => {
               />
             </div>
             <div>
+              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">TikTok</label>
+              <input 
+                value={(profile as any).tiktok || ''}
+                onChange={(e) => setProfile({...profile, tiktok: e.target.value} as any)}
+                placeholder="@tu_tiktok"
+                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+              />
+            </div>
+            <div>
               <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
               <input 
                 value={profile.website}
@@ -3113,15 +3073,26 @@ const MyProfileView = () => {
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E91E63] via-[#C13584] to-[#F77737] text-white font-semibold hover:opacity-90 transition shadow-md"
             >
-              <Instagram size={16} /> Compartir en Instagram
+              <Instagram size={16} /> Instagram
             </a>
+            {(profile as any).tiktok && (
+              <a
+                href={`https://www.tiktok.com/@${(profile as any).tiktok.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#000000] text-white font-semibold hover:bg-[#1a1a1a] transition shadow-md"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                TikTok
+              </a>
+            )}
             <a
               href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"
             >
-              <Share2 size={16} /> Enviar por WhatsApp
+              <Share2 size={16} /> WhatsApp
             </a>
           </div>
         )}
@@ -3473,22 +3444,46 @@ const MembershipSection = ({ userId }: { userId: string }) => {
         {/* Detalles si es miembro */}
         {isMember && (
           <div className="space-y-2 text-sm border-t border-[#E4E7EF]/50 pt-3">
-            <div className="flex justify-between">
-              <span className="text-[#7C8193]">Fecha de pago:</span>
-              <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#7C8193]">Método:</span>
-              <span className="text-[#181B34] font-medium capitalize">{membership?.paymentMethod || 'N/A'}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#7C8193]">Monto:</span>
-              <span className="text-[#181B34] font-medium">{formatPrice(membership?.amount)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#7C8193]">Vence:</span>
-              <span className="text-[#181B34] font-medium">{formatDate(membership?.expiresAt)}</span>
-            </div>
+            {/* Plan especial para Beta Pública */}
+            {membership?.paymentMethod === 'beta_publica' ? (
+              <>
+                <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-xl p-3 mb-2">
+                  <p className="text-[#00CA72] font-bold text-center">
+                    🎉 Mes Gratis - Círculo Emprendedor
+                  </p>
+                  <p className="text-xs text-[#7C8193] text-center mt-1">
+                    Beta Pública Tribu Impulsa
+                  </p>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Activado:</span>
+                  <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Válido hasta:</span>
+                  <span className="text-[#181B34] font-medium">{formatDate(membership?.expiresAt)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Fecha de pago:</span>
+                  <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Método:</span>
+                  <span className="text-[#181B34] font-medium capitalize">{membership?.paymentMethod || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Monto:</span>
+                  <span className="text-[#181B34] font-medium">{formatPrice(membership?.amount)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#7C8193]">Vence:</span>
+                  <span className="text-[#181B34] font-medium">{formatDate(membership?.expiresAt)}</span>
+                </div>
+              </>
+            )}
             {daysRemaining !== null && daysRemaining <= 30 && (
               <div className="mt-2 p-2 bg-[#FFCC00]/10 rounded-lg">
                 <p className="text-xs text-[#B38F00] font-medium">
@@ -3503,10 +3498,10 @@ const MembershipSection = ({ userId }: { userId: string }) => {
         {!isMember && (
           <button
             onClick={() => navigate('/membership')}
-            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
+            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#00CA72] to-[#00B366] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
           >
-            <CreditCard size={18} />
-            Activar Membresía - {formatPrice(getAppConfig().membershipPrice)}/mes
+            <Gift size={18} />
+            ¡Canjear Mi Mes Gratis!
           </button>
         )}
       </div>

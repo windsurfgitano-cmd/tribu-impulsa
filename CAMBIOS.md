@@ -4,6 +4,72 @@
 
 ---
 
+## 📅 Domingo 7 de Diciembre 2025
+
+### 🎁 Beta Pública - Mes Gratis + TikTok en Perfil
+**Hora:** 19:48 - 20:15 hrs  
+**Solicitado por:** Usuario (Doraluz)  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Nueva Pantalla de Membresía - Beta Pública**
+   - **Antes:** Pantalla de pago con MercadoPago/Transferencia ($20.000/mes)
+   - **Ahora:** Pantalla de "Bienvenido a la Beta Pública" con mes gratis
+   - **Mensaje:** "Has sido seleccionado/a entre cientos de personas para disfrutar 1 MES GRATIS"
+   - **Botón:** "¡Canjear Mi Mes Gratis!" (verde, con icono de regalo)
+   - **Beneficios mostrados:**
+     - Acceso completo al Algoritmo Tribal 10+10
+     - Conexiones con emprendedores verificados
+     - Cross-promotion sin costo por 30 días
+   - **Ubicación:** `App.tsx` líneas 1603-1737 (MembershipScreen)
+
+2. **Actualización de Sección Membresía en Perfil**
+   - **Antes:** Mostraba "Monto: $20.000", "Método: mercadopago/transferencia"
+   - **Ahora:** Para usuarios Beta muestra:
+     - "🎉 Mes Gratis - Círculo Emprendedor"
+     - "Beta Pública Tribu Impulsa"
+     - Fecha de activación y vencimiento
+   - **Botón para invitados:** Cambiado de "Activar Membresía - $20.000/mes" a "¡Canjear Mi Mes Gratis!"
+   - **Ubicación:** `App.tsx` líneas 3423-3485 (MembershipSection)
+
+3. **Nuevo Campo TikTok en Perfil**
+   - **Agregado:** Campo editable para TikTok en la sección de redes sociales
+   - **Placeholder:** "@tu_tiktok"
+   - **Botón:** Aparece junto a Instagram y WhatsApp cuando el usuario tiene TikTok configurado
+   - **Estilo:** Botón negro con icono SVG de TikTok
+   - **Ubicaciones:**
+     - Campo editable: `App.tsx` líneas 3037-3044
+     - Botón de vista: `App.tsx` líneas 3078-3088
+     - Guardado: `App.tsx` línea 2825
+
+4. **Import Agregado**
+   - `Gift` de lucide-react para el icono de regalo en la pantalla de membresía
+   - **Ubicación:** `App.tsx` línea 5
+
+#### Archivos Modificados
+```
+App.tsx
+- Línea 5: Import de Gift
+- Líneas 1603-1737: MembershipScreen completo (reescrito)
+- Líneas 2825: profileData con tiktok
+- Líneas 3037-3044: Campo TikTok editable
+- Líneas 3078-3088: Botón TikTok en vista
+- Líneas 3423-3485: MembershipSection actualizado
+```
+
+#### Lógica de Negocio
+- **Método de pago:** `beta_publica`
+- **Monto:** `0` (gratis)
+- **Plan:** `Círculo Emprendedor Tribu Impulsa`
+- **Duración:** 30 días desde activación
+- **Firebase:** Se sincroniza con colección `memberships`
+
+#### Tiempo Estimado
+**Total:** ~30 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

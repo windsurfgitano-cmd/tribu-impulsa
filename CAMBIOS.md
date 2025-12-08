@@ -272,6 +272,35 @@ services/matchService.ts
 
 ---
 
+### 🎨 FASE 5: UI/UX Selector de Comunas
+**Hora:** 22:00 - 22:15 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problema
+El selector de comunas tenía ~346 opciones en un `<select>` simple, imposible de usar.
+
+#### Solución
+Combobox con búsqueda en tiempo real:
+- Input de texto para filtrar comunas
+- Dropdown con máximo 15 resultados
+- Muestra mensaje "Mostrando 15 de 346 comunas. Escribe para filtrar."
+- Botón ✕ para limpiar selección
+- Cierra dropdown al seleccionar
+
+#### Archivos Modificados
+```
+App.tsx
+- SurveyScreen: estados comunaSearch, showComunaDropdown, filteredComunas
+- RegisterScreen: estados comunaSearch, showComunaDropdown, filteredComunas
+- UI: Combobox con búsqueda reemplaza <select> simple
+```
+
+#### Tiempo Estimado
+**Total:** ~15 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

@@ -1260,8 +1260,15 @@ const RegisterScreen = () => {
     website: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [comunaSearch, setComunaSearch] = useState('');
+  const [showComunaDropdown, setShowComunaDropdown] = useState(false);
 
   const totalSteps = 5;
+  
+  // Filtrar comunas por búsqueda
+  const filteredComunas = comunaSearch.length > 0
+    ? ALL_COMUNAS.filter(c => c.toLowerCase().includes(comunaSearch.toLowerCase())).slice(0, 15)
+    : ALL_COMUNAS.slice(0, 15);
 
   const validateStep = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -1837,8 +1844,15 @@ const SurveyScreen = () => {
   const [formData, setFormData] = useState<SurveyFormState>(() => getStoredSurveyResponse() ?? EMPTY_SURVEY_FORM);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [comunaSearch, setComunaSearch] = useState('');
+  const [showComunaDropdown, setShowComunaDropdown] = useState(false);
 
   const requiredFields: (keyof SurveyFormState)[] = ['email', 'name', 'phone', 'city', 'category', 'affinity', 'scope'];
+  
+  // Filtrar comunas por búsqueda
+  const filteredComunas = comunaSearch.length > 0
+    ? ALL_COMUNAS.filter(c => c.toLowerCase().includes(comunaSearch.toLowerCase())).slice(0, 15)
+    : ALL_COMUNAS.slice(0, 15);
 
   const handleChange = (field: keyof SurveyFormState, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -2031,24 +2045,67 @@ const SurveyScreen = () => {
                 {errors.scope && <p className="text-xs text-[#FB275D] mt-1">{errors.scope}</p>}
               </div>
               <div>
-                {/* Selector de Comuna (si es LOCAL) */}
+                {/* Selector de Comuna con búsqueda (si es LOCAL) */}
                 {formData.scope === 'LOCAL' && (
                   <>
                     <label className="text-sm font-semibold text-[#434343] flex items-center gap-1">
                       Comuna específica<span className="text-[#FB275D]">*</span>
                     </label>
                     <div className="relative mt-2">
-                      <select
-                        className="w-full appearance-none rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] p-4 pr-10 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
-                        value={formData.comuna}
-                        onChange={(e) => handleChange('comuna', e.target.value)}
-                      >
-                        <option value="">Selecciona tu comuna</option>
-                        {ALL_COMUNAS.map(comuna => (
-                          <option key={comuna} value={comuna}>{comuna}</option>
-                        ))}
-                      </select>
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6161FF]">▼</span>
+                      {/* Input de búsqueda */}
+                      <input
+                        type="text"
+                        placeholder="Escribe para buscar tu comuna..."
+                        className="w-full rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
+                        value={formData.comuna || comunaSearch}
+                        onChange={(e) => {
+                          setComunaSearch(e.target.value);
+                          setShowComunaDropdown(true);
+                          if (formData.comuna) handleChange('comuna', '');
+                        }}
+                        onFocus={() => setShowComunaDropdown(true)}
+                      />
+                      {/* Botón limpiar */}
+                      {formData.comuna && (
+                        <button
+                          type="button"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#7C8193] hover:text-[#FB275D]"
+                          onClick={() => {
+                            handleChange('comuna', '');
+                            setComunaSearch('');
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                      {/* Dropdown de opciones */}
+                      {showComunaDropdown && !formData.comuna && (
+                        <div className="absolute z-50 w-full mt-1 bg-white rounded-xl border border-[#E4E7EF] shadow-lg max-h-48 overflow-y-auto">
+                          {filteredComunas.length > 0 ? (
+                            filteredComunas.map(comuna => (
+                              <button
+                                key={comuna}
+                                type="button"
+                                className="w-full text-left px-4 py-2 hover:bg-[#F5F7FB] text-sm text-[#434343] first:rounded-t-xl last:rounded-b-xl"
+                                onClick={() => {
+                                  handleChange('comuna', comuna);
+                                  setComunaSearch('');
+                                  setShowComunaDropdown(false);
+                                }}
+                              >
+                                {comuna}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-4 py-3 text-sm text-[#7C8193]">No se encontraron comunas</p>
+                          )}
+                          {comunaSearch.length === 0 && (
+                            <p className="px-4 py-2 text-xs text-[#7C8193] bg-[#F5F7FB] border-t">
+                              Mostrando 15 de {ALL_COMUNAS.length} comunas. Escribe para filtrar.
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <p className="text-xs text-[#7C8193] mt-1">Solo harás match con emprendedores de tu comuna.</p>
                   </>

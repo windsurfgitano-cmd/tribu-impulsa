@@ -3152,32 +3152,11 @@ const MyProfileView = () => {
                             </>
                         )}
                         
-                        {/* Categoría / Giro / Afinidad */}
-                        {isEditing ? (
-                          <div className="w-full mt-4 space-y-3">
-                            <div>
-                              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block text-left">Categoría / Giro</label>
-                              <input 
-                                value={profile.category} 
-                                onChange={(e) => setProfile({...profile, category: e.target.value})}
-                                placeholder="Ej: Joyería, Marketing, Pastelería..."
-                                className="bg-[#F5F7FB] text-sm text-[#181B34] rounded-lg p-3 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block text-left">Afinidad / Intereses</label>
-                              <input 
-                                value={(profile as any).affinity || ''} 
-                                onChange={(e) => setProfile({...profile, affinity: e.target.value} as any)}
-                                placeholder="Ej: Moda, Bienestar, Emprendimiento..."
-                                className="bg-[#F5F7FB] text-sm text-[#181B34] rounded-lg p-3 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
-                              />
-                            </div>
-                          </div>
-                        ) : (
+                        {/* Badge de categoría (solo lectura) */}
+                        {!isEditing && (
                           <div className="flex justify-center gap-2 mt-4 flex-wrap">
                             <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-4 py-1.5 rounded-full">
-                                {profile.category}
+                                {editCategory || profile.category}
                             </span>
                           </div>
                         )}
@@ -3462,22 +3441,14 @@ const MyProfileView = () => {
           </div>
         )}
 
-        {/* Details */}
+        {/* Details - Solo visible cuando NO estamos editando */}
+        {!isEditing && (
         <div className="space-y-8 w-full text-left">
                         <div>
                             <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Biografía</h3>
-                            {isEditing ? (
-                                <textarea 
-                                    value={profile.bio}
-                                    onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                                    rows={4}
-                                    className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
-                                />
-                            ) : (
-                                <p className="text-[#434343] leading-relaxed text-lg">
-                                    {profile.bio}
-                                </p>
-                            )}
+                            <p className="text-[#434343] leading-relaxed text-lg">
+                                {profile.bio}
+                            </p>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3">
@@ -3502,7 +3473,11 @@ const MyProfileView = () => {
                               <ArrowRight size={16} className="text-[#7C8193] shrink-0" />
                             </a>
                         </div>
+        </div>
+        )}
 
+        {/* Secciones siempre visibles */}
+        <div className="space-y-8 w-full text-left">
                         <div>
                             <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Etiquetas</h3>
                             <div className="flex flex-wrap gap-2">

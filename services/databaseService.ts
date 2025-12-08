@@ -27,6 +27,9 @@ export interface UserProfile {
   category: string;      // Giro/Rubro del negocio
   affinity: string;      // Con qué tipo de negocios quiere conectar
   scope?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
+  // Geografía detallada
+  comuna?: string;           // Para alcance LOCAL
+  selectedRegions?: string[]; // Para alcance REGIONAL (array de IDs de región)
   // Perfil visual
   avatarUrl?: string;
   companyLogoUrl?: string;

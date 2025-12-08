@@ -60,12 +60,66 @@ const SYNERGY_MAP: Record<string, string[]> = {
   'Transporte y Logística': ['Negocio', 'Eventos', 'Turismo'],
 };
 
+// Verificar compatibilidad geográfica entre dos usuarios
+const checkGeographicCompatibility = (
+  user1Scope: string | undefined,
+  user1Comuna: string | undefined,
+  user1Regions: string[] | undefined,
+  user2Scope: string | undefined,
+  user2Comuna: string | undefined,
+  user2Regions: string[] | undefined
+): { compatible: boolean; bonus: number; reason?: string } => {
+  // Si ambos son NACIONAL, siempre compatibles
+  if (user1Scope === 'NACIONAL' || user2Scope === 'NACIONAL') {
+    return { compatible: true, bonus: 0 };
+  }
+  
+  // Si ambos son LOCAL, deben ser la misma comuna
+  if (user1Scope === 'LOCAL' && user2Scope === 'LOCAL') {
+    if (user1Comuna && user2Comuna && user1Comuna === user2Comuna) {
+      return { compatible: true, bonus: 15, reason: 'Misma comuna' };
+    }
+    return { compatible: false, bonus: -30, reason: 'Comunas diferentes' };
+  }
+  
+  // Si uno es LOCAL y otro REGIONAL, verificar si la comuna está en las regiones
+  if (user1Scope === 'LOCAL' && user2Scope === 'REGIONAL') {
+    // Por ahora asumimos compatibilidad si el regional tiene regiones seleccionadas
+    if (user2Regions && user2Regions.length > 0) {
+      return { compatible: true, bonus: 5, reason: 'Cobertura regional' };
+    }
+  }
+  if (user2Scope === 'LOCAL' && user1Scope === 'REGIONAL') {
+    if (user1Regions && user1Regions.length > 0) {
+      return { compatible: true, bonus: 5, reason: 'Cobertura regional' };
+    }
+  }
+  
+  // Si ambos son REGIONAL, verificar si comparten alguna región
+  if (user1Scope === 'REGIONAL' && user2Scope === 'REGIONAL') {
+    const regions1 = user1Regions || [];
+    const regions2 = user2Regions || [];
+    const sharedRegions = regions1.filter(r => regions2.includes(r));
+    
+    if (sharedRegions.length > 0) {
+      return { compatible: true, bonus: 10, reason: 'Regiones compartidas' };
+    }
+    return { compatible: false, bonus: -20, reason: 'Sin regiones en común' };
+  }
+  
+  // Default: compatibles sin bonus
+  return { compatible: true, bonus: 0 };
+};
+
 // Calcular score de compatibilidad entre dos usuarios
 const calculateCompatibilityScore = (
   user1Category: string,
   user1Affinity: string,
   user2Category: string,
-  user2Affinity: string
+  user2Affinity: string,
+  // Parámetros de geografía opcionales
+  user1Geo?: { scope?: string; comuna?: string; regions?: string[] },
+  user2Geo?: { scope?: string; comuna?: string; regions?: string[] }
 ): { score: number; reason: string } => {
   let score = 50; // Base score
   let reasons: string[] = [];
@@ -74,6 +128,24 @@ const calculateCompatibilityScore = (
   const group2 = extractCategoryGroup(user2Category);
   const affGroup1 = extractAffinityGroup(user1Affinity);
   const affGroup2 = extractAffinityGroup(user2Affinity);
+  
+  // 0. Verificar compatibilidad geográfica primero
+  if (user1Geo && user2Geo) {
+    const geoCompat = checkGeographicCompatibility(
+      user1Geo.scope, user1Geo.comuna, user1Geo.regions,
+      user2Geo.scope, user2Geo.comuna, user2Geo.regions
+    );
+    
+    if (!geoCompat.compatible) {
+      // Si no son geográficamente compatibles, score muy bajo
+      return { score: 25, reason: geoCompat.reason || 'Incompatibilidad geográfica' };
+    }
+    
+    score += geoCompat.bonus;
+    if (geoCompat.reason && geoCompat.bonus > 0) {
+      reasons.push(geoCompat.reason);
+    }
+  }
   
   // 1. Misma categoría exacta = MALO (competencia directa)
   if (user1Category === user2Category) {
@@ -302,78 +374,69 @@ const seededShuffle = <T>(array: T[], seed: string): T[] => {
 
 // IDs de perfiles de relleno (byturquia, terraflor, elevate)
 const FILLER_EMAILS = [
-  'dafnafinkelstein@gmail.com',      // By Turquía - Dafna
-  'doraluz@terraflorpaisajismo.cl',  // Terraflor Paisajismo - Doraluz  
-  'guille@elevatecreativo.com'       // Elevate Agencia - Guillermo
+  'dafnafinkelstein@gmail.com',
+  'doraluz@terraflorpaisajismo.cl',
+  'guille@elevatecreativo.com'
 ];
 
 export const generateTribeAssignments = (userCategory: string, currentUserId?: string, userAffinity?: string): TribeAssignments => {
-  // Primero intentar con usuarios reales
   const realUsers = getAllUsers();
   const currentUser = realUsers.find(u => u.id === currentUserId);
   const myCategory = currentUser?.category || userCategory;
   const myAffinity = currentUser?.affinity || userAffinity || '';
   
+  // Datos geográficos del usuario actual
+  const myGeo = currentUser ? {
+    scope: currentUser.scope,
+    comuna: currentUser.comuna,
+    regions: currentUser.selectedRegions
+  } : undefined;
+  
   if (realUsers.length >= 10) {
-    // Usar usuarios reales
     let pool = realUsers
-      .filter(u => u.id !== currentUserId) // Excluir al usuario actual
+      .filter(u => u.id !== currentUserId)
       .map(userToMatchProfile);
     
-    // Si faltan personas, agregar los perfiles de relleno (máx 3)
-    if (pool.length < 20) {
-      const fillerProfiles = realUsers
-        .filter(u => FILLER_EMAILS.includes(u.email.toLowerCase()) && u.id !== currentUserId)
-        .map(userToMatchProfile);
-      
-      // Agregar solo los que no estén ya en el pool
-      const existingIds = new Set(pool.map(p => p.id));
-      const fillersToAdd = fillerProfiles.filter(f => !existingIds.has(f.id)).slice(0, 3);
-      pool = [...pool, ...fillersToAdd];
-      
-      if (fillersToAdd.length > 0) {
-        console.log(`📌 Agregados ${fillersToAdd.length} perfiles de relleno`);
-      }
-    }
-    
-    // NUEVO: Calcular compatibilidad y ordenar por score
+    // Calcular compatibilidad CON GEOGRAFÍA
     const poolWithScores = pool.map(profile => {
       const otherUser = realUsers.find(u => u.id === profile.id);
       const otherCategory = otherUser?.category || profile.category;
       const otherAffinity = otherUser?.affinity || '';
       
+      // Datos geográficos del otro usuario
+      const otherGeo = otherUser ? {
+        scope: otherUser.scope,
+        comuna: otherUser.comuna,
+        regions: otherUser.selectedRegions
+      } : undefined;
+      
       const { score, reason } = calculateCompatibilityScore(
         myCategory,
         myAffinity,
         otherCategory,
-        otherAffinity
+        otherAffinity,
+        myGeo,
+        otherGeo
       );
       
       return { profile, score, reason };
     });
     
-    // Filtrar usuarios con score muy bajo (incompatibles)
+    // Filtrar incompatibles
     const compatible = poolWithScores.filter(p => p.score >= 40);
-    
-    // Ordenar por score descendente
     compatible.sort((a, b) => b.score - a.score);
     
     console.log(`🎯 Matching: ${compatible.length} compatibles de ${pool.length} usuarios`);
     
-    // Mezclar de forma DETERMINÍSTICA pero respetando prioridad por score
     const seed = currentUserId || 'default-seed';
-    
-    // Dividir en grupos por score para dar variedad
     const highScore = compatible.filter(p => p.score >= 70);
     const mediumScore = compatible.filter(p => p.score >= 50 && p.score < 70);
     const lowScore = compatible.filter(p => p.score >= 40 && p.score < 50);
     
-    // Mezclar cada grupo
     const shuffledHigh = seededShuffle(highScore, seed);
     const shuffledMedium = seededShuffle(mediumScore, seed + '-med');
     const shuffledLow = seededShuffle(lowScore, seed + '-low');
     
-    // Combinar: mayoría alta compatibilidad, algo de media
     const finalList = [
       ...shuffledHigh.slice(0, 8),
       ...shuffledMedium.slice(0, 6),
@@ -386,18 +449,18 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
     const remaining = finalList.slice(10);
     const shareWithMe = remaining.slice(0, Math.min(10, remaining.length));
     
-    console.log(`✅ Tribu generada para ${seed}: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
+    console.log(`✅ Tribu generada: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
     
     return { toShare, shareWithMe };
   }
   
-  // Fallback a datos mock si no hay suficientes usuarios reales
+  // Fallback a datos mock
   console.log('⚠️ Usando datos mock (menos de 10 usuarios reales)');
-  const pool = [...DUMMY_DATABASE.slice(1)];
-  const safePool = pool.filter(profile => profile.category !== userCategory);
-  const prioritized = safePool.length >= 20 ? safePool : pool;
-  const seed = currentUserId || 'default-seed';
-  const shuffled = seededShuffle(prioritized, seed);
+  const mockPool = [...DUMMY_DATABASE.slice(1)];
+  const safePool = mockPool.filter(profile => profile.category !== userCategory);
+  const prioritized = safePool.length >= 20 ? safePool : mockPool;
+  const mockSeed = currentUserId || 'default-seed';
+  const shuffled = seededShuffle(prioritized, mockSeed);
 
   const toShare = shuffled.slice(0, 10);
   const remaining = shuffled.slice(10).filter(profile => !toShare.find(item => item.id === profile.id));
@@ -407,13 +470,11 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
 };
 
 export const getProfileById = (id: string): MatchProfile | undefined => {
-  // Primero buscar en usuarios reales
   const realUsers = getAllUsers();
   const realUser = realUsers.find(u => u.id === id);
   if (realUser) {
     return userToMatchProfile(realUser);
   }
-  // Fallback a mock
   return DUMMY_DATABASE.find(p => p.id === id);
 };
 

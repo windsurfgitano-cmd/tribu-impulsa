@@ -215,9 +215,57 @@ App.tsx
 - Líneas 2034-2094: Selectores condicionales en formulario
 ```
 
-#### Próximos Pasos
-- Integrar geografía en algoritmo de matching
-- Agregar campo de facturación al matching
+#### Tiempo Estimado
+**Total:** ~30 minutos
+
+---
+
+### 🎯 FASE 4: Algoritmo con Compatibilidad Geográfica
+**Hora:** 21:30 - 22:00 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Campos de Geografía en UserProfile (databaseService.ts)**
+   - `comuna?: string` → Para usuarios con alcance LOCAL
+   - `selectedRegions?: string[]` → Para usuarios con alcance REGIONAL
+
+2. **Nueva Función checkGeographicCompatibility()**
+   - Verifica compatibilidad geográfica entre dos usuarios
+   - Reglas:
+     - NACIONAL ↔ cualquiera = siempre compatible
+     - LOCAL ↔ LOCAL = solo si misma comuna (+15 pts bonus)
+     - REGIONAL ↔ REGIONAL = si comparten al menos 1 región (+10 pts)
+     - LOCAL ↔ REGIONAL = compatible si hay cobertura (+5 pts)
+   - Usuarios incompatibles geográficamente: score = 25 (muy bajo)
+
+3. **calculateCompatibilityScore() Actualizado**
+   - Ahora acepta parámetros opcionales de geografía
+   - Verifica compatibilidad geográfica ANTES de calcular score de rubro/afinidad
+   - Si no son compatibles geográficamente, retorna score 25 inmediatamente
+
+4. **generateTribeAssignments() Actualizado**
+   - Extrae datos geográficos del usuario actual
+   - Pasa datos geográficos al cálculo de compatibilidad
+   - Usuarios de comunas diferentes (ambos LOCAL) no aparecen como match
+
+#### Archivos Modificados
+```
+services/databaseService.ts
+- Líneas 30-32: Campos comuna y selectedRegions
+
+services/matchService.ts
+- Líneas 63-112: Nueva función checkGeographicCompatibility()
+- Líneas 114-148: calculateCompatibilityScore con parámetros de geo
+- Líneas 382-470: generateTribeAssignments con geografía
+```
+
+#### Beneficios
+- ✅ Usuarios LOCAL solo ven matches de su comuna
+- ✅ Usuarios REGIONAL ven matches de regiones compartidas
+- ✅ Usuarios NACIONAL ven todos los matches
+- ✅ Bonus de score para matches de misma ubicación
 
 #### Tiempo Estimado
 **Total:** ~30 minutos

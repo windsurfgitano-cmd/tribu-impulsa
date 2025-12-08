@@ -4,6 +4,150 @@
 
 ---
 
+# 📊 RESUMEN EJECUTIVO - TODOS LOS CAMBIOS
+
+## Estado Actual de la App (8 Dic 2025)
+
+| Métrica | Valor |
+|---------|-------|
+| **Usuarios en archivo base** | 101 únicos |
+| **Usuarios en Firebase** | ~140 |
+| **Duplicados eliminados** | 7 |
+| **Categorías disponibles** | 157 |
+| **Afinidades disponibles** | 11 |
+| **Regiones de Chile** | 16 |
+| **Comunas de Chile** | 346 |
+
+---
+
+## 🎯 FUNCIONALIDADES IMPLEMENTADAS
+
+### 1. SISTEMA DE MATCHING INTELIGENTE
+| Feature | Estado |
+|---------|--------|
+| Matching por Categoría/Rubro | ✅ |
+| Matching por Afinidad/Intereses | ✅ |
+| Matching Geográfico (LOCAL/REGIONAL/NACIONAL) | ✅ |
+| Matching por Facturación | ✅ |
+| **Competencia directa EXCLUIDA** | ✅ Score=15 (NO MATCHEA) |
+| Sinergias entre rubros | ✅ +25 pts |
+| Cross-promotion mismo rubro | ✅ +15 pts |
+| Misma afinidad | ✅ +20 pts |
+
+### 2. PERFIL DE USUARIO
+| Campo | Editable | Persistente |
+|-------|----------|-------------|
+| Nombre/Empresa | ✅ | ✅ Firebase |
+| Bio/Descripción | ✅ | ✅ Firebase |
+| WhatsApp | ✅ | ✅ Firebase |
+| Instagram | ✅ | ✅ Firebase |
+| TikTok | ✅ | ✅ Firebase |
+| Facebook | ✅ | ✅ Firebase |
+| X (Twitter) | ✅ | ✅ Firebase |
+| Sitio Web | ✅ | ✅ Firebase |
+| Categoría/Giro | ✅ Dropdown | ✅ Firebase |
+| Afinidad | ✅ Dropdown | ✅ Firebase |
+| Facturación | ✅ Dropdown | ✅ Firebase |
+| Alcance (LOCAL/REGIONAL/NACIONAL) | ✅ | ✅ Firebase |
+| Región/Comuna | ✅ Cascada | ✅ Firebase |
+| Avatar/Cover | ✅ | ✅ Firebase |
+
+### 3. REGISTRO Y ONBOARDING
+| Feature | Estado |
+|---------|--------|
+| Formulario de registro completo | ✅ |
+| Survey de bienvenida | ✅ |
+| Selector cascada Región → Comuna | ✅ |
+| Multi-select regiones | ✅ |
+| Validación obligatoria de ubicación | ✅ |
+| Pantalla de "Beta Pública" (mes gratis) | ✅ |
+| Onboarding modal | ✅ |
+| Cambio de contraseña primer login | ✅ |
+
+### 4. SISTEMA TRIBU 10+10
+| Feature | Estado |
+|---------|--------|
+| 10 perfiles para impulsar | ✅ |
+| 10 perfiles que me impulsan | ✅ |
+| Checklist con persistencia Firebase | ✅ |
+| Registro de cumplimiento (URL) | ✅ |
+| Sistema de reportes | ✅ |
+| Relleno automático si faltan matches | ✅ |
+
+### 5. UI/UX
+| Feature | Estado |
+|---------|--------|
+| Dropdowns ordenados A-Z | ✅ |
+| Banner "Completa tu perfil" | ✅ |
+| Diseño iOS 26 Liquid Glass | ✅ |
+| PWA instalable | ✅ |
+| Iconos y favicon actualizados | ✅ |
+
+---
+
+## 📁 ARCHIVOS PRINCIPALES
+
+```
+App.tsx                          - ~7000 líneas (toda la UI)
+services/matchService.ts         - Algoritmo de matching
+services/databaseService.ts      - Base de datos local + Firebase
+services/firebaseService.ts      - Sincronización cloud
+services/realUsersData.ts        - 101 usuarios base
+constants/geography.ts           - 16 regiones, 346 comunas
+constants/categories.ts          - 157 categorías
+constants/affinities.ts          - 11 afinidades
+data/tribeCategories.ts          - Opciones de categoría
+```
+
+---
+
+## 📅 TIMELINE DE DESARROLLO
+
+| Fecha | Cambios Principales | Tiempo |
+|-------|---------------------|--------|
+| **6 Dic** | Branding (logo, favicon, iconos PWA) | ~100 min |
+| **7 Dic AM** | Beta pública + TikTok | ~30 min |
+| **7 Dic PM** | FASES 1-9: Matching completo | ~200 min |
+| **8 Dic** | Duplicados, competencia excluida, Facebook/X, banner | ~45 min |
+| **TOTAL** | | **~375 min (~6.25 hrs)** |
+
+---
+
+## 🔧 COMMITS PRINCIPALES
+
+```
+8 Dic: b57e64e - Eliminar duplicados + excluir competencia directa
+8 Dic: ed8feea - Facebook/X + persistencia Firebase
+8 Dic: b84d5f7 - Banner perfil incompleto
+8 Dic: e378ee9 - Dropdowns ordenados A-Z
+7 Dic: [múltiples] - Fases 1-9 matching
+6 Dic: a235165 - Branding actualizado
+```
+
+---
+
+## ⚠️ PENDIENTES / CONOCIDOS
+
+1. **100% usuarios sin SCOPE** - Todos necesitan completar ubicación
+2. **76 usuarios con "Chile"** como ciudad (muy genérico)
+3. **~39 usuarios extra en Firebase** - Pueden incluir duplicados
+4. **Banner activo** pidiendo completar perfil
+
+---
+
+## 📞 NOTAS TÉCNICAS
+
+- **Score mínimo para match:** 40 puntos
+- **Competencia directa:** Score 15 (NUNCA matchea)
+- **Firebase collections:** `users`, `profiles`, `memberships`, `interactions`
+- **Persistencia:** Doble (localStorage + Firebase)
+
+---
+
+# DETALLE DE CAMBIOS POR DÍA
+
+---
+
 ## 📅 Domingo 8 de Diciembre 2025
 
 ### 🧹 Limpieza de Datos y Mejoras de Matching

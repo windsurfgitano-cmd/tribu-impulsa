@@ -500,26 +500,77 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
       ...shuffledMedium.slice(6),
     ].map(p => p.profile);
     
-    const toShare = finalList.slice(0, Math.min(10, finalList.length));
-    const remaining = finalList.slice(10);
-    const shareWithMe = remaining.slice(0, Math.min(10, remaining.length));
+    // Obtener usuarios de relleno (Dafna, Doraluz, Guillermo)
+    const fillerUsers = realUsers
+      .filter(u => FILLER_EMAILS.includes(u.email) && u.id !== currentUserId)
+      .map(userToMatchProfile);
     
-    console.log(`✅ Tribu generada: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
+    // Agregar relleno si no llegamos a 20 perfiles
+    let allProfiles = [...finalList];
+    if (allProfiles.length < 20) {
+      const needed = 20 - allProfiles.length;
+      const fillersToAdd = fillerUsers
+        .filter(f => !allProfiles.find(p => p.id === f.id))
+        .slice(0, needed);
+      allProfiles = [...allProfiles, ...fillersToAdd];
+    }
+    
+    // Si aún faltan, usar mock
+    if (allProfiles.length < 20) {
+      const mockSeed = currentUserId || 'default-seed';
+      const mockFiller = seededShuffle([...DUMMY_DATABASE], mockSeed)
+        .filter(m => !allProfiles.find(p => p.id === m.id))
+        .slice(0, 20 - allProfiles.length);
+      allProfiles = [...allProfiles, ...mockFiller];
+    }
+    
+    const toShare = allProfiles.slice(0, 10);
+    const shareWithMe = allProfiles.slice(10, 20);
+    
+    console.log(`✅ Tribu generada: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan (${finalList.length} reales)`);
     
     return { toShare, shareWithMe };
   }
   
-  // Fallback a datos mock
-  console.log('⚠️ Usando datos mock (menos de 10 usuarios reales)');
-  const mockPool = [...DUMMY_DATABASE.slice(1)];
-  const safePool = mockPool.filter(profile => profile.category !== userCategory);
-  const prioritized = safePool.length >= 20 ? safePool : mockPool;
+  // Fallback: Menos de 10 usuarios reales - combinar con relleno
+  console.log('⚠️ Pocos usuarios reales, combinando con relleno...');
+  
+  // Convertir usuarios reales a perfiles (excluyendo actual)
+  const realProfiles = realUsers
+    .filter(u => u.id !== currentUserId)
+    .map(userToMatchProfile);
+  
+  // Obtener usuarios de relleno
+  const fillerUsers = realUsers
+    .filter(u => FILLER_EMAILS.includes(u.email) && u.id !== currentUserId)
+    .map(userToMatchProfile);
+  
+  // Combinar reales + relleno
+  let allProfiles = [...realProfiles];
+  if (allProfiles.length < 20) {
+    const fillersToAdd = fillerUsers
+      .filter(f => !allProfiles.find(p => p.id === f.id))
+      .slice(0, 20 - allProfiles.length);
+    allProfiles = [...allProfiles, ...fillersToAdd];
+  }
+  
+  // Si aún faltan, usar mock
+  if (allProfiles.length < 20) {
+    const mockSeed = currentUserId || 'default-seed';
+    const mockFiller = seededShuffle([...DUMMY_DATABASE], mockSeed)
+      .filter(m => !allProfiles.find(p => p.id === m.id))
+      .slice(0, 20 - allProfiles.length);
+    allProfiles = [...allProfiles, ...mockFiller];
+  }
+  
+  // Mezclar para variedad
   const mockSeed = currentUserId || 'default-seed';
-  const shuffled = seededShuffle(prioritized, mockSeed);
+  const shuffled = seededShuffle(allProfiles, mockSeed);
 
   const toShare = shuffled.slice(0, 10);
-  const remaining = shuffled.slice(10).filter(profile => !toShare.find(item => item.id === profile.id));
-  const shareWithMe = remaining.slice(0, 10);
+  const shareWithMe = shuffled.slice(10, 20);
+  
+  console.log(`✅ Tribu mixta: ${realProfiles.length} reales + ${fillerUsers.length} relleno + mock`);
 
   return { toShare, shareWithMe };
 };

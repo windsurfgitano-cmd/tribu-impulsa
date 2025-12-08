@@ -381,6 +381,44 @@ services/matchService.ts
 
 ---
 
+### 🎨 FASE 7: UI Cards + Fix Registro + Sistema 10+10
+**Hora:** 23:00 - 23:20 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Fix Selector Región→Comuna en RegisterScreen**
+   - Reemplazado input de texto por selector cascada
+   - Agregado multi-select de regiones para REGIONAL
+   - Validación visual con errores
+
+2. **UI Cards Tribu Mejorada**
+   - Agregado tag de categoría para reconocimiento rápido
+   - Removido botón "Me compartieron" (simplifica flujo)
+   - Solo WhatsApp + Ver perfil + Reportar en "Me impulsan"
+
+3. **Sistema 10+10 Garantizado**
+   - Siempre genera exactamente 10 + 10 perfiles
+   - Prioriza usuarios reales compatibles
+   - Complementa con usuarios relleno (Dafna, Doraluz, Guillermo)
+   - Si aún faltan, usa perfiles mock
+
+#### Archivos Modificados
+```
+App.tsx
+- RegisterScreen: Selector cascada Región→Comuna (líneas 1486-1553)
+- TribeCard: Tag categoría + sin botón "Me compartieron" (líneas 2481-2523)
+
+services/matchService.ts
+- generateTribeAssignments: Sistema 10+10 con relleno (líneas 503-575)
+```
+
+#### Tiempo Estimado
+**Total:** ~20 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

@@ -1484,15 +1484,71 @@ const RegisterScreen = () => {
               </div>
             </div>
             {formData.scope === 'LOCAL' && (
-              <div className="animate-fadeIn">
-                <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Comuna/Sector</label>
-                <input 
-                  type="text" 
-                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
-                  placeholder="Ej. Providencia"
-                  value={formData.sector}
-                  onChange={(e) => setFormData({...formData, sector: e.target.value})}
-                />
+              <div className="animate-fadeIn space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Región *</label>
+                  <div className="relative">
+                    <select
+                      className={`w-full bg-[#F5F7FB] border ${errors.comuna ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 appearance-none`}
+                      value={selectedRegionForComuna}
+                      onChange={(e) => {
+                        setSelectedRegionForComuna(e.target.value);
+                        setFormData({...formData, comuna: ''});
+                      }}
+                    >
+                      <option value="">Selecciona tu región</option>
+                      {REGIONS.map(region => (
+                        <option key={region.id} value={region.id}>{region.shortName}</option>
+                      ))}
+                    </select>
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6161FF] pointer-events-none">▼</span>
+                  </div>
+                </div>
+                {selectedRegionForComuna && (
+                  <div>
+                    <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Comuna *</label>
+                    <div className="relative">
+                      <select
+                        className={`w-full bg-[#F5F7FB] border ${errors.comuna ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 appearance-none`}
+                        value={formData.comuna}
+                        onChange={(e) => setFormData({...formData, comuna: e.target.value})}
+                      >
+                        <option value="">Selecciona tu comuna</option>
+                        {comunasDeRegion.map(comuna => (
+                          <option key={comuna} value={comuna}>{comuna}</option>
+                        ))}
+                      </select>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6161FF] pointer-events-none">▼</span>
+                    </div>
+                  </div>
+                )}
+                {errors.comuna && <p className="text-xs text-[#FB275D]">{errors.comuna}</p>}
+                <p className="text-xs text-[#7C8193]">Solo harás match con emprendedores de tu comuna.</p>
+              </div>
+            )}
+            {formData.scope === 'REGIONAL' && (
+              <div className="animate-fadeIn space-y-3">
+                <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Regiones de operación *</label>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {REGIONS.map(region => (
+                    <label key={region.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#F5F7FB] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.selectedRegions.includes(region.id)}
+                        onChange={(e) => {
+                          const newRegions = e.target.checked
+                            ? [...formData.selectedRegions, region.id]
+                            : formData.selectedRegions.filter(r => r !== region.id);
+                          setFormData({...formData, selectedRegions: newRegions});
+                        }}
+                        className="rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
+                      />
+                      <span className="text-sm text-[#434343]">{region.shortName}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.selectedRegions && <p className="text-xs text-[#FB275D]">{errors.selectedRegions}</p>}
+                <p className="text-xs text-[#7C8193]">Harás match con emprendedores de las regiones seleccionadas.</p>
               </div>
             )}
           </div>
@@ -2411,7 +2467,7 @@ const TribeAssignmentsView = () => {
                   ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
                   : 'bg-white border-[#E4E7EF]'
               }`}>
-                {/* Row 1: Checkbox + Full Name */}
+                {/* Row 1: Checkbox + Name + Category Tag */}
                 <div className="flex items-start gap-3 mb-3">
                   <input
                     type="checkbox"
@@ -2422,6 +2478,10 @@ const TribeAssignmentsView = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[15px] text-[#181B34] break-words leading-tight">{profile.companyName || 'Sin nombre de empresa'}</p>
                     <p className="text-[13px] text-[#7C8193] mt-0.5">{profile.name}</p>
+                    {/* Tag de categoría para reconocimiento rápido */}
+                    <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-medium rounded-full bg-[#6161FF]/10 text-[#6161FF]">
+                      {profile.category || profile.subCategory || 'Emprendimiento'}
+                    </span>
                   </div>
                 </div>
                 
@@ -2450,27 +2510,16 @@ const TribeAssignmentsView = () => {
                     </>
                   )}
                   
-                  {/* ME IMPULSAN: "Ya me compartieron" + "Preguntar" */}
+                  {/* ME IMPULSAN: Solo WhatsApp para preguntar */}
                   {!isToShare && (
-                    <>
-                      {!isCompleted && (
-                        <button
-                          type="button"
-                          onClick={() => setShowShareModal({ profile, type: 'received_from' })}
-                          className="text-[12px] px-3 py-2 rounded-lg bg-[#6161FF] text-white font-medium"
-                        >
-                          Me compartieron
-                        </button>
-                      )}
-                      <a
-                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
-                      >
-                        💬 WhatsApp
-                      </a>
-                    </>
+                    <a
+                      href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
+                    >
+                      💬 WhatsApp
+                    </a>
                   )}
                   
                   {/* Ver perfil */}

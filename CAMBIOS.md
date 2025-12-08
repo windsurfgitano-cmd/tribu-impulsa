@@ -118,6 +118,63 @@ constants/
 
 ---
 
+### 🎯 FASE 2: Algoritmo de Matching Mejorado v2.0
+**Hora:** 20:50 - 21:30 hrs  
+**Solicitado por:** Usuario (problema reportado por Doraluz: matches malos)  
+**Desarrollador:** Cascade AI
+
+#### Problema Resuelto
+- Doraluz reportó que le aparecía "un emprendimiento de construcción, 0 en común"
+- El algoritmo anterior usaba scores ALEATORIOS (78-98%)
+- No consideraba categorías ni afinidades reales
+
+#### Cambios Realizados
+
+1. **Nuevo Sistema de Compatibilidad**
+   - Función `calculateCompatibilityScore()` que calcula score REAL basado en:
+     - Grupos de categoría (Moda, Belleza, Gastronomía, etc.)
+     - Afinidades del usuario
+     - Mapa de sinergias entre rubros
+
+2. **Mapa de Sinergias (SYNERGY_MAP)**
+   - Define qué rubros tienen audiencias complementarias:
+     - Moda ↔ Belleza ↔ Eventos
+     - Gastronomía ↔ Eventos ↔ Turismo
+     - Tecnología ↔ Arte/Diseño ↔ Educación
+     - etc.
+
+3. **Lógica de Scoring**
+   - Misma categoría exacta = -20 pts (competencia directa)
+   - Mismo grupo, diferente sub = +15 pts (cross-promotion)
+   - Grupos con sinergia = +25 pts (audiencias complementarias)
+   - Grupos sin relación = -15 pts (evitar matches malos)
+   - Misma afinidad = +20 pts (comparten valores)
+   - Score mínimo para match: 40 pts
+
+4. **Funciones Actualizadas**
+   - `generateTribeAssignments()` → usa compatibilidad real
+   - `generateMockMatches()` → usa compatibilidad real
+   - Ambas ahora filtran usuarios con score < 40
+
+#### Archivos Modificados
+```
+services/matchService.ts
+- Líneas 1-152: Nuevo algoritmo de compatibilidad
+- Líneas 310-407: generateTribeAssignments actualizado
+- Líneas 465-523: generateMockMatches actualizado
+```
+
+#### Beneficios
+- ✅ No más matches de "construcción" con "bienestar"
+- ✅ Prioriza usuarios con audiencias complementarias
+- ✅ Considera afinidades para mejor matching
+- ✅ Muestra razón real del match ("Audiencias complementarias", etc.)
+
+#### Tiempo Estimado
+**Total:** ~40 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

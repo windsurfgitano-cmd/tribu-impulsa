@@ -1,6 +1,155 @@
 import { Match, MatchProfile, AFFINITY_OPTIONS, CATEGORY_MAPPING, ActivityItem, TribeAssignments } from '../types';
 import { TRIBE_CATEGORY_OPTIONS } from '../data/tribeCategories';
 import { getAllUsers, UserProfile, getUserNotifications } from './databaseService';
+import { CATEGORIES, AFFINITIES, CATEGORY_GROUPS } from '../constants';
+
+// ============================================
+// ALGORITMO DE MATCHING MEJORADO v2.0
+// ============================================
+
+// Extraer grupo principal de una categoría del formulario
+// Ej: "Moda Mujer Ropa  Jeans" → "Moda Mujer"
+// Ej: "Belleza, Estética y Bienestar Peluquería" → "Belleza, Estética y Bienestar"
+const extractCategoryGroup = (categoryString: string): string => {
+  if (!categoryString) return 'Otro';
+  
+  // Buscar coincidencia con grupos conocidos
+  for (const group of CATEGORY_GROUPS) {
+    if (categoryString.startsWith(group)) {
+      return group;
+    }
+  }
+  
+  // Fallback: tomar primera parte antes de doble espacio
+  const parts = categoryString.split('  ');
+  return parts[0]?.trim() || 'Otro';
+};
+
+// Extraer subcategoría
+const extractSubCategory = (categoryString: string): string => {
+  if (!categoryString) return 'General';
+  const parts = categoryString.split('  ').filter(Boolean);
+  return parts.length > 1 ? parts.slice(1).join(' / ') : 'General';
+};
+
+// Extraer grupo de afinidad
+// Ej: "Bienestar y Salud  Nutrición / alimentación saludable" → "Bienestar y Salud"
+const extractAffinityGroup = (affinityString: string): string => {
+  if (!affinityString) return '';
+  const parts = affinityString.split('  ');
+  return parts[0]?.trim() || affinityString;
+};
+
+// Grupos de categorías que tienen SINERGIA entre sí
+const SYNERGY_MAP: Record<string, string[]> = {
+  'Moda Mujer': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos'],
+  'Moda Hombre': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos'],
+  'Belleza, Estética y Bienestar': ['Moda Mujer', 'Moda Hombre', 'Alimentos y Gastronomía', 'Eventos'],
+  'Alimentos y Gastronomía': ['Eventos', 'Turismo', 'Belleza, Estética y Bienestar'],
+  'Eventos': ['Alimentos y Gastronomía', 'Arte, Diseño y Creatividad', 'Turismo', 'Transporte y Logística'],
+  'Arte, Diseño y Creatividad': ['Moda Mujer', 'Moda Hombre', 'Tecnología y Desarrollo', 'Educación y Capacitación'],
+  'Tecnología y Desarrollo': ['Arte, Diseño y Creatividad', 'Educación y Capacitación', 'Servicios Profesionales'],
+  'Servicios Profesionales': ['Tecnología y Desarrollo', 'Educación y Capacitación', 'Negocio'],
+  'Educación y Capacitación': ['Servicios Profesionales', 'Arte, Diseño y Creatividad', 'Tecnología y Desarrollo'],
+  'Turismo': ['Eventos', 'Alimentos y Gastronomía', 'Transporte y Logística'],
+  'Mascotas y Animales': ['Belleza, Estética y Bienestar', 'Alimentos y Gastronomía'],
+  'Negocio': ['Servicios Profesionales', 'Tecnología y Desarrollo', 'Transporte y Logística'],
+  'Industria y Manufactura': ['Negocio', 'Alimentos y Gastronomía'],
+  'Construcción y Mantención': ['Negocio', 'Oficio'],
+  'Oficio': ['Construcción y Mantención', 'Negocio'],
+  'Transporte y Logística': ['Negocio', 'Eventos', 'Turismo'],
+};
+
+// Calcular score de compatibilidad entre dos usuarios
+const calculateCompatibilityScore = (
+  user1Category: string,
+  user1Affinity: string,
+  user2Category: string,
+  user2Affinity: string
+): { score: number; reason: string } => {
+  let score = 50; // Base score
+  let reasons: string[] = [];
+  
+  const group1 = extractCategoryGroup(user1Category);
+  const group2 = extractCategoryGroup(user2Category);
+  const affGroup1 = extractAffinityGroup(user1Affinity);
+  const affGroup2 = extractAffinityGroup(user2Affinity);
+  
+  // 1. Misma categoría exacta = MALO (competencia directa)
+  if (user1Category === user2Category) {
+    score -= 20;
+    reasons.push('Competencia directa');
+  }
+  // 2. Mismo grupo pero diferente subcategoría = BUENO (cross-promotion)
+  else if (group1 === group2) {
+    score += 15;
+    reasons.push('Cross-promotion en mismo rubro');
+  }
+  // 3. Grupos con sinergia = MUY BUENO
+  else if (SYNERGY_MAP[group1]?.includes(group2)) {
+    score += 25;
+    reasons.push('Audiencias complementarias');
+  }
+  // 4. Grupos sin relación = NEUTRAL a MALO
+  else {
+    // Verificar si tienen alguna relación indirecta
+    const hasIndirectRelation = Object.entries(SYNERGY_MAP).some(([key, values]) => 
+      (key === group1 || values.includes(group1)) && 
+      (key === group2 || values.includes(group2))
+    );
+    
+    if (hasIndirectRelation) {
+      score += 5;
+      reasons.push('Potencial sinergia indirecta');
+    } else {
+      score -= 15;
+      reasons.push('Rubros sin relación clara');
+    }
+  }
+  
+  // 5. Misma afinidad = BONUS
+  if (affGroup1 && affGroup2 && affGroup1 === affGroup2) {
+    score += 20;
+    reasons.push('Comparten valores e intereses');
+  }
+  // 6. Afinidades relacionadas
+  else if (affGroup1 && affGroup2) {
+    const affinityRelations: Record<string, string[]> = {
+      'Bienestar y Salud': ['Diseño y Estilo', 'Estilo de Vida y Experiencias'],
+      'Diseño y Estilo': ['Bienestar y Salud', 'Digital y Tecnología'],
+      'Digital y Tecnología': ['Educación y Desarrollo', 'Economía y Negocios'],
+      'Sustentabilidad': ['Bienestar y Salud', 'Conciencia y Propósito'],
+      'Estilo de Vida y Experiencias': ['Bienestar y Salud', 'Diseño y Estilo'],
+    };
+    
+    if (affinityRelations[affGroup1]?.includes(affGroup2)) {
+      score += 10;
+      reasons.push('Afinidades relacionadas');
+    }
+  }
+  
+  // Clamp score entre 30 y 98
+  score = Math.max(30, Math.min(98, score));
+  
+  // Seleccionar la razón más relevante
+  const reason = reasons.length > 0 
+    ? reasons[0] 
+    : 'Potencial de colaboración';
+  
+  return { score, reason };
+};
+
+// Verificar si dos usuarios son compatibles (score mínimo)
+const areUsersCompatible = (
+  user1Category: string,
+  user1Affinity: string,
+  user2Category: string,
+  user2Affinity: string,
+  minScore: number = 45
+): boolean => {
+  const { score } = calculateCompatibilityScore(user1Category, user1Affinity, user2Category, user2Affinity);
+  return score >= minScore;
+};
 
 // Gender-separated names for realistic avatars
 const MALE_NAMES = ["Carlos", "Felipe", "Jorge", "Diego", "Luis", "Javier", "Ricardo", "Matias", "Pablo", "Andres", "Jose", "Manuel", "Cristian", "Nicolas", "Fernando"];
@@ -158,9 +307,12 @@ const FILLER_EMAILS = [
   'guille@elevatecreativo.com'       // Elevate Agencia - Guillermo
 ];
 
-export const generateTribeAssignments = (userCategory: string, currentUserId?: string): TribeAssignments => {
+export const generateTribeAssignments = (userCategory: string, currentUserId?: string, userAffinity?: string): TribeAssignments => {
   // Primero intentar con usuarios reales
   const realUsers = getAllUsers();
+  const currentUser = realUsers.find(u => u.id === currentUserId);
+  const myCategory = currentUser?.category || userCategory;
+  const myAffinity = currentUser?.affinity || userAffinity || '';
   
   if (realUsers.length >= 10) {
     // Usar usuarios reales
@@ -184,18 +336,54 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
       }
     }
     
-    // Priorizar usuarios con categorías diferentes para diversidad
-    const differentCategory = pool.filter(p => !p.category.includes(userCategory.split(' ')[0]));
-    const sameCategory = pool.filter(p => p.category.includes(userCategory.split(' ')[0]));
+    // NUEVO: Calcular compatibilidad y ordenar por score
+    const poolWithScores = pool.map(profile => {
+      const otherUser = realUsers.find(u => u.id === profile.id);
+      const otherCategory = otherUser?.category || profile.category;
+      const otherAffinity = otherUser?.affinity || '';
+      
+      const { score, reason } = calculateCompatibilityScore(
+        myCategory,
+        myAffinity,
+        otherCategory,
+        otherAffinity
+      );
+      
+      return { profile, score, reason };
+    });
     
-    const prioritized = [...differentCategory, ...sameCategory];
+    // Filtrar usuarios con score muy bajo (incompatibles)
+    const compatible = poolWithScores.filter(p => p.score >= 40);
     
-    // Mezclar de forma DETERMINÍSTICA basada en el userId
+    // Ordenar por score descendente
+    compatible.sort((a, b) => b.score - a.score);
+    
+    console.log(`🎯 Matching: ${compatible.length} compatibles de ${pool.length} usuarios`);
+    
+    // Mezclar de forma DETERMINÍSTICA pero respetando prioridad por score
     const seed = currentUserId || 'default-seed';
-    const shuffled = seededShuffle(prioritized, seed);
     
-    const toShare = shuffled.slice(0, Math.min(10, shuffled.length));
-    const remaining = shuffled.slice(10);
+    // Dividir en grupos por score para dar variedad
+    const highScore = compatible.filter(p => p.score >= 70);
+    const mediumScore = compatible.filter(p => p.score >= 50 && p.score < 70);
+    const lowScore = compatible.filter(p => p.score >= 40 && p.score < 50);
+    
+    // Mezclar cada grupo
+    const shuffledHigh = seededShuffle(highScore, seed);
+    const shuffledMedium = seededShuffle(mediumScore, seed + '-med');
+    const shuffledLow = seededShuffle(lowScore, seed + '-low');
+    
+    // Combinar: mayoría alta compatibilidad, algo de media
+    const finalList = [
+      ...shuffledHigh.slice(0, 8),
+      ...shuffledMedium.slice(0, 6),
+      ...shuffledLow.slice(0, 4),
+      ...shuffledHigh.slice(8),
+      ...shuffledMedium.slice(6),
+    ].map(p => p.profile);
+    
+    const toShare = finalList.slice(0, Math.min(10, finalList.length));
+    const remaining = finalList.slice(10);
     const shareWithMe = remaining.slice(0, Math.min(10, remaining.length));
     
     console.log(`✅ Tribu generada para ${seed}: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
@@ -272,50 +460,47 @@ export const getMyProfile = (): MatchProfile => {
     bio: "Perfil de demostración",
     category: "General"
   };
-}
+};
 
-export const generateMockMatches = (userCategory: string, currentUserId?: string): Match[] => {
+export const generateMockMatches = (userCategory: string, currentUserId?: string, userAffinity?: string): Match[] => {
   // Primero intentar con usuarios REALES
   const realUsers = getAllUsers();
+  const currentUser = realUsers.find(u => u.id === currentUserId);
+  const myCategory = currentUser?.category || userCategory;
+  const myAffinity = currentUser?.affinity || userAffinity || '';
   
   if (realUsers.length >= 5) {
     // Usar usuarios reales - excluir al usuario actual
-    const pool = realUsers
-      .filter(u => u.id !== currentUserId)
-      .map(userToMatchProfile);
+    const pool = realUsers.filter(u => u.id !== currentUserId);
     
-    // Mezclar y tomar máximo 8
-    const shuffled = [...pool].sort(() => 0.5 - Math.random());
-    const selectedProfiles = shuffled.slice(0, Math.min(8, shuffled.length));
-    
-    return selectedProfiles.map(profile => {
-      // Calcular score basado en compatibilidad real
-      const score = Math.floor(Math.random() * 20 + 78); // 78-98%
+    // Calcular compatibilidad REAL para cada usuario
+    const matchesWithScores = pool.map(user => {
+      const profile = userToMatchProfile(user);
+      const { score, reason } = calculateCompatibilityScore(
+        myCategory,
+        myAffinity,
+        user.category || '',
+        user.affinity || ''
+      );
       
-      // Razones más específicas basadas en categorías reales
-      let reason = "Sinergia comercial potencial";
-      if (profile.category?.includes('Marketing') || profile.category?.includes('Digital')) {
-        reason = "Potencial para visibilidad digital";
-      } else if (profile.category?.includes('Belleza') || profile.category?.includes('Estética')) {
-        reason = "Audiencia complementaria de bienestar";
-      } else if (profile.category?.includes('Consultoría') || profile.category?.includes('Coaching')) {
-        reason = "Apoyo estratégico para crecimiento";
-      } else if (profile.category?.includes('Paisajismo') || profile.category?.includes('Hogar')) {
-        reason = "Clientes con intereses similares";
-      } else if (profile.category?.includes('Gastronomía') || profile.category?.includes('Alimentos')) {
-        reason = "Oportunidad de eventos conjuntos";
-      } else if (profile.category !== userCategory) {
-        reason = "Audiencias no competitivas";
-      }
-      
-      return {
-        id: `match-${profile.id}`,
-        targetProfile: profile,
-        affinityScore: score,
-        reason: reason,
-        status: 'New'
-      };
+      return { profile, score, reason };
     });
+    
+    // Filtrar incompatibles y ordenar por score
+    const compatible = matchesWithScores
+      .filter(m => m.score >= 40)
+      .sort((a, b) => b.score - a.score);
+    
+    // Tomar los mejores 8
+    const selectedMatches = compatible.slice(0, Math.min(8, compatible.length));
+    
+    return selectedMatches.map(({ profile, score, reason }) => ({
+      id: `match-${profile.id}`,
+      targetProfile: profile,
+      affinityScore: score,
+      reason: reason,
+      status: 'New' as const
+    }));
   }
   
   // Fallback a mock si no hay suficientes usuarios reales
@@ -332,7 +517,7 @@ export const generateMockMatches = (userCategory: string, currentUserId?: string
       targetProfile: profile,
       affinityScore: score,
       reason: reason,
-      status: 'New'
+      status: 'New' as const
     };
   });
 };

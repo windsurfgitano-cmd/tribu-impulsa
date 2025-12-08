@@ -1571,7 +1571,7 @@ const RegisterScreen = () => {
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
                 >
                   <option value="">Selecciona tu giro</option>
-                  {SURVEY_CATEGORY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  {[...SURVEY_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-[#6161FF]">▼</div>
               </div>
@@ -1599,7 +1599,7 @@ const RegisterScreen = () => {
                   onChange={(e) => setFormData({...formData, affinity: e.target.value})}
                 >
                   <option value="">Selecciona una afinidad</option>
-                  {SURVEY_AFFINITY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  {[...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => <option key={opt} value={opt}>{opt}</option>)}
                 </select>
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none text-[#6161FF]">▼</div>
               </div>
@@ -2072,7 +2072,7 @@ const SurveyScreen = () => {
                     onChange={(e) => handleChange('category', e.target.value)}
                   >
                     <option value="">Selecciona una categoría</option>
-                    {SURVEY_CATEGORY_OPTIONS.map(opt => (
+                    {[...SURVEY_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
@@ -2089,7 +2089,7 @@ const SurveyScreen = () => {
                     onChange={(e) => handleChange('affinity', e.target.value)}
                   >
                     <option value="">Selecciona una afinidad</option>
-                    {SURVEY_AFFINITY_OPTIONS.map(opt => (
+                    {[...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => (
                       <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
@@ -3248,7 +3248,7 @@ const MyProfileView = () => {
                   className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                 >
                   <option value="">Selecciona tu giro...</option>
-                  {TRIBE_CATEGORY_OPTIONS.map((cat, idx) => (
+                  {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
                     <option key={idx} value={cat}>{cat}</option>
                   ))}
                 </select>
@@ -3261,7 +3261,7 @@ const MyProfileView = () => {
                   className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                 >
                   <option value="">Selecciona tu afinidad...</option>
-                  {AFFINITY_OPTIONS.map((aff, idx) => (
+                  {[...AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((aff, idx) => (
                     <option key={idx} value={aff}>{aff}</option>
                   ))}
                 </select>

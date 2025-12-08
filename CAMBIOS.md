@@ -521,6 +521,68 @@ App.tsx
 
 ---
 
+### 📍 Banner de Perfil Incompleto + Mejoras UX
+**Hora:** 13:50 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problema
+- 108 usuarios base sin SCOPE definido (LOCAL/REGIONAL/NACIONAL)
+- 76 usuarios con "Chile" como ciudad (muy genérico)
+- Sin datos geográficos, el matching no puede ser preciso
+
+#### Solución
+1. **Banner "Completa tu perfil"**
+   - Aparece en Dashboard y TribeAssignmentsView
+   - Naranja llamativo con botón directo a editar
+   - Solo aparece si falta: scope, comuna (si es LOCAL), o regiones (si es REGIONAL)
+
+2. **Dropdowns ordenados alfabéticamente**
+   - Giro/Categoría: A-Z
+   - Afinidad/Intereses: A-Z
+   - Aplicado en: Registro, Survey, Editar Perfil
+
+3. **Análisis de datos**
+   - Detectados 7 duplicados reales
+   - 108 usuarios totales, 101 únicos
+
+#### Archivos Modificados
+```
+App.tsx - Banner incompleto + dropdowns ordenados
+```
+
+#### Commits
+- `e378ee9` - Dropdowns ordenados alfabéticamente
+- `b84d5f7` - Banner de perfil incompleto
+
+#### Tiempo Estimado
+**Total:** ~20 minutos
+
+---
+
+### 🌐 Redes Sociales Facebook y X.com
+**Hora:** 00:25 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios
+1. **Nuevos campos en perfil**: Facebook, X (Twitter)
+2. **Persistencia completa**: Todos los campos ahora se sincronizan a Firebase/users Y Firebase/profiles
+3. **Nueva función**: `syncUserToFirebase()` en firebaseService.ts
+4. **Función de análisis**: `detectDuplicateUsers()` en databaseService.ts
+
+#### Archivos Modificados
+```
+App.tsx - Campos de Facebook y X en edición/visualización
+services/firebaseService.ts - syncUserToFirebase()
+services/databaseService.ts - detectDuplicateUsers() + campo twitter
+```
+
+#### Tiempo Estimado
+**Total:** ~15 minutos
+
+---
+
 ### 🧹 Fix: Secciones Duplicadas en Perfil
 **Hora:** 00:15 hrs  
 **Solicitado por:** Usuario  

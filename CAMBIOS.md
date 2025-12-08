@@ -4,6 +4,90 @@
 
 ---
 
+## 📅 Domingo 8 de Diciembre 2025
+
+### 🧹 Limpieza de Datos y Mejoras de Matching
+**Hora:** 13:50 - 14:10 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Eliminación de 7 Usuarios Duplicados**
+   - Eliminados del archivo `realUsersData.ts`:
+     - akuschel@dtpingenieria.cl (Centro Elysia)
+     - clau7552@gmail.com (GroB Pastelería)
+     - cristobal.baier@gmail.com (BAW Arquitectura)
+     - franvergaraeventos@gmail.com (Francisca Vergara Eventos)
+     - klga.aranguiz@gmail.com (Kinesióloga Katherine)
+     - pablo.gonzalez@madsupport.cl (MAD Support)
+     - pamelareyesrivera@gmail.com (Luna Enfermería Dermoestética)
+   - **Antes:** 108 usuarios base
+   - **Ahora:** 101 usuarios únicos
+
+2. **Competencia Directa EXCLUIDA del Matching**
+   - **Antes:** Competidores directos recibían -20 puntos (podían matchear con score 45+)
+   - **Ahora:** Retornan score=15 inmediatamente (NO MATCHEAN, mínimo es 40)
+   - **Código:** `matchService.ts` línea 287-290
+   ```typescript
+   if (user1Category === user2Category) {
+     return { score: 15, reason: 'Competencia directa - No compatible' };
+   }
+   ```
+
+3. **Banner "Completa tu perfil"**
+   - Aparece en Dashboard y TribeAssignmentsView
+   - Color naranja llamativo con botón directo a editar
+   - Se muestra si falta: scope, comuna (si LOCAL), o regiones (si REGIONAL)
+   - **Ubicaciones:** líneas 2568-2586 y 5362-5380
+
+4. **Dropdowns Ordenados Alfabéticamente**
+   - Giro/Categoría: A-Z
+   - Afinidad/Intereses: A-Z
+   - Aplicado en: Registro, Survey, Editar Perfil
+   - **Método:** `.sort((a, b) => a.localeCompare(b, 'es'))`
+
+5. **Nuevas Redes Sociales: Facebook y X.com**
+   - Campos editables en perfil
+   - Botones de visualización (azul FB, negro X)
+   - Persistencia completa a Firebase/users y Firebase/profiles
+   - **Nueva función:** `syncUserToFirebase()` en firebaseService.ts
+
+6. **Función de Detección de Duplicados**
+   - Nueva función `detectDuplicateUsers()` en databaseService.ts
+   - Detecta duplicados por: email, nombre de empresa, Instagram
+   - Ejecutar en consola: `detectDuplicateUsers()`
+
+#### Análisis de Datos Actual
+| Métrica | Valor |
+|---------|-------|
+| Usuarios en archivo base | 101 (únicos) |
+| Usuarios en Firebase | ~140 (incluye registros nuevos) |
+| Con categoría | 100% |
+| Con afinidad | 100% |
+| Con ciudad | 100% |
+| Sin SCOPE definido | 100% (necesitan completar perfil) |
+
+#### Archivos Modificados
+```
+App.tsx - Banner incompleto, dropdowns ordenados, Facebook/X
+services/matchService.ts - Competencia directa excluida
+services/realUsersData.ts - 7 duplicados eliminados (-125 líneas)
+services/firebaseService.ts - syncUserToFirebase()
+services/databaseService.ts - detectDuplicateUsers() + campo twitter
+```
+
+#### Commits
+- `e378ee9` - Dropdowns ordenados alfabéticamente
+- `b84d5f7` - Banner de perfil incompleto
+- `ed8feea` - Facebook y X.com + persistencia Firebase
+- `b57e64e` - Eliminar duplicados + excluir competencia directa
+
+#### Tiempo Estimado
+**Total:** ~45 minutos
+
+---
+
 ## 📅 Domingo 7 de Diciembre 2025
 
 ### 🎁 Beta Pública - Mes Gratis + TikTok en Perfil

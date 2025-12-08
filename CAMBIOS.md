@@ -175,6 +175,55 @@ services/matchService.ts
 
 ---
 
+### 🌍 FASE 3: Selector de Geografía (Comunas y Regiones)
+**Hora:** 21:15 - 21:45 hrs  
+**Solicitado por:** Usuario (formulario Google Forms)  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Import de Constantes Geográficas**
+   - Importado `REGIONS`, `ALL_COMUNAS` desde `constants/geography.ts`
+   - 16 regiones de Chile con ~346 comunas disponibles
+
+2. **Nuevos Campos en SurveyFormState**
+   - `comuna: string` → Para alcance LOCAL
+   - `selectedRegions: string[]` → Para alcance REGIONAL (multi-select)
+
+3. **Selectores Condicionales en SurveyScreen**
+   - **Si LOCAL:** Muestra dropdown con todas las comunas de Chile
+   - **Si REGIONAL:** Muestra checkboxes con las 16 regiones
+   - **Si NACIONAL:** Muestra mensaje confirmando alcance nacional
+
+4. **Actualización de RegisterScreen**
+   - Agregados campos `comuna` y `selectedRegions` al estado
+
+#### UI/UX
+- Selector de comunas: Dropdown con búsqueda (346 opciones)
+- Selector de regiones: Lista de checkboxes scrolleable
+- Mensaje verde para alcance nacional
+- Textos explicativos de cómo afecta al matching
+
+#### Archivos Modificados
+```
+App.tsx
+- Línea 11: Import de REGIONS, ALL_COMUNAS
+- Líneas 587-588: Nuevos campos en SurveyFormState
+- Líneas 631-632: Valores vacíos en EMPTY_SURVEY_FORM
+- Líneas 1254-1255: Campos en RegisterScreen
+- Líneas 1332-1333: Campos en surveyData
+- Líneas 2034-2094: Selectores condicionales en formulario
+```
+
+#### Próximos Pasos
+- Integrar geografía en algoritmo de matching
+- Agregar campo de facturación al matching
+
+#### Tiempo Estimado
+**Total:** ~30 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

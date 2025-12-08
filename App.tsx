@@ -8,6 +8,7 @@ import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
+import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { 
   exportForGoogleDrive, 
@@ -583,6 +584,8 @@ type SurveyFormState = {
   affinity: string;
   scope: string;
   sector: string;
+  comuna: string;           // Para alcance LOCAL
+  selectedRegions: string[]; // Para alcance REGIONAL (array de IDs de región)
   revenue: string;
   copyResponse: boolean;
 };
@@ -625,6 +628,8 @@ const EMPTY_SURVEY_FORM: SurveyFormState = {
   affinity: '',
   scope: '',
   sector: '',
+  comuna: '',
+  selectedRegions: [],
   revenue: '',
   copyResponse: false,
 };
@@ -1246,6 +1251,8 @@ const RegisterScreen = () => {
     // Paso 4: Afinidad
     affinity: '',
     scope: 'NACIONAL' as 'LOCAL' | 'REGIONAL' | 'NACIONAL',
+    comuna: '',                    // Para alcance LOCAL
+    selectedRegions: [] as string[], // Para alcance REGIONAL
     // Paso 5: Redes
     instagram: '',
     facebook: '',
@@ -1313,7 +1320,7 @@ const RegisterScreen = () => {
       syncUserToCloud(newUser);
       
       // También guardar en formato antiguo para compatibilidad
-      const surveyData = {
+      const surveyData: SurveyFormState = {
         email: formData.email,
         name: formData.name,
         phone: formData.phone,
@@ -1324,6 +1331,8 @@ const RegisterScreen = () => {
         otherChannel: '',
         city: formData.city,
         sector: formData.sector,
+        comuna: formData.comuna || '',
+        selectedRegions: formData.selectedRegions || [],
         category: formData.category,
         affinity: formData.affinity,
         scope: formData.scope,
@@ -2022,14 +2031,66 @@ const SurveyScreen = () => {
                 {errors.scope && <p className="text-xs text-[#FB275D] mt-1">{errors.scope}</p>}
               </div>
               <div>
-                <label className="text-sm font-semibold text-[#434343]">Sector (si es local)</label>
-                <input
-                  className="w-full mt-2 rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
-                  placeholder="Ej. Providencia"
-                  value={formData.sector}
-                  onChange={(e) => handleChange('sector', e.target.value)}
-                />
-                <p className="text-xs text-[#7C8193] mt-1">Solo completa si marcaste alcance LOCAL.</p>
+                {/* Selector de Comuna (si es LOCAL) */}
+                {formData.scope === 'LOCAL' && (
+                  <>
+                    <label className="text-sm font-semibold text-[#434343] flex items-center gap-1">
+                      Comuna específica<span className="text-[#FB275D]">*</span>
+                    </label>
+                    <div className="relative mt-2">
+                      <select
+                        className="w-full appearance-none rounded-xl bg-[#F5F7FB] border border-[#E4E7EF] p-4 pr-10 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
+                        value={formData.comuna}
+                        onChange={(e) => handleChange('comuna', e.target.value)}
+                      >
+                        <option value="">Selecciona tu comuna</option>
+                        {ALL_COMUNAS.map(comuna => (
+                          <option key={comuna} value={comuna}>{comuna}</option>
+                        ))}
+                      </select>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6161FF]">▼</span>
+                    </div>
+                    <p className="text-xs text-[#7C8193] mt-1">Solo harás match con emprendedores de tu comuna.</p>
+                  </>
+                )}
+                
+                {/* Selector de Regiones (si es REGIONAL) */}
+                {formData.scope === 'REGIONAL' && (
+                  <>
+                    <label className="text-sm font-semibold text-[#434343] flex items-center gap-1">
+                      Regiones donde operas<span className="text-[#FB275D]">*</span>
+                    </label>
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto p-2 bg-[#F5F7FB] rounded-xl border border-[#E4E7EF]">
+                      {REGIONS.map(region => (
+                        <label key={region.id} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded-lg transition">
+                          <input
+                            type="checkbox"
+                            className="accent-[#6161FF] w-4 h-4"
+                            checked={(formData.selectedRegions as unknown as string[])?.includes(region.id) || false}
+                            onChange={(e) => {
+                              const current = (formData.selectedRegions as unknown as string[]) || [];
+                              if (e.target.checked) {
+                                handleChange('selectedRegions', [...current, region.id] as unknown as string);
+                              } else {
+                                handleChange('selectedRegions', current.filter(r => r !== region.id) as unknown as string);
+                              }
+                            }}
+                          />
+                          <span className="text-sm text-[#434343]">{region.shortName}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-[#7C8193] mt-1">Selecciona todas las regiones donde ofreces tu servicio.</p>
+                  </>
+                )}
+                
+                {/* Mensaje para NACIONAL */}
+                {formData.scope === 'NACIONAL' && (
+                  <div className="mt-2 p-3 bg-[#00CA72]/10 rounded-xl border border-[#00CA72]/20">
+                    <p className="text-sm text-[#00CA72] font-medium">✓ Alcance Nacional</p>
+                    <p className="text-xs text-[#7C8193]">Harás match con emprendedores de todo Chile.</p>
+                  </div>
+                )}
               </div>
             </section>
 

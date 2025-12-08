@@ -521,6 +521,38 @@ App.tsx
 
 ---
 
+### 🧹 Fix: Secciones Duplicadas en Perfil
+**Hora:** 00:15 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problema
+- Campos de texto libre duplicaban los dropdowns de matching
+- Secciones repetidas: Categoría/Giro, Afinidad, Biografía, Ubicación
+
+#### Solución
+1. **Eliminados inputs de texto libre** (líneas 3155-3176)
+   - "Categoría / Giro" texto → ya está en dropdown
+   - "Afinidad / Intereses" texto → ya está en dropdown
+
+2. **Sección "Details" solo lectura cuando NO edita**
+   - Biografía, Ubicación, Sitio Web → solo se muestran
+   - Edición se hace en la sección de Datos Básicos
+
+3. **Estructura corregida**
+   - `{!isEditing && (...)}` para secciones de solo lectura
+   - Contenedor separado para Etiquetas (permite edición)
+
+#### Archivos Modificados
+```
+App.tsx - Eliminación de ~25 líneas duplicadas
+```
+
+#### Tiempo Estimado
+**Total:** ~5 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

@@ -2552,12 +2552,37 @@ const TribeAssignmentsView = () => {
     );
   };
 
+  // Detectar si el perfil está incompleto (para mejor matching)
+  const currentUser = getCurrentUser();
+  const isProfileIncomplete = !currentUser?.scope || !currentUser?.comuna && currentUser?.scope === 'LOCAL' || !currentUser?.selectedRegions?.length && currentUser?.scope === 'REGIONAL';
+
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
       {/* Toast de notificación */}
       {toastMessage && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#181B34] text-white text-sm py-2 px-6 rounded-xl z-50 animate-fadeIn shadow-lg">
           {toastMessage}
+        </div>
+      )}
+      
+      {/* Banner de perfil incompleto */}
+      {isProfileIncomplete && (
+        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#FF9500] to-[#FF6B00] rounded-xl shadow-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">⚠️</span>
+            <div className="flex-1">
+              <h3 className="font-bold text-white text-sm">Completa tu perfil para mejor matching</h3>
+              <p className="text-white/80 text-xs mt-1">
+                Sin tu ubicación geográfica, el algoritmo no puede encontrar matches cercanos a ti.
+              </p>
+              <button 
+                onClick={() => navigate('/my-profile')}
+                className="mt-3 px-4 py-2 bg-white text-[#FF6B00] rounded-lg text-xs font-bold hover:bg-white/90 transition"
+              >
+                Completar ahora →
+              </button>
+            </div>
+          </div>
         </div>
       )}
       
@@ -5333,6 +5358,27 @@ const Dashboard = () => {
       
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
+      
+      {/* Banner de perfil incompleto */}
+      {!showOnboarding && !showPasswordChange && (!currentUser?.scope || (!currentUser?.comuna && currentUser?.scope === 'LOCAL') || (!currentUser?.selectedRegions?.length && currentUser?.scope === 'REGIONAL')) && (
+        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#FF9500] to-[#FF6B00] rounded-xl shadow-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">📍</span>
+            <div className="flex-1">
+              <h3 className="font-bold text-white text-sm">¿Dónde está tu negocio?</h3>
+              <p className="text-white/80 text-xs mt-1">
+                Completa tu ubicación para que el algoritmo encuentre matches cercanos a ti.
+              </p>
+              <button 
+                onClick={() => navigate('/my-profile')}
+                className="mt-3 px-4 py-2 bg-white text-[#FF6B00] rounded-lg text-xs font-bold hover:bg-white/90 transition"
+              >
+                Completar perfil →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Header - Liquid Glass iOS 26 with safe area */}
       <header className="px-5 pb-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"

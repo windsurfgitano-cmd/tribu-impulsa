@@ -1408,24 +1408,7 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  {
-    email: 'franvergaraeventos@gmail.com',
-    name: 'María Francisca Vergara',
-    companyName: 'Francisca Vergara Eventos',
-    instagram: '@Franciscavergaraeventos',
-    phone: '+56998304686',
-    category: 'Eventos',
-    affinity: 'Eventos',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('María Francisca Vergara', '@Franciscavergaraeventos'),
-    companyLogoUrl: getLogoUrl('Francisca Eventos'),
-    coverUrl: getCoverUrl('Eventos'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true
-  },
+  
   {
     email: 'fuentesvivianpaola@gmail.com',
     name: 'Vivian Fuentes Doñez',
@@ -2077,66 +2060,9 @@ export const REAL_USERS: RealUser[] = [
   // ===============================================
   // USUARIOS ADICIONALES DEL CSV (Faltantes)
   // ===============================================
-  {
-    email: 'akuschel@dtpingenieria.cl',
-    name: 'Alejandra Kuschel',
-    companyName: 'Centro Elysia',
-    instagram: '@elysia_cl',
-    phone: '+56994513299',
-    category: 'Manicure y Pedicure',
-    affinity: 'Bienestar',
-    bio: 'Enfocados en autocuidado y bienestar.',
-    businessDescription: 'Servicios de Manicure y Pedicure',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('Alejandra Kuschel', '@elysia_cl'),
-    companyLogoUrl: getLogoUrl('Centro Elysia'),
-    coverUrl: getCoverUrl('Belleza'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true,
-    rut: '78098333-7',
-    razonSocial: 'Centro Elysia Spa',
-    direccion: 'Hochstetter 1002 of 510'
-  },
-  {
-    email: 'clau7552@gmail.com',
-    name: 'Claudia Suárez',
-    companyName: 'GroB Pastelería',
-    instagram: '@grobpasteleriacl',
-    phone: '+56977918833',
-    category: 'Pastelería',
-    affinity: 'Gastronomía',
-    bio: 'En Pastelería GroB creamos productos únicos e innovadores, elaborados con ingredientes de alta calidad.',
-    businessDescription: 'Pastelería',
-    city: 'Las Condes',
-    avatarUrl: getAvatarUrl('Claudia Suárez', '@grobpasteleriacl'),
-    companyLogoUrl: getLogoUrl('GroB Pastelería'),
-    coverUrl: getCoverUrl('Gastronomía'),
-    status: 'active',
-    followers: 10000,
-    firstLogin: true,
-    rut: '12.537.022-5',
-    razonSocial: 'Grob Pastelería',
-    direccion: 'Luis Matte Larrain 10185, Las Condes'
-  },
-  {
-    email: 'cristobal.baier@gmail.com',
-    name: 'Cristobal Baier',
-    companyName: 'BAW Arquitectura',
-    instagram: '@baw_arquitectos',
-    phone: '+56987271997',
-    category: 'Arquitectura',
-    affinity: 'Diseño',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('Cristobal Baier', '@baw_arquitectos'),
-    companyLogoUrl: getLogoUrl('BAW Arquitectura'),
-    coverUrl: getCoverUrl('Arte'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true
-  },
+  
+  
+  
   {
     email: 'emedinapaez@gmail.com',
     name: 'Emiliano Medina',
@@ -2209,24 +2135,7 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  {
-    email: 'klga.aranguiz@gmail.com',
-    name: 'Katherine Aránguiz',
-    companyName: 'Kinesióloga Katherine',
-    instagram: '@Kinekatherinearanguiz',
-    phone: '+56981298763',
-    category: 'Kinesiología',
-    affinity: 'Bienestar',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('Katherine Aránguiz', '@Kinekatherinearanguiz'),
-    companyLogoUrl: getLogoUrl('Kinesióloga'),
-    coverUrl: getCoverUrl('Salud'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true
-  },
+  
   {
     email: 'lionskill@gmail.com',
     name: 'Emiliano Lion',
@@ -2281,42 +2190,8 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  {
-    email: 'pablo.gonzalez@madsupport.cl',
-    name: 'Pablo Gonzalez',
-    companyName: 'MAD Support',
-    instagram: '@madsupport',
-    phone: '+56984590309',
-    category: 'Tecnología',
-    affinity: 'Tecnología',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('Pablo Gonzalez', '@madsupport'),
-    companyLogoUrl: getLogoUrl('MAD Support'),
-    coverUrl: getCoverUrl('Tecnología'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true
-  },
-  {
-    email: 'pamelareyesrivera@gmail.com',
-    name: 'Pamela Reyes',
-    companyName: 'Luna Enfermería Dermoestética',
-    instagram: '@luna_enfermeria_dermoestetica',
-    phone: '+56999309948',
-    category: 'Dermoestética',
-    affinity: 'Bienestar',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
-    avatarUrl: getAvatarUrl('Pamela Reyes', '@luna_enfermeria_dermoestetica'),
-    companyLogoUrl: getLogoUrl('Luna Enfermería'),
-    coverUrl: getCoverUrl('Belleza'),
-    status: 'active',
-    followers: 500,
-    firstLogin: true
-  },
+  
+  
   {
     email: 'ryaropa.accesorios@gmail.com',
     name: 'Juliette Poblete',

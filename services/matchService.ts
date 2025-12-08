@@ -284,10 +284,10 @@ const calculateCompatibilityScore = (
     }
   }
   
-  // 1. Misma categoría exacta = MALO (competencia directa)
+  // 1. Misma categoría exacta = EXCLUIR (competencia directa - NO MATCHEAN)
   if (user1Category === user2Category) {
-    score -= 20;
-    reasons.push('Competencia directa');
+    // Competencia directa = EXCLUIR COMPLETAMENTE
+    return { score: 15, reason: 'Competencia directa - No compatible' };
   }
   // 2. Mismo grupo pero diferente subcategoría = BUENO (cross-promotion)
   else if (group1 === group2) {

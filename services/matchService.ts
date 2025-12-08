@@ -309,10 +309,10 @@ const calculateCompatibilityScore = (
     
     if (hasIndirectRelation) {
       score += 5;
-      reasons.push('Potencial sinergia indirecta');
+      reasons.push('Nuevas oportunidades de negocio');
     } else {
       score -= 15;
-      reasons.push('Rubros sin relación clara');
+      reasons.push('Amplía tu red de contactos');
     }
   }
   

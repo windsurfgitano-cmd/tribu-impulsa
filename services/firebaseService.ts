@@ -130,6 +130,30 @@ export const syncProfileToCloud = async (profile: ProfileData): Promise<boolean>
   }
 };
 
+// Sincronizar usuario a la colección 'users' de Firestore
+export const syncUserToFirebase = async (userId: string, userData: Record<string, unknown>): Promise<boolean> => {
+  const firestore = getFirestoreInstance();
+  if (!firestore) {
+    console.warn('Firestore no disponible para sincronizar usuario');
+    return false;
+  }
+
+  try {
+    const userRef = doc(firestore, 'users', userId);
+    await setDoc(userRef, {
+      ...userData,
+      updatedAt: serverTimestamp(),
+      syncedAt: new Date().toISOString()
+    }, { merge: true });
+    
+    console.log(`✅ Usuario ${userId} sincronizado a Firebase/users`);
+    return true;
+  } catch (error) {
+    console.error('❌ Error sincronizando usuario a Firebase:', error);
+    return false;
+  }
+};
+
 // Obtener perfil desde Firestore
 export const getProfileFromCloud = async (profileId: string): Promise<ProfileData | null> => {
   const firestore = getFirestoreInstance();
@@ -814,6 +838,7 @@ export default {
   getNotificationStatus,
   // Firestore sync
   syncProfileToCloud,
+  syncUserToFirebase,
   getProfileFromCloud,
   updateProfileField,
   getAllProfilesFromCloud,

@@ -20,6 +20,7 @@ export interface UserProfile {
   instagram: string;
   facebook?: string;
   tiktok?: string;
+  twitter?: string;
   website?: string;
   otherChannel?: string;
   whatsapp?: string;
@@ -679,4 +680,71 @@ export const getCategoryDistribution = () => {
       percentage: Math.round((count / users.length) * 100)
     }))
     .sort((a, b) => b.count - a.count);
+};
+
+// Detectar usuarios duplicados
+export const detectDuplicateUsers = (): {
+  byEmail: { email: string; count: number; users: string[] }[];
+  byCompany: { company: string; count: number; users: string[] }[];
+  byInstagram: { instagram: string; count: number; users: string[] }[];
+  total: number;
+  duplicates: number;
+} => {
+  const users = getAllUsers();
+  
+  // Por email
+  const emailMap: Record<string, string[]> = {};
+  users.forEach(u => {
+    const email = u.email?.toLowerCase().trim();
+    if (email && email.length > 0) {
+      if (!emailMap[email]) emailMap[email] = [];
+      emailMap[email].push(`${u.companyName} (${u.id})`);
+    }
+  });
+  
+  // Por nombre de empresa
+  const companyMap: Record<string, string[]> = {};
+  users.forEach(u => {
+    const company = u.companyName?.toLowerCase().trim();
+    if (company && company.length > 0) {
+      if (!companyMap[company]) companyMap[company] = [];
+      companyMap[company].push(`${u.email} (${u.id})`);
+    }
+  });
+  
+  // Por Instagram
+  const igMap: Record<string, string[]> = {};
+  users.forEach(u => {
+    const ig = u.instagram?.toLowerCase().replace('@', '').trim();
+    if (ig && ig.length > 0) {
+      if (!igMap[ig]) igMap[ig] = [];
+      igMap[ig].push(`${u.companyName} (${u.id})`);
+    }
+  });
+  
+  const byEmail = Object.entries(emailMap)
+    .filter(([_, arr]) => arr.length > 1)
+    .map(([email, users]) => ({ email, count: users.length, users }));
+  
+  const byCompany = Object.entries(companyMap)
+    .filter(([_, arr]) => arr.length > 1)
+    .map(([company, users]) => ({ company, count: users.length, users }));
+  
+  const byInstagram = Object.entries(igMap)
+    .filter(([_, arr]) => arr.length > 1)
+    .map(([instagram, users]) => ({ instagram, count: users.length, users }));
+  
+  console.log('📊 ANÁLISIS DE DUPLICADOS:');
+  console.log(`Total usuarios: ${users.length}`);
+  console.log(`Emails duplicados: ${byEmail.length}`, byEmail);
+  console.log(`Empresas duplicadas: ${byCompany.length}`, byCompany);
+  console.log(`Instagram duplicados: ${byInstagram.length}`, byInstagram);
+  
+  return {
+    byEmail,
+    byCompany,
+    byInstagram,
+    total: users.length,
+    duplicates: byEmail.length + byCompany.length + byInstagram.length
+  };
 };

@@ -2988,6 +2988,8 @@ const MyProfileView = () => {
             name: profile.name,
             companyName: profile.companyName,
             bio: profile.bio,
+            phone: profile.phone || profile.whatsapp || '',
+            whatsapp: profile.whatsapp || profile.phone || '',
             instagram: profile.instagram,
             tiktok: (profile as any).tiktok || '',
             website: profile.website,
@@ -3190,44 +3192,95 @@ const MyProfileView = () => {
                         </div>
                     )}
 
-        {/* Redes sociales editables */}
+        {/* Campos editables del perfil */}
         {isEditing && (
-          <div className="w-full mb-6 space-y-3">
-            <div>
-              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Instagram</label>
-              <input 
-                value={profile.instagram}
-                onChange={(e) => setProfile({...profile, instagram: e.target.value})}
-                placeholder="@tu_instagram"
-                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-              />
+          <div className="w-full mb-6 space-y-4">
+            {/* Datos básicos */}
+            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Datos Básicos</h4>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Nombre del Emprendimiento</label>
+                <input 
+                  value={profile.companyName}
+                  onChange={(e) => setProfile({...profile, companyName: e.target.value})}
+                  placeholder="Mi Empresa"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Tu Nombre</label>
+                <input 
+                  value={profile.name}
+                  onChange={(e) => setProfile({...profile, name: e.target.value})}
+                  placeholder="Tu nombre"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">WhatsApp</label>
+                <input 
+                  value={profile.whatsapp || profile.phone || ''}
+                  onChange={(e) => setProfile({...profile, whatsapp: e.target.value, phone: e.target.value})}
+                  placeholder="+56 9 1234 5678"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Descripción del Negocio</label>
+                <textarea 
+                  value={profile.bio}
+                  onChange={(e) => setProfile({...profile, bio: e.target.value})}
+                  placeholder="Describe tu emprendimiento..."
+                  rows={3}
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF] resize-none"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">TikTok</label>
-              <input 
-                value={(profile as any).tiktok || ''}
-                onChange={(e) => setProfile({...profile, tiktok: e.target.value} as any)}
-                placeholder="@tu_tiktok"
-                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-              />
+
+            {/* Redes sociales */}
+            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Redes Sociales</h4>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Instagram</label>
+                <input 
+                  value={profile.instagram}
+                  onChange={(e) => setProfile({...profile, instagram: e.target.value})}
+                  placeholder="@tu_instagram"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">TikTok</label>
+                <input 
+                  value={(profile as any).tiktok || ''}
+                  onChange={(e) => setProfile({...profile, tiktok: e.target.value} as any)}
+                  placeholder="@tu_tiktok"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
+                <input 
+                  value={profile.website}
+                  onChange={(e) => setProfile({...profile, website: e.target.value})}
+                  placeholder="www.tusitio.cl"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
-              <input 
-                value={profile.website}
-                onChange={(e) => setProfile({...profile, website: e.target.value})}
-                placeholder="www.tusitio.cl"
-                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Ubicación</label>
-              <input 
-                value={profile.location}
-                onChange={(e) => setProfile({...profile, location: e.target.value})}
-                placeholder="Santiago, Chile"
-                className="w-full bg-[#F5F7FB] text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-              />
+
+            {/* Ubicación */}
+            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Ubicación</h4>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Ciudad</label>
+                <input 
+                  value={profile.location}
+                  onChange={(e) => setProfile({...profile, location: e.target.value})}
+                  placeholder="Santiago, Chile"
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -3308,8 +3361,8 @@ const MyProfileView = () => {
                         <div>
                             <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Etiquetas</h3>
                             <div className="flex flex-wrap gap-2">
-                                {profile.tags.map(tag => (
-                                <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors flex items-center gap-2">
+                                {profile.tags.map((tag, idx) => (
+                                <span key={`${tag}-${idx}`} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors flex items-center gap-2">
                                     #{tag}
                                     {isEditing && (
                                       <button 

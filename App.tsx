@@ -8,6 +8,7 @@ import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
+import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { 
@@ -2792,6 +2793,20 @@ const MyProfileView = () => {
     const [newTag, setNewTag] = useState('');
     const [showTagInput, setShowTagInput] = useState(false);
     const currentUser = getCurrentUser();
+    
+    // Estados para selectores de matching (categoría, afinidad, geografía)
+    const [editScope, setEditScope] = useState<'LOCAL' | 'REGIONAL' | 'NACIONAL'>(currentUser?.scope || 'NACIONAL');
+    const [editSelectedRegionForComuna, setEditSelectedRegionForComuna] = useState<string>('');
+    const [editSelectedRegions, setEditSelectedRegions] = useState<string[]>(currentUser?.selectedRegions || []);
+    const [editComuna, setEditComuna] = useState<string>(currentUser?.comuna || '');
+    const [editCategory, setEditCategory] = useState<string>(currentUser?.category || '');
+    const [editAffinity, setEditAffinity] = useState<string>(currentUser?.affinity || '');
+    const [editRevenue, setEditRevenue] = useState<string>(currentUser?.revenue || '');
+    
+    // Comunas filtradas por región seleccionada
+    const editComunasDeRegion = editSelectedRegionForComuna 
+      ? REGIONS.find(r => r.id === editSelectedRegionForComuna)?.comunas || []
+      : [];
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const bannerInputRef = React.useRef<HTMLInputElement>(null);
     
@@ -2983,7 +2998,7 @@ const MyProfileView = () => {
         setIsSaving(true);
         setSaveMessage('💾 Guardando cambios...');
         
-        // Datos a guardar
+        // Datos a guardar (incluye campos de matching)
         const profileData = {
             name: profile.name,
             companyName: profile.companyName,
@@ -2997,8 +3012,13 @@ const MyProfileView = () => {
             avatarUrl: profile.avatarUrl,
             coverUrl: profile.coverUrl,
             tags: profile.tags,
-            category: profile.category,
-            affinity: (profile as any).affinity || profile.category,
+            // Campos de MATCHING - usando los selectores
+            category: editCategory || profile.category,
+            affinity: editAffinity || (profile as any).affinity || profile.category,
+            scope: editScope,
+            comuna: editComuna,
+            selectedRegions: editSelectedRegions,
+            revenue: editRevenue,
         };
         
         // Guardar cambios localmente
@@ -3237,6 +3257,145 @@ const MyProfileView = () => {
               </div>
             </div>
 
+            {/* Categoría y Afinidad - SELECTORES para matching */}
+            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">🎯 Categoría e Intereses (para Matching)</h4>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/Categoría del Negocio</label>
+                <select
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                >
+                  <option value="">Selecciona tu giro...</option>
+                  {TRIBE_CATEGORY_OPTIONS.map((cat, idx) => (
+                    <option key={idx} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Afinidad/Intereses</label>
+                <select
+                  value={editAffinity}
+                  onChange={(e) => setEditAffinity(e.target.value)}
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                >
+                  <option value="">Selecciona tu afinidad...</option>
+                  {AFFINITY_OPTIONS.map((aff, idx) => (
+                    <option key={idx} value={aff}>{aff}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual</label>
+                <select
+                  value={editRevenue}
+                  onChange={(e) => setEditRevenue(e.target.value)}
+                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                >
+                  <option value="">Selecciona rango...</option>
+                  <option value="Menos de $500.000">Menos de $500.000</option>
+                  <option value="$500.000 - $2.000.000">$500.000 - $2.000.000</option>
+                  <option value="$2.000.000 - $5.000.000">$2.000.000 - $5.000.000</option>
+                  <option value="$5.000.000 - $10.000.000">$5.000.000 - $10.000.000</option>
+                  <option value="Más de $10.000.000">Más de $10.000.000</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Geografía - SELECTORES para matching */}
+            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">📍 Alcance Geográfico (para Matching)</h4>
+              <div>
+                <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['LOCAL', 'REGIONAL', 'NACIONAL'].map(scope => (
+                    <button
+                      key={scope}
+                      type="button"
+                      onClick={() => setEditScope(scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL')}
+                      className={`py-2 rounded-lg text-sm font-medium transition-all ${editScope === scope ? 'bg-[#6161FF] text-white' : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'}`}
+                    >
+                      {scope}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* LOCAL: Selector Región -> Comuna */}
+              {editScope === 'LOCAL' && (
+                <div className="space-y-3 animate-fadeIn">
+                  <div>
+                    <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Región</label>
+                    <select
+                      value={editSelectedRegionForComuna}
+                      onChange={(e) => {
+                        setEditSelectedRegionForComuna(e.target.value);
+                        setEditComuna(''); // Reset comuna al cambiar región
+                      }}
+                      className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                    >
+                      <option value="">Selecciona región...</option>
+                      {REGIONS.map(region => (
+                        <option key={region.id} value={region.id}>{region.shortName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {editSelectedRegionForComuna && (
+                    <div>
+                      <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Comuna</label>
+                      <select
+                        value={editComuna}
+                        onChange={(e) => setEditComuna(e.target.value)}
+                        className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                      >
+                        <option value="">Selecciona comuna...</option>
+                        {editComunasDeRegion.map(comuna => (
+                          <option key={comuna} value={comuna}>{comuna}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* REGIONAL: Multi-select de regiones */}
+              {editScope === 'REGIONAL' && (
+                <div className="animate-fadeIn">
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Regiones donde operas</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                    {REGIONS.map(region => (
+                      <button
+                        key={region.id}
+                        type="button"
+                        onClick={() => {
+                          if (editSelectedRegions.includes(region.id)) {
+                            setEditSelectedRegions(editSelectedRegions.filter(r => r !== region.id));
+                          } else {
+                            setEditSelectedRegions([...editSelectedRegions, region.id]);
+                          }
+                        }}
+                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-all text-left ${
+                          editSelectedRegions.includes(region.id) 
+                            ? 'bg-[#6161FF] text-white' 
+                            : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'
+                        }`}
+                      >
+                        {editSelectedRegions.includes(region.id) ? '✓ ' : ''}{region.shortName}
+                      </button>
+                    ))}
+                  </div>
+                  {editSelectedRegions.length > 0 && (
+                    <p className="text-xs text-[#6161FF] mt-2">{editSelectedRegions.length} región(es) seleccionada(s)</p>
+                  )}
+                </div>
+              )}
+              
+              {editScope === 'NACIONAL' && (
+                <p className="text-sm text-[#7C8193] italic">Operación a nivel nacional - matchearás con todos</p>
+              )}
+            </div>
+
             {/* Redes sociales */}
             <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
               <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Redes Sociales</h4>
@@ -3264,20 +3423,6 @@ const MyProfileView = () => {
                   value={profile.website}
                   onChange={(e) => setProfile({...profile, website: e.target.value})}
                   placeholder="www.tusitio.cl"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-            </div>
-
-            {/* Ubicación */}
-            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Ubicación</h4>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Ciudad</label>
-                <input 
-                  value={profile.location}
-                  onChange={(e) => setProfile({...profile, location: e.target.value})}
-                  placeholder="Santiago, Chile"
                   className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                 />
               </div>

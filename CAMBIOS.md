@@ -469,41 +469,55 @@ services/matchService.ts
 
 ---
 
-### 📝 FASE 9: Perfil Editable Completo
-**Hora:** 23:57 hrs  
+### 📝 FASE 9: Perfil Editable con Selectores de Matching
+**Hora:** 23:57 - 00:10 hrs  
 **Solicitado por:** Usuario  
 **Desarrollador:** Cascade AI
 
+#### Problema Identificado
+- Campos de texto libre no permiten matching correcto
+- Usuarios pueden escribir cualquier cosa y no matchean
+
+#### Solución: Selectores Idénticos al Registro
+
+1. **Categoría/Giro** → Dropdown con TRIBE_CATEGORY_OPTIONS (157 opciones)
+2. **Afinidad/Intereses** → Dropdown con AFFINITY_OPTIONS (11 opciones)
+3. **Facturación** → Dropdown con 5 rangos
+4. **Alcance Geográfico** → Botones LOCAL/REGIONAL/NACIONAL
+5. **Región/Comuna** → Cascada igual que registro (si LOCAL)
+6. **Multi-Regiones** → Checkboxes (si REGIONAL)
+
 #### Cambios Realizados
 
-1. **Fix Key Duplicada "Moda"**
-   - Línea 3311-3312: Cambiado `key={tag}` a `key={\`${tag}-${idx}\`}`
-   - Evita warning de React por keys duplicadas
+1. **Estados de Edición para Matching**
+   ```typescript
+   editScope, editSelectedRegionForComuna, editSelectedRegions,
+   editComuna, editCategory, editAffinity, editRevenue
+   ```
 
-2. **Campos Editables Agregados**
-   - Nombre del Emprendimiento (companyName)
-   - Tu Nombre (name)
-   - WhatsApp/Teléfono
-   - Descripción del Negocio (bio)
+2. **Selectores en UI**
+   - Sección "🎯 Categoría e Intereses (para Matching)"
+   - Sección "📍 Alcance Geográfico (para Matching)"
+   - Selectores cascada Región→Comuna para LOCAL
+   - Multi-select de regiones para REGIONAL
 
-3. **UI Mejorada en Edición**
-   - Secciones agrupadas: Datos Básicos, Redes Sociales, Ubicación
-   - Cards con fondo gris y campos blancos
-   - Títulos de sección en color principal
+3. **handleSave Actualizado**
+   - Guarda: category, affinity, scope, comuna, selectedRegions, revenue
 
-4. **handleSave Actualizado**
-   - Ahora guarda phone/whatsapp correctamente
+4. **Fix Key Duplicada "Moda"**
+   - `key={tag}` → `key={\`${tag}-${idx}\`}`
 
 #### Archivos Modificados
 ```
 App.tsx
-- Líneas 3311-3312: Fix key duplicada
-- Líneas 3193-3284: Campos editables expandidos
-- Líneas 2991-2992: phone/whatsapp en save
+- Línea 11: Import TRIBE_CATEGORY_OPTIONS
+- Líneas 2796-2808: Estados de edición para matching
+- Líneas 3254-3391: Selectores de categoría, afinidad, geografía
+- Líneas 3015-3021: Campos de matching en save
 ```
 
 #### Tiempo Estimado
-**Total:** ~10 minutos
+**Total:** ~15 minutos
 
 ---
 

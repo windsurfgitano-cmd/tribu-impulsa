@@ -301,6 +301,36 @@ App.tsx
 
 ---
 
+### 🔄 FASE 5b: Selector Cascada Región → Comuna
+**Hora:** 22:15 - 22:20 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+Selector de comunas ahora funciona en cascada:
+1. **Paso 1:** Usuario selecciona su REGIÓN (16 opciones)
+2. **Paso 2:** Se habilita dropdown con solo las comunas de esa región
+
+#### Flujo
+```
+[Selecciona región] → Metropolitana
+      ↓
+[Selecciona comuna] → Providencia, Ñuñoa, Las Condes, etc. (52 opciones)
+```
+
+#### Archivos Modificados
+```
+App.tsx
+- Estado: selectedRegionForComuna
+- Computed: comunasDeRegion (filtrado por región)
+- UI: 2 dropdowns en cascada
+```
+
+#### Tiempo Estimado
+**Total:** ~5 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

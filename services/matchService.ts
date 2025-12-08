@@ -2,6 +2,7 @@ import { Match, MatchProfile, AFFINITY_OPTIONS, CATEGORY_MAPPING, ActivityItem, 
 import { TRIBE_CATEGORY_OPTIONS } from '../data/tribeCategories';
 import { getAllUsers, UserProfile, getUserNotifications } from './databaseService';
 import { CATEGORIES, AFFINITIES, CATEGORY_GROUPS } from '../constants';
+import { REGIONS } from '../constants/geography';
 
 // ============================================
 // ALGORITMO DE MATCHING MEJORADO v2.0
@@ -101,54 +102,145 @@ const checkRevenueCompatibility = (
   return { bonus: 0 };
 };
 
-// Verificar compatibilidad geográfica entre dos usuarios
+// Inferir región desde ciudad o comuna
+const inferRegionFromCity = (city: string | undefined): string | null => {
+  if (!city) return null;
+  const cityLower = city.toLowerCase().trim();
+  
+  // Buscar en qué región está esta ciudad/comuna
+  for (const region of REGIONS) {
+    // Verificar si es la comuna exacta
+    if (region.comunas.some(c => c.toLowerCase() === cityLower)) {
+      return region.id;
+    }
+    // Verificar si contiene el nombre de la región
+    if (cityLower.includes(region.shortName.toLowerCase()) || 
+        region.shortName.toLowerCase().includes(cityLower)) {
+      return region.id;
+    }
+  }
+  
+  // Casos especiales comunes
+  if (cityLower.includes('santiago') || cityLower.includes('providencia') || 
+      cityLower.includes('las condes') || cityLower.includes('ñuñoa') ||
+      cityLower.includes('vitacura') || cityLower.includes('la florida')) {
+    return 'metropolitana';
+  }
+  if (cityLower.includes('viña') || cityLower.includes('valparaíso') || cityLower.includes('valparaiso')) {
+    return 'valparaiso';
+  }
+  if (cityLower.includes('concepción') || cityLower.includes('concepcion')) {
+    return 'biobio';
+  }
+  
+  return null;
+};
+
+// Inferir comuna desde ciudad
+const inferComunaFromCity = (city: string | undefined): string | null => {
+  if (!city) return null;
+  const cityLower = city.toLowerCase().trim();
+  
+  for (const region of REGIONS) {
+    const comuna = region.comunas.find(c => c.toLowerCase() === cityLower);
+    if (comuna) return comuna;
+  }
+  
+  return null;
+};
+
+// Verificar si una comuna pertenece a una región
+const isComunaInRegion = (comuna: string, regionId: string): boolean => {
+  const region = REGIONS.find(r => r.id === regionId);
+  if (!region) return false;
+  return region.comunas.some(c => c.toLowerCase() === comuna.toLowerCase());
+};
+
+// Obtener región de una comuna
+const getRegionOfComuna = (comuna: string): string | null => {
+  for (const region of REGIONS) {
+    if (region.comunas.some(c => c.toLowerCase() === comuna.toLowerCase())) {
+      return region.id;
+    }
+  }
+  return null;
+};
+
+// ============================================
+// MATCHING GEOGRÁFICO ESTRICTO
+// ============================================
+// LOCAL solo con LOCAL de la misma comuna
+// REGIONAL solo con REGIONAL de mismas regiones  
+// NACIONAL con todos
+
 const checkGeographicCompatibility = (
   user1Scope: string | undefined,
   user1Comuna: string | undefined,
   user1Regions: string[] | undefined,
   user2Scope: string | undefined,
   user2Comuna: string | undefined,
-  user2Regions: string[] | undefined
+  user2Regions: string[] | undefined,
+  // Campos adicionales para inferencia
+  user1City?: string,
+  user2City?: string
 ): { compatible: boolean; bonus: number; reason?: string } => {
-  // Si ambos son NACIONAL, siempre compatibles
+  
+  // Inferir datos faltantes desde city
+  const comuna1 = user1Comuna || inferComunaFromCity(user1City);
+  const comuna2 = user2Comuna || inferComunaFromCity(user2City);
+  const region1 = user1Regions?.length ? user1Regions : 
+    (comuna1 ? [getRegionOfComuna(comuna1)].filter(Boolean) as string[] : 
+    (user1City ? [inferRegionFromCity(user1City)].filter(Boolean) as string[] : []));
+  const region2 = user2Regions?.length ? user2Regions :
+    (comuna2 ? [getRegionOfComuna(comuna2)].filter(Boolean) as string[] : 
+    (user2City ? [inferRegionFromCity(user2City)].filter(Boolean) as string[] : []));
+  
+  // Si alguno es NACIONAL, matchea con todos
   if (user1Scope === 'NACIONAL' || user2Scope === 'NACIONAL') {
-    return { compatible: true, bonus: 0 };
+    return { compatible: true, bonus: 0, reason: 'Alcance nacional' };
   }
   
-  // Si ambos son LOCAL, deben ser la misma comuna
+  // LOCAL solo con LOCAL de la MISMA COMUNA
   if (user1Scope === 'LOCAL' && user2Scope === 'LOCAL') {
-    if (user1Comuna && user2Comuna && user1Comuna === user2Comuna) {
+    if (comuna1 && comuna2 && comuna1.toLowerCase() === comuna2.toLowerCase()) {
       return { compatible: true, bonus: 15, reason: 'Misma comuna' };
     }
-    return { compatible: false, bonus: -30, reason: 'Comunas diferentes' };
+    return { compatible: false, bonus: 0, reason: 'Solo matchea con su comuna' };
   }
   
-  // Si uno es LOCAL y otro REGIONAL, verificar si la comuna está en las regiones
-  if (user1Scope === 'LOCAL' && user2Scope === 'REGIONAL') {
-    // Por ahora asumimos compatibilidad si el regional tiene regiones seleccionadas
-    if (user2Regions && user2Regions.length > 0) {
-      return { compatible: true, bonus: 5, reason: 'Cobertura regional' };
-    }
-  }
-  if (user2Scope === 'LOCAL' && user1Scope === 'REGIONAL') {
-    if (user1Regions && user1Regions.length > 0) {
-      return { compatible: true, bonus: 5, reason: 'Cobertura regional' };
-    }
+  // LOCAL NO matchea con REGIONAL (regla estricta)
+  if ((user1Scope === 'LOCAL' && user2Scope === 'REGIONAL') ||
+      (user1Scope === 'REGIONAL' && user2Scope === 'LOCAL')) {
+    return { compatible: false, bonus: 0, reason: 'LOCAL no matchea con REGIONAL' };
   }
   
-  // Si ambos son REGIONAL, verificar si comparten alguna región
+  // REGIONAL solo con REGIONAL de mismas regiones
   if (user1Scope === 'REGIONAL' && user2Scope === 'REGIONAL') {
-    const regions1 = user1Regions || [];
-    const regions2 = user2Regions || [];
-    const sharedRegions = regions1.filter(r => regions2.includes(r));
+    if (region1.length === 0 || region2.length === 0) {
+      // Si no tienen regiones definidas, usar inferencia
+      return { compatible: region1.length > 0 && region2.length > 0, bonus: 0 };
+    }
     
+    const sharedRegions = region1.filter(r => region2.includes(r));
     if (sharedRegions.length > 0) {
       return { compatible: true, bonus: 10, reason: 'Regiones compartidas' };
     }
-    return { compatible: false, bonus: -20, reason: 'Sin regiones en común' };
+    return { compatible: false, bonus: 0, reason: 'Sin regiones en común' };
   }
   
-  // Default: compatibles sin bonus
+  // Si no tienen scope definido, inferir desde city y ser permisivos
+  if (!user1Scope || !user2Scope) {
+    // Usuarios sin scope definido: intentar inferir compatibilidad
+    if (region1.length > 0 && region2.length > 0) {
+      const shared = region1.filter(r => region2.includes(r));
+      if (shared.length > 0) {
+        return { compatible: true, bonus: 5, reason: 'Misma región (inferido)' };
+      }
+    }
+    // Sin datos geográficos, asumir NACIONAL
+    return { compatible: true, bonus: 0, reason: 'Sin datos geográficos' };
+  }
+  
   return { compatible: true, bonus: 0 };
 };
 
@@ -158,9 +250,9 @@ const calculateCompatibilityScore = (
   user1Affinity: string,
   user2Category: string,
   user2Affinity: string,
-  // Parámetros de geografía opcionales
-  user1Geo?: { scope?: string; comuna?: string; regions?: string[] },
-  user2Geo?: { scope?: string; comuna?: string; regions?: string[] },
+  // Parámetros de geografía opcionales (incluye city para inferencia)
+  user1Geo?: { scope?: string; comuna?: string; regions?: string[]; city?: string },
+  user2Geo?: { scope?: string; comuna?: string; regions?: string[]; city?: string },
   // Parámetros de facturación opcionales
   user1Revenue?: string,
   user2Revenue?: string
@@ -177,7 +269,8 @@ const calculateCompatibilityScore = (
   if (user1Geo && user2Geo) {
     const geoCompat = checkGeographicCompatibility(
       user1Geo.scope, user1Geo.comuna, user1Geo.regions,
-      user2Geo.scope, user2Geo.comuna, user2Geo.regions
+      user2Geo.scope, user2Geo.comuna, user2Geo.regions,
+      user1Geo.city, user2Geo.city  // Para inferir ubicación desde city
     );
     
     if (!geoCompat.compatible) {
@@ -438,11 +531,12 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
   const myCategory = currentUser?.category || userCategory;
   const myAffinity = currentUser?.affinity || userAffinity || '';
   
-  // Datos geográficos del usuario actual
+  // Datos geográficos del usuario actual (incluye city para inferencia)
   const myGeo = currentUser ? {
     scope: currentUser.scope,
     comuna: currentUser.comuna,
-    regions: currentUser.selectedRegions
+    regions: currentUser.selectedRegions,
+    city: currentUser.city  // Para inferir ubicación si faltan datos
   } : undefined;
   
   if (realUsers.length >= 10) {
@@ -456,11 +550,12 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
       const otherCategory = otherUser?.category || profile.category;
       const otherAffinity = otherUser?.affinity || '';
       
-      // Datos geográficos del otro usuario
+      // Datos geográficos del otro usuario (incluye city para inferencia)
       const otherGeo = otherUser ? {
         scope: otherUser.scope,
         comuna: otherUser.comuna,
-        regions: otherUser.selectedRegions
+        regions: otherUser.selectedRegions,
+        city: otherUser.city  // Para inferir ubicación si faltan datos
       } : undefined;
       
       const { score, reason } = calculateCompatibilityScore(

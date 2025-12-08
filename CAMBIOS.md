@@ -419,6 +419,56 @@ services/matchService.ts
 
 ---
 
+### 🌍 FASE 8: Matching Geográfico ESTRICTO + Inferencia
+**Hora:** 23:20 - 23:40 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Reglas de Matching Geográfico (ESTRICTAS)
+
+| Alcance 1 | Alcance 2 | ¿Compatible? |
+|-----------|-----------|--------------|
+| LOCAL | LOCAL | ✅ Solo si MISMA COMUNA |
+| LOCAL | REGIONAL | ❌ NO compatible |
+| LOCAL | NACIONAL | ✅ Siempre |
+| REGIONAL | REGIONAL | ✅ Solo si comparten REGIÓN |
+| REGIONAL | NACIONAL | ✅ Siempre |
+| NACIONAL | NACIONAL | ✅ Siempre |
+
+#### Cambios Realizados
+
+1. **Reglas Geográficas Estrictas**
+   - LOCAL solo matchea con LOCAL de la misma comuna
+   - LOCAL NO matchea con REGIONAL (regla dura)
+   - REGIONAL solo con REGIONAL de mismas regiones
+   - NACIONAL matchea con todos
+
+2. **Inferencia de Ubicación desde City**
+   - `inferRegionFromCity()`: Infiere región desde nombre de ciudad
+   - `inferComunaFromCity()`: Infiere comuna si coincide exacta
+   - `getRegionOfComuna()`: Obtiene región de una comuna
+   - Casos especiales: Santiago, Viña del Mar, Concepción
+
+3. **Fallback para Datos Incompletos**
+   - Si no tiene scope definido → asume NACIONAL (permisivo)
+   - Si tiene city pero no comuna → intenta inferir
+   - Siempre intenta encontrar compatibilidad antes de rechazar
+
+#### Archivos Modificados
+```
+services/matchService.ts
+- Líneas 5: Import REGIONS
+- Líneas 105-166: Funciones de inferencia geográfica
+- Líneas 176-245: checkGeographicCompatibility() reescrito
+- Líneas 253-255: Tipo geo con city opcional
+- Líneas 533-558: myGeo y otherGeo con city
+```
+
+#### Tiempo Estimado
+**Total:** ~20 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

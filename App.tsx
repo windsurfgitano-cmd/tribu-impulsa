@@ -1286,6 +1286,13 @@ const RegisterScreen = () => {
       if (!formData.category) newErrors.category = 'Selecciona un giro';
     } else if (step === 4) {
       if (!formData.affinity) newErrors.affinity = 'Selecciona una afinidad';
+      // Validar geografía según alcance
+      if (formData.scope === 'LOCAL' && !formData.comuna) {
+        newErrors.comuna = 'Selecciona tu comuna';
+      }
+      if (formData.scope === 'REGIONAL' && formData.selectedRegions.length === 0) {
+        newErrors.selectedRegions = 'Selecciona al menos una región';
+      }
     } else if (step === 5) {
       if (!formData.instagram.trim()) newErrors.instagram = 'Instagram es requerido';
     }
@@ -1870,6 +1877,17 @@ const SurveyScreen = () => {
         nextErrors[field] = 'Campo obligatorio';
       }
     });
+    
+    // Validar comuna si alcance es LOCAL
+    if (formData.scope === 'LOCAL' && !formData.comuna) {
+      nextErrors.comuna = 'Debes seleccionar tu comuna';
+    }
+    
+    // Validar regiones si alcance es REGIONAL
+    if (formData.scope === 'REGIONAL' && (!formData.selectedRegions || formData.selectedRegions.length === 0)) {
+      nextErrors.selectedRegions = 'Debes seleccionar al menos una región';
+    }
+    
     return nextErrors;
   };
 

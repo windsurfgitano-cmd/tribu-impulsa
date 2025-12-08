@@ -331,6 +331,56 @@ App.tsx
 
 ---
 
+### 💰 FASE 6: Compatibilidad por Facturación + Validaciones
+**Hora:** 22:20 - 22:35 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Validación Comuna/Regiones Obligatoria**
+   - Si alcance LOCAL → comuna es requerida
+   - Si alcance REGIONAL → al menos 1 región requerida
+   - Validación en SurveyScreen y RegisterScreen
+
+2. **Compatibilidad por Facturación en Matching**
+   - Nueva función `checkRevenueCompatibility()`
+   - Rangos de facturación con niveles 1-5
+   - Mismo rango = +10 pts bonus
+   - Rango adyacente = +5 pts
+   - Muy diferentes (3+ niveles) = -5 pts
+
+3. **Integración en generateTribeAssignments**
+   - Pasa revenue de ambos usuarios a calculateCompatibilityScore
+   - Aplica bonus/penalización según compatibilidad
+
+#### Rangos de Facturación
+```
+Nivel 1: Menos de $500.000
+Nivel 2: $500.000 - $2.000.000
+Nivel 3: $2.000.000 - $5.000.000
+Nivel 4: $5.000.000 - $10.000.000
+Nivel 5: Más de $10.000.000
+```
+
+#### Archivos Modificados
+```
+App.tsx
+- SurveyScreen: validate() con validación de comuna/regiones
+- RegisterScreen: validateStep() con validación de comuna/regiones
+
+services/matchService.ts
+- Líneas 63-102: REVENUE_LEVELS y checkRevenueCompatibility()
+- Líneas 155-166: calculateCompatibilityScore con parámetros revenue
+- Líneas 226-233: Aplicación de compatibilidad por facturación
+- Líneas 472-475: Paso de revenue en generateTribeAssignments
+```
+
+#### Tiempo Estimado
+**Total:** ~15 minutos
+
+---
+
 ## 📅 Viernes 6 de Diciembre 2025
 
 ### 🎨 Actualización de Branding - Logo y Favicon

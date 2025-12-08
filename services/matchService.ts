@@ -60,6 +60,47 @@ const SYNERGY_MAP: Record<string, string[]> = {
   'Transporte y Logística': ['Negocio', 'Eventos', 'Turismo'],
 };
 
+// Rangos de facturación ordenados para comparación
+const REVENUE_LEVELS: Record<string, number> = {
+  'Menos de $500.000': 1,
+  '$500.000 - $2.000.000': 2,
+  '$2.000.000 - $5.000.000': 3,
+  '$5.000.000 - $10.000.000': 4,
+  'Más de $10.000.000': 5,
+};
+
+// Verificar compatibilidad por facturación
+const checkRevenueCompatibility = (
+  revenue1: string | undefined,
+  revenue2: string | undefined
+): { bonus: number; reason?: string } => {
+  if (!revenue1 || !revenue2) {
+    return { bonus: 0 }; // Sin datos, no penalizar ni bonificar
+  }
+  
+  const level1 = REVENUE_LEVELS[revenue1] || 0;
+  const level2 = REVENUE_LEVELS[revenue2] || 0;
+  
+  if (level1 === 0 || level2 === 0) {
+    return { bonus: 0 }; // Valor no reconocido
+  }
+  
+  const diff = Math.abs(level1 - level2);
+  
+  if (diff === 0) {
+    // Mismo rango = muy compatible
+    return { bonus: 10, reason: 'Mismo nivel de negocio' };
+  } else if (diff === 1) {
+    // Rango adyacente = compatible
+    return { bonus: 5, reason: 'Nivel de negocio similar' };
+  } else if (diff >= 3) {
+    // Muy diferentes = penalizar un poco
+    return { bonus: -5 };
+  }
+  
+  return { bonus: 0 };
+};
+
 // Verificar compatibilidad geográfica entre dos usuarios
 const checkGeographicCompatibility = (
   user1Scope: string | undefined,
@@ -119,7 +160,10 @@ const calculateCompatibilityScore = (
   user2Affinity: string,
   // Parámetros de geografía opcionales
   user1Geo?: { scope?: string; comuna?: string; regions?: string[] },
-  user2Geo?: { scope?: string; comuna?: string; regions?: string[] }
+  user2Geo?: { scope?: string; comuna?: string; regions?: string[] },
+  // Parámetros de facturación opcionales
+  user1Revenue?: string,
+  user2Revenue?: string
 ): { score: number; reason: string } => {
   let score = 50; // Base score
   let reasons: string[] = [];
@@ -179,12 +223,21 @@ const calculateCompatibilityScore = (
     }
   }
   
-  // 5. Misma afinidad = BONUS
+  // 5. Compatibilidad por facturación
+  if (user1Revenue && user2Revenue) {
+    const revenueCompat = checkRevenueCompatibility(user1Revenue, user2Revenue);
+    score += revenueCompat.bonus;
+    if (revenueCompat.reason && revenueCompat.bonus > 0) {
+      reasons.push(revenueCompat.reason);
+    }
+  }
+  
+  // 6. Misma afinidad = BONUS
   if (affGroup1 && affGroup2 && affGroup1 === affGroup2) {
     score += 20;
     reasons.push('Comparten valores e intereses');
   }
-  // 6. Afinidades relacionadas
+  // 7. Afinidades relacionadas
   else if (affGroup1 && affGroup2) {
     const affinityRelations: Record<string, string[]> = {
       'Bienestar y Salud': ['Diseño y Estilo', 'Estilo de Vida y Experiencias'],
@@ -416,7 +469,9 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
         otherCategory,
         otherAffinity,
         myGeo,
-        otherGeo
+        otherGeo,
+        currentUser?.revenue,  // Facturación usuario actual
+        otherUser?.revenue     // Facturación otro usuario
       );
       
       return { profile, score, reason };

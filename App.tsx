@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
+import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
@@ -6078,6 +6079,12 @@ const AdminSettingsTab = () => {
   );
 };
 
+// Wrapper for AcademiaView to use with React Router
+const AcademiaViewWrapper = () => {
+  const navigate = useNavigate();
+  return <AcademiaView onNavigateBack={() => navigate('/dashboard')} />;
+};
+
 // Admin Panel Inline (simplified version)
 const AdminPanelInline = () => {
   const navigate = useNavigate();
@@ -6911,6 +6918,7 @@ const AppLayout = () => {
                 <Route path="/activity" element={<ActivityView />} />
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
+                <Route path="/academia" element={<AcademiaViewWrapper />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </div>

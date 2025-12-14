@@ -148,6 +148,32 @@ data/tribeCategories.ts          - Opciones de categoría
 
 ---
 
+## 📅 Domingo 14 de Diciembre 2025
+
+### 📄 Docs: Agregar presentación ejecutiva a recursos de reuniones
+**Hora:** 13:36 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Realizados
+
+1. **Añadido a Archivos de Referencia**
+   - Se agregó `reuniones/Presentacion_Tribu_Impulsa.docx.md` a la tabla **"Archivos de Referencia"**.
+
+#### Archivos Modificados
+```
+OTROS/Planymejoras.md
+CAMBIOS.md
+```
+
+#### Commits
+- Pendiente
+
+#### Tiempo Estimado
+**Total:** ~2 minutos
+
+---
+
 ## 📅 Martes 9 de Diciembre 2025
 
 ### 🎓 Integración Santander Academia en Main
@@ -914,6 +940,30 @@ App.tsx - Eliminación de ~25 líneas duplicadas
 ---
 
 ## 📅 Viernes 6 de Diciembre 2025
+
+### 📋 Fix: Registro muestra lista completa de rubros (LoginScreen)
+**Hora:** 13:30 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problema
+- En el registro rápido del login (`step="register"`) el selector de rubro usaba un árbol hardcodeado (`CATEGORY_TREE`), mostrando pocos rubros.
+
+#### Solución
+1. **Rubro principal desde lista completa**
+   - El `<select>` del registro ahora usa `TRIBE_CATEGORY_OPTIONS` (ordenado) para mostrar todos los rubros disponibles.
+
+2. **Validación de subcategoría más segura**
+   - La subcategoría solo se exige cuando existe `CATEGORY_TREE[registerData.category]`.
+
+#### Archivos Modificados
+```
+App.tsx
+CAMBIOS.md
+```
+
+#### Tiempo Estimado
+**Total:** ~10 minutos
 
 ### 🎨 Actualización de Branding - Logo y Favicon
 **Hora:** 21:00 - 21:41 hrs  

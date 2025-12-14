@@ -180,157 +180,7 @@ const loadUserFromCloud = async (userId: string): Promise<UserProfile | null> =>
   }
 };
 
-const SURVEY_CATEGORY_OPTIONS = [
-  "Moda Mujer Ropa  Jeans",
-  "Moda Mujer Ropa  Ropa de mujer",
-  "Moda Mujer Ropa  Vestidos de fiesta",
-  "Moda Mujer Ropa  Todo ropa mujer",
-  "Moda Mujer Ropa  bikinis",
-  "Moda Mujer Ropa  Ropa deportiva",
-  "Moda Mujer Accesorios Joyas / bijouterie",
-  "Moda Mujer Accesorios Relojes",
-  "Moda Mujer Accesorios Pañuelos",
-  "Moda Mujer Accesorios Cinturones",
-  "Moda Mujer Accesorios Todo Accesorios",
-  "Moda Mujer Zapatos y Carteras Zapatos",
-  "Moda Mujer Zapatos y Carteras Zapatillas",
-  "Moda Mujer Zapatos y Carteras Carteras",
-  "Moda Mujer Zapatos y Carteras Zapatos y Carteras",
-  "Moda Mujer Cosmética y perfumería Cosmeticos y skincare",
-  "Moda Cosmética y perfumería Perfumes",
-  "Moda Anteojos moda Anteojos moda",
-  "Moda Hombre Ropa  Todo ropa hombre",
-  "Moda Hombre Accesorios Todo accesorio hombres",
-  "Moda Hombre Zapatos y zapatillas Todo zapatos y zapatillas hombre",
-  "Negocio Artículos de hogar y decoración Menaje",
-  "Negocio Artículos de hogar y decoración Ropa de cama",
-  "Negocio Artículos de hogar y decoración Decoración y diseño",
-  "Negocio Artículos de hogar y decoración Cocina",
-  "Negocio Artículos de hogar y decoración Todo artículos de hogar y decoración",
-  "Negocio Artículos deportivos Artículos de deporte",
-  "Negocio Artículos ópticos Lentes ópticos",
-  "Negocio",
-  "Negocio Artículos de packaging Cajas, bolsas y packaging",
-  "Negocio Insumos oficinas (facility) toallas de papel, papel higiéncio, limpieza, vasos",
-  "Negocio Imprentas o artículos publicitarios Impresión y branding",
-  "Negocio Tecnología y electrónicos Arregla celulares",
-  "Negocio Tecnología y electrónicos Accesorios celulares",
-  "Negocio Tecnología y electrónicos Venta de electrodomésticos",
-  "Negocio Librería, papelería  Articulos de librería",
-  "Negocio Librería Libros",
-  "Negocio Mueblería Muebles",
-  "Negocio Supermercado o minimarket Supermercado o minimarket",
-  "Negocio Comercio internacional (importación/exportación)",
-  "Alimentos y Gastronomía Restaurante o café",
-  "Alimentos y Gastronomía Alimentos saludables Comida y Snacks saludables",
-  "Alimentos y Gastronomía Delivery comida preparada Comida preparada a domicilio",
-  "Alimentos y Gastronomía Pastelería o repostería Tortas y repostería",
-  "Alimentos y Gastronomía Panadería artesanal Panadería",
-  "Alimentos y Gastronomía Catering y banquetería Catering y banquetería",
-  "Alimentos y Gastronomía Productos gourmet  Productos gourmet",
-  "Alimentos y Gastronomía Productos congelados Mariscos",
-  "Alimentos y Gastronomía Productos congelados Productos congelados",
-  "Alimentos y Gastronomía Productos congelados y gourmet Todo productos gourmet y congelados",
-  "Alimentos y Gastronomía Verdulería y frutería Frutas y verduras",
-  "Alimentos y Gastronomía Bebidas y jugos artesanales",
-  "Alimentos y Gastronomía Alimentos fermentados Alimentos fermentados",
-  "Alimentos y Gastronomía Conservas  Alimentos en conserva",
-  "Belleza, Estética y Bienestar Peluquería y barbería Peluquería y barbería",
-  "Belleza, Estética y Bienestar Cejas / pestañas Cejas y pestañas",
-  "Belleza, Estética y Bienestar Manicure/pedicure Manicure y pedicure",
-  "Belleza, Estética y Bienestar Centro depilación con cera Depilación con cera",
-  "Todo Belleza Todo belleza",
-  "Belleza, Estética y Bienestar Centros de estética o depilación laser Centro de estética",
-  "Belleza, Estética y Bienestar Centros de estética o depilación laser Depilación láser",
-  "Belleza, Estética y Bienestar Maasoterapia y masajes reductivos Maasoterapia y masajes reductivos",
-  "Belleza, Estética y Bienestar Servicios de maquillaje Maquilladores",
-  "Belleza, Estética y Bienestar Terapias alternativas (reiki, flores de Bach, etc.) Terapias alternativas (reiki, flores de Bach, etc.)",
-  "Belleza, Estética y Bienestar Nutrición y suplementación",
-  "Belleza, Estética y Bienestar Entrenamiento personal o fitness Perosonal Trainners",
-  "Servicios Profesionales Abogados Abogados",
-  "Servicios Profesionales Contadores y auditores Contadores y auditores",
-  "Servicios Profesionales Arquitectos Arquitectura",
-  "Servicios Profesionales Psicólogos  Psicología adulto",
-  "Servicios Profesionales Psicólogos  Psicología infantil",
-  "Servicios Profesionales Psicólogos  Todo psicología",
-  "Servicios Profesionales Coaches Coaching",
-  "Servicios Profesionales Traductores Traductores idiomas",
-  "Servicios Profesionales Dentistas Servicios dentales",
-  "Servicios Profesionales Estéticos y Dentistas Servicios estéticos",
-  "Servicios Profesionales Kinesiologos Kinesología",
-  "Servicios Profesionales Seguros Corredores de seguros",
-  "Servicios Profesionales Corredores de propiedades  Corredores de propiedades",
-  "Educación y Capacitación Clases particulares o reforzamiento escolar Clases particulares o reforzamiento escolar",
-  "Educación y Capacitación Cursos de idiomas Cursos de idiomas",
-  "Educación y Capacitación Talleres de arte, música o manualidades Clases de arte",
-  "Educación y Capacitación Talleres de arte, música o manualidades Clases de música",
-  "Educación y Capacitación Coaching y mentoring",
-  "Educación y Capacitación Educación financiera o empresarial",
-  "Educación y Capacitación Plataforma educativa online",
-  "Educación y Capacitación Servicios de tutoría o preparación PSU",
-  "Arte, Diseño y Creatividad Fotografía y video",
-  "Arte, Diseño y Creatividad Diseño gráfico y branding",
-  "Arte, Diseño y Creatividad Producción audiovisual",
-  "Arte, Diseño y Creatividad Ilustración y arte digital",
-  "Arte, Diseño y Creatividad Pintura, cerámica, escultura",
-  "Arte, Diseño y Creatividad Servicios de impresión",
-  "Arte, Diseño y Creatividad Marketing digital o community management",
-  "Construcción y Mantención",
-  "Construcción y Mantención Construcción y remodelación",
-  "Construcción y Mantención Paisajismo y jardinería Paisajista",
-  "Construcción y Mantención Construcción Piscinas Construcción de piscinas",
-  "Construcción y Mantención Instalación de paneles solares Paneles solares",
-  "Construcción y Mantención Fumigación Fumigadores",
-  "Tecnología y Desarrollo Soluciones tecnológicas Desarrollo de softwares y soluciones tecnólogicas",
-  "Tecnología y Desarrollo",
-  "Tecnología y Desarrollo Servicios de hosting o dominio Hosting y dominios web",
-  "Tecnología y Desarrollo Soporte técnico",
-  "Tecnología y Desarrollo Automatización o robótica",
-  "Tecnología y Desarrollo E-commerce (tiendas online)",
-  "Tecnología y Desarrollo Ciberseguridad y análisis de datos",
-  "Turismo  Agencias de viaje Agencia y agente de viajes",
-  "Turismo  Guías turísticos Guías",
-  "Turismo  Hoteles, hostales, cabañas Hotelería",
-  "Eventos Arriendo de espacios para eventos Centro de Eventos",
-  "Eventos Organización de matrimonios o celebraciones Producción de matrimonios",
-  "Eventos Producción de eventos y ferias Producción para ferias y eventos",
-  "Eventos Producción de eventos Todo Producción",
-  "Eventos Djs Djs",
-  "Eventos Food truck Carros de comida",
-  "Eventos Organización de cumpleaños Fiesta de cumpleaños",
-  "Eventos Globos Armado de globos",
-  "Transporte y Logística Transporte de pasajeros Transporte de pasajeros",
-  "Transporte y Logística Transporte de pasajeros Furgon escolar",
-  "Transporte y Logística Transporte de carga Mudanzas",
-  "Transporte y Logística Transporte y delivery Delivery para emprendedores",
-  "Transporte y Logística Arriendo de vehículos",
-  "Transporte y Logística Servicios de logística y almacenamiento",
-  "Transporte y Logística Mudanzas y fletes Mudanzas y Fletes",
-  "Mascotas y Animales Peluquería canina o felina Peluquería mascotas",
-  "Mascotas y Animales Alimentos para mascotas Alimento para mascotas",
-  "Mascotas y Animales Accesorios para mascotas Accesorios para mascotas",
-  "Alimentos y Accesorios para mascotas Todo Alimento y accesorios para mascotas",
-  "Mascotas y Animales Paseo y entrenamiento de perros",
-  "Mascotas y Animales Veterinaria y servicios médicos Veterinaria",
-  "Mascotas y Animales Crematorio de mascotas Cremación de mascotas",
-  "Mascotas y Animales Guarderías o hoteles para mascotas Hoteles de mascotas",
-  "Industria y Manufactura",
-  "Industria y Manufactura Elaboración de jabones artesanales Jabones artesanales",
-  "Industria y Manufactura Elaboración de productos de limpieza Productos de limpieza hogar",
-  "Industria y Manufactura Producción de envases  Envases",
-  "Oficio Carpintería Carpintero",
-  "Oficio Mantención de piscinas Piscinero",
-  "Oficio Jardin Jardinero",
-  "Oficio Electricidad Electricista",
-  "Oficio Aseo y mantención Limpieza de casas",
-  "Oficio Taller mecánico Mecánico",
-  "Oficio Servicios de asistencia Servicio de grúa",
-  "Oficio Servicios de asistencia Vulcanización",
-  "Oficio Servicios de asistencia Todo asistencia",
-  "Oficio Arreglo zapatos y maletas Zapatero",
-  "Oficio Modista Arreglo de ropa",
-  "Otro"
-];
+const SURVEY_CATEGORY_OPTIONS = TRIBE_CATEGORY_OPTIONS;
 
 const SURVEY_AFFINITY_OPTIONS = [
   "Bienestar y Salud  Bienestar emocional / espiritualidad / terapias alternativas",
@@ -835,7 +685,7 @@ const LoginScreen = () => {
     }
     
     // Validar subcategoría si la categoría no es "Otro"
-    if (registerData.category !== 'Otro' && !registerData.subcategory) {
+    if (registerData.category !== 'Otro' && CATEGORY_TREE[registerData.category] && !registerData.subcategory) {
       setError('Por favor selecciona qué ofreces específicamente');
       return;
     }
@@ -1089,8 +939,8 @@ const LoginScreen = () => {
                 required
               >
                 <option value="">Selecciona tu rubro...</option>
-                {Object.keys(CATEGORY_TREE).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
+                  <option key={idx} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>
@@ -1159,7 +1009,7 @@ const LoginScreen = () => {
             
             <button 
               type="submit"
-              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone || (registerData.category !== 'Otro' && !registerData.subcategory)}
+              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone || (registerData.category !== 'Otro' && CATEGORY_TREE[registerData.category] && !registerData.subcategory)}
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
             >
               {isLoading ? 'Registrando...' : '¡Unirme a la Tribu!'}

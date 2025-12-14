@@ -174,6 +174,33 @@ CAMBIOS.md
 
 ---
 
+### 🔒 Chore: Ignorar carpeta reuniones/ (archivos internos)
+**Hora:** 18:30 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Motivo
+- Se detectó la carpeta `reuniones/` con material interno (grabaciones / extracción) que no debe versionarse.
+
+#### Cambios Realizados
+
+1. **Ignorar carpeta completa**
+   - Se agregó `reuniones/` a `.gitignore`.
+
+#### Archivos Modificados
+```
+.gitignore
+CAMBIOS.md
+```
+
+#### Commits
+- Pendiente
+
+#### Tiempo Estimado
+**Total:** ~2 minutos
+
+---
+
 ## 📅 Martes 9 de Diciembre 2025
 
 ### 🎓 Integración Santander Academia en Main

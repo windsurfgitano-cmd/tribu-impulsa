@@ -5273,6 +5273,9 @@ const Dashboard = () => {
   const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
   
+  // Menú hamburguesa state
+  const [showMenu, setShowMenu] = useState(false);
+  
   // Onboarding state
   const currentUser = getCurrentUser();
   const [showOnboarding, setShowOnboarding] = useState(() => {
@@ -5353,6 +5356,119 @@ const Dashboard = () => {
         </div>
       )}
       
+      {/* Menú Hamburguesa Overlay */}
+      {showMenu && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMenu(false)}
+          />
+          {/* Menu Panel */}
+          <div className="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
+            <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">Menú</h2>
+                <button 
+                  onClick={() => setShowMenu(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
+                >
+                  <X size={18} className="text-white" />
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <img 
+                  src={myProfile.avatarUrl} 
+                  alt="Me"
+                  className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
+                />
+                <div>
+                  <p className="text-white font-semibold">{myProfile.name}</p>
+                  <p className="text-white/70 text-sm">{myProfile.companyName}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 space-y-2">
+              {/* Alianzas y Beneficios */}
+              <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas y Beneficios</p>
+              
+              <button 
+                onClick={() => { setShowMenu(false); navigate('/beneficios'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#6161FF] to-[#00CA72] flex items-center justify-center">
+                  <Gift size={20} className="text-white" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
+                  <p className="text-xs text-[#7C8193]">Descuentos exclusivos para miembros</p>
+                </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
+              </button>
+              
+              <button 
+                onClick={() => { setShowMenu(false); navigate('/academia'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
+                  <span className="text-lg">🎓</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Santander Academia</p>
+                  <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
+                </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
+              </button>
+              
+              <div className="border-t border-[#E4E7EF] my-3" />
+              
+              {/* Navegación */}
+              <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Navegación</p>
+              
+              <button 
+                onClick={() => { setShowMenu(false); navigate('/tribe'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#6161FF]/10 flex items-center justify-center">
+                  <Users size={20} className="text-[#6161FF]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Mi Tribu</p>
+                  <p className="text-xs text-[#7C8193]">Checklist y asignaciones</p>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => { setShowMenu(false); navigate('/directory'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#00CA72]/10 flex items-center justify-center">
+                  <Briefcase size={20} className="text-[#00CA72]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Directorio</p>
+                  <p className="text-xs text-[#7C8193]">Todos los emprendedores</p>
+                </div>
+              </button>
+              
+              <button 
+                onClick={() => { setShowMenu(false); navigate('/my-profile'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#FFCC00]/10 flex items-center justify-center">
+                  <UserIcon size={20} className="text-[#FFCC00]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Mi Perfil</p>
+                  <p className="text-xs text-[#7C8193]">Configuración y cuenta</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header - Liquid Glass iOS 26 with safe area */}
       <header className="px-5 pb-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
         style={{
@@ -5360,10 +5476,23 @@ const Dashboard = () => {
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
         }}
       >
-        <div>
+        {/* Hamburger menu button */}
+        <button 
+          onClick={() => setShowMenu(true)}
+          className="w-10 h-10 rounded-xl bg-[#F5F7FB] flex items-center justify-center hover:bg-[#E4E7EF] transition"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#181B34" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+        
+        <div className="flex-1 text-center">
           <h1 className="text-xl font-bold text-[#181B34]">Hola, {myProfile.name.split(' ')[0]}</h1>
-          <p className="text-[#7C8193] text-sm">Tus conexiones activas</p>
+          <p className="text-[#7C8193] text-sm">Tu comunidad de impulso</p>
         </div>
+        
         <button 
           onClick={() => navigate('/my-profile')}
           className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#E4E7EF] hover:border-[#6161FF] transition-colors"
@@ -7079,26 +7208,79 @@ const CompleteProfileScreen = () => {
     ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
     : [];
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const handleSave = async () => {
-    if (!currentUser) return;
+    console.log('🔄 handleSave llamado');
+    setSaveError(null);
+    
+    if (!currentUser) {
+      console.error('❌ No hay usuario actual');
+      setSaveError('Error: No hay sesión activa. Por favor recarga la página.');
+      return;
+    }
+    
+    // Validar campos antes de guardar
+    if (!formData.name?.trim()) {
+      setSaveError('Por favor ingresa tu nombre');
+      return;
+    }
+    if (!formData.companyName?.trim()) {
+      setSaveError('Por favor ingresa el nombre de tu emprendimiento');
+      return;
+    }
+    if (!formData.phone?.trim()) {
+      setSaveError('Por favor ingresa tu teléfono');
+      return;
+    }
+    if (!formData.category) {
+      setSaveError('Por favor selecciona tu giro/rubro');
+      return;
+    }
+    if (!formData.affinity) {
+      setSaveError('Por favor selecciona una afinidad');
+      return;
+    }
+    if (!formData.scope) {
+      setSaveError('Por favor selecciona tu alcance geográfico');
+      return;
+    }
+    if (formData.scope === 'LOCAL' && !formData.comuna) {
+      setSaveError('Por favor selecciona tu comuna');
+      return;
+    }
+    if (formData.scope === 'REGIONAL' && formData.selectedRegions.length === 0) {
+      setSaveError('Por favor selecciona al menos una región');
+      return;
+    }
+    
     setIsLoading(true);
+    console.log('📝 Guardando datos:', formData);
 
     try {
       const updatedUser = {
         ...currentUser,
-        name: formData.name,
-        companyName: formData.companyName,
+        name: formData.name.trim(),
+        companyName: formData.companyName.trim(),
         category: formData.category,
         affinity: formData.affinity,
         scope: formData.scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL',
-        phone: formData.phone,
-        whatsapp: formData.phone,
+        phone: formData.phone.trim(),
+        whatsapp: formData.phone.trim(),
         comuna: formData.scope === 'LOCAL' ? formData.comuna : undefined,
         selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : []
       };
 
       // Actualizar en localStorage
-      updateUser(currentUser.id, updatedUser);
+      const result = updateUser(currentUser.id, updatedUser);
+      console.log('💾 Usuario actualizado:', result);
+      
+      if (!result) {
+        setSaveError('Error al guardar. Por favor intenta de nuevo.');
+        setIsLoading(false);
+        return;
+      }
+      
       setCurrentUser(currentUser.id);
 
       // Sincronizar con Firebase
@@ -7114,15 +7296,22 @@ const CompleteProfileScreen = () => {
         console.log('⚠️ Error sincronizando:', err);
       }
 
-      // Revalidar
-      const newValidation = validateUserProfile(updatedUser);
+      // Revalidar con el usuario actualizado desde localStorage
+      const freshUser = getCurrentUser();
+      const newValidation = validateUserProfile(freshUser);
+      console.log('✅ Nueva validación:', newValidation);
       setValidation(newValidation);
       
       if (newValidation.isComplete) {
+        console.log('🎉 Perfil completo, navegando a dashboard');
         navigate('/dashboard', { replace: true });
+      } else {
+        console.log('⚠️ Aún faltan campos:', newValidation.missingFields);
+        setSaveError(`Aún faltan campos: ${newValidation.missingFields.join(', ')}`);
       }
     } catch (err) {
       console.error('Error guardando perfil:', err);
+      setSaveError('Error inesperado. Por favor intenta de nuevo.');
     }
     
     setIsLoading(false);
@@ -7330,8 +7519,16 @@ const CompleteProfileScreen = () => {
             </div>
           )}
 
+          {/* Mensaje de error */}
+          {saveError && (
+            <div className="bg-[#FFE6E6] border border-[#FB275D] rounded-xl p-4 mt-4">
+              <p className="text-sm text-[#FB275D] font-medium">⚠️ {saveError}</p>
+            </div>
+          )}
+
           {/* Botón guardar */}
           <button
+            type="button"
             onClick={handleSave}
             disabled={isLoading}
             className="w-full py-4 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#7B61FF] text-white font-bold text-base shadow-lg hover:shadow-xl transition disabled:opacity-50 mt-6"

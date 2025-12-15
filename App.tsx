@@ -7357,7 +7357,7 @@ const CompleteProfileScreen = () => {
         scope: formData.scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL',
         phone: formData.phone.trim(),
         whatsapp: formData.phone.trim(),
-        comuna: formData.scope === 'LOCAL' ? formData.comuna : undefined,
+        comuna: formData.scope === 'LOCAL' ? formData.comuna : null,
         selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : [],
         revenue: formData.revenue
       };
@@ -7664,6 +7664,15 @@ const CompleteProfileScreen = () => {
           <p className="text-center text-xs text-[#7C8193] mt-4">
             Estos datos son necesarios para el algoritmo de matching y para que tu Tribu pueda contactarte
           </p>
+
+          {/* Botón para ir al perfil sin completar */}
+          <button
+            type="button"
+            onClick={() => window.location.href = '/#/my-profile'}
+            className="w-full py-3 rounded-xl font-medium text-sm text-[#7C8193] hover:text-[#6161FF] hover:bg-[#F5F7FB] transition mt-2"
+          >
+            Ir a mi perfil para editar después →
+          </button>
         </div>
       </div>
     </div>

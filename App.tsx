@@ -596,8 +596,8 @@ initAppConfigFromFirebase();
 // 1. Login / Landing - FLUJO UNIFICADO SEAMLESS
 const LoginScreen = () => {
   const navigate = useNavigate();
-  // Estados del flujo
-  const [step, setStep] = useState<'email' | 'password' | 'register'>('email');
+  // Estados del flujo - ahora incluye 'landing' como primera pantalla
+  const [step, setStep] = useState<'landing' | 'email' | 'password' | 'register'>('landing');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -858,12 +858,68 @@ const LoginScreen = () => {
       </div>
 
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
-        <p className="text-[#7C8193] mb-6 text-sm text-center -mt-2">
-          Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
-        </p>
+        
+        {/* PASO 0: Landing / Bienvenida */}
+        {step === 'landing' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-[#181B34] text-center">¡Bienvenido/a a Tribu Impulsa!</h2>
+            <p className="text-[#7C8193] text-sm text-center">
+              La comunidad donde emprendedores <span className="text-[#6161FF] font-semibold">crecen juntos</span>
+            </p>
+            
+            {/* Explicación visual */}
+            <div className="space-y-3 my-6">
+              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#6161FF] to-[#00CA72] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Users size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#181B34]">Tu Tribu Mensual</p>
+                  <p className="text-xs text-[#7C8193]">Cada mes recibes 10 emprendedores para impulsar y 10 que te impulsan a ti</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#00CA72] to-[#4AE698] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Share2 size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#181B34]">Impulso Mutuo</p>
+                  <p className="text-xs text-[#7C8193]">Compartes en tus redes y ellos comparten las tuyas. Todos ganan exposición</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Sparkles size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#181B34]">Matching Inteligente</p>
+                  <p className="text-xs text-[#7C8193]">El algoritmo te conecta con emprendedores complementarios, nunca competencia</p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setStep('email')}
+              className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
+            >
+              Comenzar
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
+            </button>
+            
+            <p className="text-[10px] text-[#B3B8C6] text-center mt-2">
+              ¿Ya tienes cuenta? Ingresa tu email para continuar
+            </p>
+          </div>
+        )}
         
         {/* PASO 1: Email */}
         {step === 'email' && (
+          <>
+            <p className="text-[#7C8193] mb-6 text-sm text-center -mt-2">
+              Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
+            </p>
           <form onSubmit={handleEmailCheck} className="space-y-4 text-left">
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email</label>
@@ -887,6 +943,7 @@ const LoginScreen = () => {
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
             </button>
           </form>
+          </>
         )}
 
         {/* PASO 2a: Contraseña (usuario existente) */}
@@ -3491,6 +3548,25 @@ const MyProfileView = () => {
                         {/* Botón de Notificaciones Push */}
                         <NotificationButton />
                         
+                        {/* Accesos rápidos */}
+                        <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
+                            {/* Club de Bienestar */}
+                            <button 
+                                onClick={() => navigate('/beneficios')}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white hover:opacity-90 transition-colors flex items-center justify-center gap-2 text-sm font-bold shadow-md"
+                            >
+                                <Gift size={16} /> Club de Bienestar
+                            </button>
+                            
+                            {/* Santander Academia */}
+                            <button 
+                                onClick={() => navigate('/academia')}
+                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#EC0000] to-[#CC0000] text-white hover:opacity-90 transition-colors flex items-center justify-center gap-2 text-sm font-bold shadow-md"
+                            >
+                                🎓 Santander Academia
+                            </button>
+                        </div>
+                        
                         {/* Opciones de cuenta */}
                         <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
                             {/* Cambiar contraseña */}
@@ -5981,6 +6057,199 @@ const AcademiaViewWrapper = () => {
   return <AcademiaView onNavigateBack={() => navigate('/dashboard')} />;
 };
 
+// ============================================
+// CLUB DE BIENESTAR - Alianzas y Beneficios
+// ============================================
+const ALIANZAS_BENEFICIOS = [
+  {
+    id: 'santander',
+    nombre: 'Santander Open Academy',
+    descripcion: 'Cursos gratuitos de desarrollo profesional y empresarial',
+    tipo: 'Educación',
+    descuento: 'GRATIS',
+    color: 'from-[#EC0000] to-[#CC0000]',
+    logo: '🎓',
+    url: 'https://www.santanderopenacademy.com/',
+    destacado: true
+  },
+  {
+    id: 'lovework',
+    nombre: 'Lovework',
+    descripcion: 'Formalización y regularización empresarial. Asesoría para emprendedores.',
+    tipo: 'Legal / Empresarial',
+    descuento: '20% OFF',
+    color: 'from-[#E91E63] to-[#C2185B]',
+    logo: '💼',
+    url: 'https://lovework.cl/',
+    destacado: true
+  },
+  {
+    id: 'soledad-mulati',
+    nombre: 'Soledad Mulati',
+    descripcion: 'Asesoría legal preferencial para miembros de Tribu Impulsa',
+    tipo: 'Legal',
+    descuento: '15% OFF',
+    color: 'from-[#6161FF] to-[#4A4AE0]',
+    logo: '⚖️',
+    url: null,
+    contacto: '+56 9 1234 5678'
+  },
+  {
+    id: 'restaurantes',
+    nombre: 'Red de Restaurantes',
+    descripcion: 'Descuentos en restaurantes y cafeterías aliadas a la comunidad',
+    tipo: 'Gastronomía',
+    descuento: '10-15% OFF',
+    color: 'from-[#FF9500] to-[#FF6B00]',
+    logo: '🍽️',
+    url: null,
+    proximamente: true
+  },
+  {
+    id: 'cowork',
+    nombre: 'Espacios Cowork',
+    descripcion: 'Acceso preferencial a espacios de trabajo compartido',
+    tipo: 'Espacios',
+    descuento: '25% OFF',
+    color: 'from-[#00CA72] to-[#00A85D]',
+    logo: '🏢',
+    url: null,
+    proximamente: true
+  },
+  {
+    id: 'bienestar',
+    nombre: 'Club de Bienestar',
+    descripcion: 'Yoga, pilates, meditación y más con descuentos exclusivos',
+    tipo: 'Bienestar',
+    descuento: '20% OFF',
+    color: 'from-[#A78BFA] to-[#8B5CF6]',
+    logo: '🧘',
+    url: null,
+    proximamente: true
+  }
+];
+
+const ClubBienestarView = () => {
+  const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  
+  const handleLinkClick = (alianza: typeof ALIANZAS_BENEFICIOS[0]) => {
+    // Tracking: guardar que el usuario visitó esta alianza
+    if (currentUser) {
+      const key = `alianza_click_${currentUser.id}_${alianza.id}`;
+      const clicks = JSON.parse(localStorage.getItem(key) || '[]');
+      clicks.push({ timestamp: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(clicks));
+      console.log(`📊 Tracking: ${currentUser.name} visitó ${alianza.nombre}`);
+    }
+    
+    if (alianza.url) {
+      window.open(alianza.url, '_blank');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F5F7FB] pb-24">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] pt-12 pb-8 px-4">
+        <div className="max-w-md mx-auto">
+          <button 
+            onClick={() => navigate('/my-profile')}
+            className="mb-4 flex items-center gap-2 text-white/80 hover:text-white transition"
+          >
+            <ArrowLeft size={20} />
+            <span className="text-sm">Volver</span>
+          </button>
+          
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-xl">
+              <Gift size={32} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white">Club de Bienestar</h1>
+            <p className="text-white/80 text-sm mt-1">Alianzas y beneficios exclusivos para miembros</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de Alianzas */}
+      <div className="max-w-md mx-auto px-4 -mt-4">
+        <div className="space-y-4">
+          {ALIANZAS_BENEFICIOS.map((alianza) => (
+            <div 
+              key={alianza.id}
+              className={`bg-white rounded-2xl shadow-lg overflow-hidden border border-[#E4E7EF] ${alianza.proximamente ? 'opacity-70' : ''}`}
+            >
+              {/* Header de la tarjeta */}
+              <div className={`bg-gradient-to-r ${alianza.color} p-4 flex items-center gap-4`}>
+                <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl backdrop-blur-xl">
+                  {alianza.logo}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-white font-bold text-lg">{alianza.nombre}</h3>
+                    {alianza.destacado && (
+                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] text-white font-bold">⭐ DESTACADO</span>
+                    )}
+                  </div>
+                  <p className="text-white/80 text-xs">{alianza.tipo}</p>
+                </div>
+                <div className="text-right">
+                  <span className="inline-block px-3 py-1 bg-white text-[#181B34] rounded-full text-sm font-bold">
+                    {alianza.descuento}
+                  </span>
+                </div>
+              </div>
+
+              {/* Contenido */}
+              <div className="p-4">
+                <p className="text-[#434343] text-sm mb-4">{alianza.descripcion}</p>
+                
+                {alianza.proximamente ? (
+                  <div className="text-center py-2">
+                    <span className="text-[#7C8193] text-sm">🔜 Próximamente</span>
+                  </div>
+                ) : alianza.url ? (
+                  <button
+                    onClick={() => handleLinkClick(alianza)}
+                    className={`w-full py-3 rounded-xl bg-gradient-to-r ${alianza.color} text-white font-semibold text-sm hover:opacity-90 transition flex items-center justify-center gap-2`}
+                  >
+                    <Globe size={16} />
+                    Visitar sitio web
+                  </button>
+                ) : alianza.contacto ? (
+                  <a
+                    href={`https://wa.me/${alianza.contacto.replace(/\D/g, '')}?text=${encodeURIComponent(`Hola! Soy miembro de Tribu Impulsa y me interesa el beneficio de ${alianza.nombre}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 rounded-xl bg-[#25D366] text-white font-semibold text-sm hover:opacity-90 transition flex items-center justify-center gap-2"
+                  >
+                    💬 Contactar por WhatsApp
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer info */}
+        <div className="mt-8 p-4 bg-white/50 rounded-xl text-center">
+          <p className="text-[#7C8193] text-xs">
+            🤝 ¿Tienes un negocio y quieres ser aliado de Tribu Impulsa?
+          </p>
+          <a 
+            href="https://wa.me/56951776005?text=Hola!%20Quiero%20ser%20aliado%20del%20Club%20de%20Bienestar%20de%20Tribu%20Impulsa"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#6161FF] text-xs font-semibold hover:underline"
+          >
+            Escríbenos para unirte →
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Admin Panel Inline (simplified version)
 const AdminPanelInline = () => {
   const navigate = useNavigate();
@@ -7140,6 +7409,7 @@ const AppLayout = () => {
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
                 <Route path="/academia" element={<AcademiaViewWrapper />} />
+                <Route path="/beneficios" element={<ClubBienestarView />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </div>

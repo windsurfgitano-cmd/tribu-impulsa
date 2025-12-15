@@ -116,6 +116,67 @@ services/tribeAlgorithm.ts
 
 ---
 
+### 🎁 Club de Bienestar - Alianzas y Beneficios
+**Hora:** 01:10 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Nuevo Componente
+- Nueva sección `/beneficios` con alianzas y descuentos exclusivos para miembros
+
+#### Alianzas Incluidas
+| Alianza | Tipo | Descuento |
+|---------|------|-----------|
+| Santander Open Academy | Educación | GRATIS |
+| Lovework | Legal/Empresarial | 20% OFF |
+| Soledad Mulati | Legal | 15% OFF |
+| Red de Restaurantes | Gastronomía | 10-15% OFF (próximamente) |
+| Espacios Cowork | Espacios | 25% OFF (próximamente) |
+| Club de Bienestar | Bienestar | 20% OFF (próximamente) |
+
+#### Funcionalidades
+- Tracking de clicks por usuario (localStorage)
+- Botón para visitar sitio web o contactar por WhatsApp
+- Diseño con gradientes y tarjetas atractivas
+- CTA para nuevos aliados
+
+#### Archivos Modificados
+```
+App.tsx
+  - ALIANZAS_BENEFICIOS array (líneas ~6044-6110)
+  - ClubBienestarView componente (líneas ~6112-6230)
+  - Nueva ruta /beneficios (línea ~7393)
+  - Botones en menú perfil (líneas ~3551-3568)
+```
+
+#### Tiempo: ~20 minutos
+
+---
+
+### 🏠 Landing Page con Explicación
+**Hora:** 01:15 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Nuevo paso "landing" antes del login con explicación de Tribu Impulsa
+- 3 tarjetas visuales explicando:
+  1. **Tu Tribu Mensual** - 10+10 emprendedores
+  2. **Impulso Mutuo** - Compartir en redes
+  3. **Matching Inteligente** - Algoritmo evita competencia
+- Botón "Comenzar" para ir al login
+
+#### Archivos Modificados
+```
+App.tsx
+  - LoginScreen step ahora incluye 'landing' (línea ~600)
+  - Nuevo paso landing con tarjetas visuales (líneas ~862-914)
+```
+
+#### Tiempo: ~15 minutos
+
+---
+
 ### 🔒 Bloqueo de App hasta Completar Perfil Obligatorio
 **Hora:** 23:20 hrs  
 **Solicitado por:** Usuario  

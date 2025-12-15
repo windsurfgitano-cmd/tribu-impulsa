@@ -6358,7 +6358,7 @@ const ClubBienestarView = () => {
       <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] pt-12 pb-8 px-4">
         <div className="max-w-md mx-auto">
           <button 
-            onClick={() => navigate('/my-profile')}
+            onClick={() => navigate('/dashboard')}
             className="mb-4 flex items-center gap-2 text-white/80 hover:text-white transition"
           >
             <ArrowLeft size={20} />

@@ -17,12 +17,7 @@ export const AFFINITY_GROUPS = [
   'Conciencia y Propósito',
   'Estilo de Vida y Experiencias',
   'Educación y Desarrollo',
-  'Economía y Negocios',
-  'Familia y Hogar',
-  'Belleza y Cuidado Personal',
-  'Servicios Profesionales',
-  'Eventos y Celebraciones',
-  'Emprendimiento y Comunidad'
+  'Economía y Negocios'
 ] as const;
 
 export type AffinityGroup = typeof AFFINITY_GROUPS[number];
@@ -62,34 +57,7 @@ export const AFFINITIES: Affinity[] = [
   { id: 'coaching-mentorias', label: 'Coaching / mentorías', group: 'Educación y Desarrollo' },
   
   // ========== ECONOMÍA Y NEGOCIOS ==========
-  { id: 'finanzas', label: 'Finanzas / inversiones / seguros', group: 'Economía y Negocios' },
-  { id: 'legal-contable', label: 'Legal / contabilidad / tributario', group: 'Economía y Negocios' },
-  { id: 'importacion-exportacion', label: 'Importación / exportación / comercio exterior', group: 'Economía y Negocios' },
-  
-  // ========== FAMILIA Y HOGAR ==========
-  { id: 'maternidad-bebes', label: 'Maternidad / bebés / niños', group: 'Familia y Hogar' },
-  { id: 'hogar-decoracion', label: 'Hogar / decoración / organización', group: 'Familia y Hogar' },
-  { id: 'mascotas-animales', label: 'Mascotas / productos animales', group: 'Familia y Hogar' },
-  
-  // ========== BELLEZA Y CUIDADO PERSONAL ==========
-  { id: 'cosmetica-skincare', label: 'Cosmética / skincare / maquillaje', group: 'Belleza y Cuidado Personal' },
-  { id: 'peluqueria-estetica', label: 'Peluquería / estética / spa', group: 'Belleza y Cuidado Personal' },
-  { id: 'moda-accesorios', label: 'Moda / accesorios / joyería', group: 'Belleza y Cuidado Personal' },
-  
-  // ========== SERVICIOS PROFESIONALES ==========
-  { id: 'consultoria-asesoria', label: 'Consultoría / asesoría empresarial', group: 'Servicios Profesionales' },
-  { id: 'rrhh-talento', label: 'Recursos humanos / selección de talento', group: 'Servicios Profesionales' },
-  { id: 'arquitectura-construccion', label: 'Arquitectura / construcción / inmobiliaria', group: 'Servicios Profesionales' },
-  
-  // ========== EVENTOS Y CELEBRACIONES ==========
-  { id: 'bodas-matrimonios', label: 'Bodas / matrimonios', group: 'Eventos y Celebraciones' },
-  { id: 'eventos-corporativos', label: 'Eventos corporativos / conferencias', group: 'Eventos y Celebraciones' },
-  { id: 'catering-banqueteria', label: 'Catering / banquetería / producción', group: 'Eventos y Celebraciones' },
-  
-  // ========== EMPRENDIMIENTO Y COMUNIDAD ==========
-  { id: 'startups-innovacion', label: 'Startups / innovación / tecnología', group: 'Emprendimiento y Comunidad' },
-  { id: 'impacto-social', label: 'Impacto social / ONGs / fundaciones', group: 'Emprendimiento y Comunidad' },
-  { id: 'networking-comunidades', label: 'Networking / comunidades / coworking', group: 'Emprendimiento y Comunidad' },
+  { id: 'finanzas', label: 'Finanzas / inversiones', group: 'Economía y Negocios' },
 ];
 
 // Función helper para obtener afinidades por grupo

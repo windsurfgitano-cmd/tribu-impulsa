@@ -6,6 +6,41 @@
 
 ## 📅 Domingo 15 de Diciembre 2025
 
+### 🎯 Expansión de Lista de Afinidades (38 opciones)
+**Hora:** 00:25 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Expandida lista de afinidades de 20 a **38 opciones** en **11 grupos**
+- Afinidades ahora usan `AFFINITIES` desde `constants/affinities.ts` como fuente única
+- App.tsx genera dropdown dinámicamente con formato "Grupo - Label"
+
+#### Grupos de Afinidad (11)
+| Grupo | Cantidad |
+|-------|----------|
+| Bienestar y Salud | 5 |
+| Diseño y Creatividad | 5 |
+| Digital y Tecnología | 4 |
+| Economía y Negocios | 4 |
+| Educación y Desarrollo | 4 |
+| Estilo de Vida | 4 |
+| Eventos y Celebraciones | 3 |
+| Familia y Hogar | 3 |
+| Gastronomía y Alimentación | 3 |
+| Impacto y Propósito | 3 |
+| Servicios Profesionales | 3 |
+
+#### Archivos Modificados
+```
+constants/affinities.ts - Lista expandida a 38 opciones
+App.tsx - Usa AFFINITIES dinámicamente (línea ~186)
+```
+
+#### Tiempo: ~15 minutos
+
+---
+
 ### 🔒 Bloqueo de App hasta Completar Perfil Obligatorio
 **Hora:** 23:20 hrs  
 **Solicitado por:** Usuario  

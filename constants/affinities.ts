@@ -11,53 +11,83 @@ export interface Affinity {
 
 export const AFFINITY_GROUPS = [
   'Bienestar y Salud',
-  'Diseño y Estilo',
+  'Diseño y Creatividad',
   'Digital y Tecnología',
-  'Sustentabilidad',
-  'Conciencia y Propósito',
-  'Estilo de Vida y Experiencias',
+  'Economía y Negocios',
   'Educación y Desarrollo',
-  'Economía y Negocios'
+  'Estilo de Vida',
+  'Eventos y Celebraciones',
+  'Familia y Hogar',
+  'Gastronomía y Alimentación',
+  'Impacto y Propósito',
+  'Servicios Profesionales'
 ] as const;
 
 export type AffinityGroup = typeof AFFINITY_GROUPS[number];
 
 export const AFFINITIES: Affinity[] = [
-  // ========== BIENESTAR Y SALUD ==========
-  { id: 'bienestar-emocional', label: 'Bienestar emocional / espiritualidad / terapias alternativas', group: 'Bienestar y Salud' },
+  // ========== BIENESTAR Y SALUD (5) ==========
+  { id: 'aire-libre', label: 'Aire libre / naturaleza / outdoor', group: 'Bienestar y Salud' },
+  { id: 'bienestar-emocional', label: 'Bienestar emocional / espiritualidad', group: 'Bienestar y Salud' },
+  { id: 'fitness', label: 'Fitness / deporte / wellness', group: 'Bienestar y Salud' },
+  { id: 'medicina-estetica', label: 'Medicina preventiva / estética / longevidad', group: 'Bienestar y Salud' },
   { id: 'nutricion', label: 'Nutrición / alimentación saludable', group: 'Bienestar y Salud' },
-  { id: 'fitness', label: 'Fitness / wellness / suplementos alimenticios', group: 'Bienestar y Salud' },
-  { id: 'aire-libre', label: 'Aire libre / naturaleza', group: 'Bienestar y Salud' },
-  { id: 'medicina-preventiva', label: 'Medicina preventiva / longevidad / medicina estética', group: 'Bienestar y Salud' },
   
-  // ========== DISEÑO Y ESTILO ==========
-  { id: 'diseno-arte', label: 'Diseño / arte / decoración', group: 'Diseño y Estilo' },
-  { id: 'fotografia-cine', label: 'Fotografía / cine / teatro', group: 'Diseño y Estilo' },
-  { id: 'moda', label: 'Moda', group: 'Diseño y Estilo' },
-  { id: 'lujo', label: 'Lujo', group: 'Diseño y Estilo' },
+  // ========== DISEÑO Y CREATIVIDAD (5) ==========
+  { id: 'arquitectura', label: 'Arquitectura / interiorismo', group: 'Diseño y Creatividad' },
+  { id: 'arte-manualidades', label: 'Arte / manualidades / artesanía', group: 'Diseño y Creatividad' },
+  { id: 'diseno-grafico', label: 'Diseño gráfico / branding', group: 'Diseño y Creatividad' },
+  { id: 'fotografia', label: 'Fotografía / video / audiovisual', group: 'Diseño y Creatividad' },
+  { id: 'moda-tendencias', label: 'Moda / tendencias / lujo', group: 'Diseño y Creatividad' },
   
-  // ========== DIGITAL Y TECNOLOGÍA ==========
-  { id: 'negocios-digitales', label: 'Negocios digitales', group: 'Digital y Tecnología' },
+  // ========== DIGITAL Y TECNOLOGÍA (4) ==========
+  { id: 'ecommerce', label: 'E-commerce / ventas online', group: 'Digital y Tecnología' },
   { id: 'marketing-digital', label: 'Marketing digital / RRSS / contenido', group: 'Digital y Tecnología' },
+  { id: 'software', label: 'Software / apps / desarrollo', group: 'Digital y Tecnología' },
+  { id: 'tecnologia-innovacion', label: 'Tecnología / innovación / IA', group: 'Digital y Tecnología' },
   
-  // ========== SUSTENTABILIDAD ==========
-  { id: 'sustentabilidad', label: 'Proyectos sustentables / economía circular', group: 'Sustentabilidad' },
+  // ========== ECONOMÍA Y NEGOCIOS (4) ==========
+  { id: 'emprendimiento', label: 'Emprendimiento / startups', group: 'Economía y Negocios' },
+  { id: 'finanzas', label: 'Finanzas / inversiones / seguros', group: 'Economía y Negocios' },
+  { id: 'importacion', label: 'Importación / exportación / comercio', group: 'Economía y Negocios' },
+  { id: 'legal-contable', label: 'Legal / contabilidad / tributario', group: 'Economía y Negocios' },
   
-  // ========== CONCIENCIA Y PROPÓSITO ==========
-  { id: 'diversidad', label: 'Diversidad / inclusión', group: 'Conciencia y Propósito' },
+  // ========== EDUCACIÓN Y DESARROLLO (4) ==========
+  { id: 'capacitacion', label: 'Capacitación / talleres / cursos', group: 'Educación y Desarrollo' },
+  { id: 'coaching', label: 'Coaching / mentorías / liderazgo', group: 'Educación y Desarrollo' },
+  { id: 'desarrollo-personal', label: 'Desarrollo personal / profesional', group: 'Educación y Desarrollo' },
+  { id: 'educacion-ninos', label: 'Educación infantil / reforzamiento', group: 'Educación y Desarrollo' },
   
-  // ========== ESTILO DE VIDA Y EXPERIENCIAS ==========
-  { id: 'viajes', label: 'Viajes', group: 'Estilo de Vida y Experiencias' },
-  { id: 'gastronomia', label: 'Gastronomía', group: 'Estilo de Vida y Experiencias' },
-  { id: 'cultura', label: 'Cultura', group: 'Estilo de Vida y Experiencias' },
-  { id: 'mascotas', label: 'Mascotas / pet friendly', group: 'Estilo de Vida y Experiencias' },
+  // ========== ESTILO DE VIDA (4) ==========
+  { id: 'cultura', label: 'Cultura / arte / entretenimiento', group: 'Estilo de Vida' },
+  { id: 'mascotas', label: 'Mascotas / pet friendly', group: 'Estilo de Vida' },
+  { id: 'turismo', label: 'Turismo / viajes / experiencias', group: 'Estilo de Vida' },
+  { id: 'vida-outdoor', label: 'Vida al aire libre / aventura', group: 'Estilo de Vida' },
   
-  // ========== EDUCACIÓN Y DESARROLLO ==========
-  { id: 'formacion', label: 'Formación / cursos / educación', group: 'Educación y Desarrollo' },
-  { id: 'coaching-mentorias', label: 'Coaching / mentorías', group: 'Educación y Desarrollo' },
+  // ========== EVENTOS Y CELEBRACIONES (3) ==========
+  { id: 'bodas', label: 'Bodas / matrimonios', group: 'Eventos y Celebraciones' },
+  { id: 'eventos-corporativos', label: 'Eventos corporativos / ferias', group: 'Eventos y Celebraciones' },
+  { id: 'fiestas', label: 'Fiestas / cumpleaños / celebraciones', group: 'Eventos y Celebraciones' },
   
-  // ========== ECONOMÍA Y NEGOCIOS ==========
-  { id: 'finanzas', label: 'Finanzas / inversiones', group: 'Economía y Negocios' },
+  // ========== FAMILIA Y HOGAR (3) ==========
+  { id: 'hogar', label: 'Hogar / decoración / organización', group: 'Familia y Hogar' },
+  { id: 'maternidad', label: 'Maternidad / bebés / niños', group: 'Familia y Hogar' },
+  { id: 'vida-familiar', label: 'Vida familiar / parenting', group: 'Familia y Hogar' },
+  
+  // ========== GASTRONOMÍA Y ALIMENTACIÓN (3) ==========
+  { id: 'gastronomia', label: 'Gastronomía / restaurantes / café', group: 'Gastronomía y Alimentación' },
+  { id: 'productos-gourmet', label: 'Productos gourmet / artesanales', group: 'Gastronomía y Alimentación' },
+  { id: 'vinos-bebidas', label: 'Vinos / bebidas / sommelier', group: 'Gastronomía y Alimentación' },
+  
+  // ========== IMPACTO Y PROPÓSITO (3) ==========
+  { id: 'diversidad', label: 'Diversidad / inclusión / comunidad', group: 'Impacto y Propósito' },
+  { id: 'impacto-social', label: 'Impacto social / ONGs / voluntariado', group: 'Impacto y Propósito' },
+  { id: 'sustentabilidad', label: 'Sustentabilidad / economía circular', group: 'Impacto y Propósito' },
+  
+  // ========== SERVICIOS PROFESIONALES (3) ==========
+  { id: 'consultoria', label: 'Consultoría / asesoría empresarial', group: 'Servicios Profesionales' },
+  { id: 'rrhh', label: 'RRHH / selección / talento', group: 'Servicios Profesionales' },
+  { id: 'servicios-b2b', label: 'Servicios B2B / corporativos', group: 'Servicios Profesionales' },
 ];
 
 // Función helper para obtener afinidades por grupo

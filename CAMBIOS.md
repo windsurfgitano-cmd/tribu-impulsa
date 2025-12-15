@@ -4,7 +4,105 @@
 
 ---
 
+## 📋 BACKLOG - Pendientes de Reuniones
+
+> Extraído de: `Grabación (2)_analysis.md`, `Grabación (3)_analysis.md`, `Presentacion_Tribu_Impulsa.docx.md`
+
+### ✅ COMPLETADO (Diciembre 2025)
+
+| # | Item | Estado |
+|---|------|--------|
+| 1 | Cambiar "Editar Perfil" a "Completar Perfil" | ✅ |
+| 2 | Checklist paso a paso (Mi Tribu) | ✅ |
+| 3 | Cambiar "Acciones pendientes" → "X emprendedores esperan tu colaboración" | ✅ |
+| 4 | Eliminar palabra "Acusete" → "Solicitudes de ayuda" | ✅ |
+| 5 | Sistema 10+10 explicado en UI | ✅ |
+| 6 | Mensaje WhatsApp rompehielo automático | ✅ |
+| 7 | Menú hamburguesa lateral (slide izquierda) | ✅ |
+| 8 | Segmentación geográfica (Local/Regional/Nacional) | ✅ |
+| 9 | Segmentación por facturación mensual | ✅ |
+| 10 | Sección "¿Cómo funciona?" colapsable en Dashboard | ✅ |
+| 11 | Navegación: Checklist → "Mi Tribu" | ✅ |
+| 12 | Navegación: Menú → "Configuración" con engranaje | ✅ |
+| 13 | Navegación: Inicio con icono casa | ✅ |
+| 14 | Fix duplicados en asignaciones de tribu | ✅ |
+| 15 | Datos perfil persisten en Firebase (para tómbola) | ✅ |
+| 16 | Integración Santander Academia (link-out + tracking) | ✅ |
+| 17 | Módulo Bienestar separado | ✅ |
+| 18 | 38 afinidades en 11 grupos | ✅ |
+
+### 🔴 PENDIENTE (Por Implementar)
+
+| # | Item | Prioridad | Fuente |
+|---|------|-----------|--------|
+| 1 | **Video animado explicativo** (demo Tribu Impulsa) | Alta | Presentación |
+| 2 | **Landing page de bienvenida** mejorada (SPA) | Alta | Grabación 2 |
+| 3 | **Tutorial de botones** en onboarding (pantallazos) | Alta | Presentación |
+| 4 | **Efectos visuales "chaya"** (confeti/fuegos al completar) | Media | Grabación 3 |
+| 5 | **Sistema de Strikes** para quienes no comparten | Media | Grabación 2 |
+| 6 | **Medallas** (bronce, plata, oro) y certificaciones | Media | Grabación 3 |
+| 7 | **Sistema de Ranking** por colaboración | Media | Grabación 3 |
+| 8 | **Reseñas/comentarios** estilo LinkedIn | Media | Grabación 3 |
+| 9 | **Módulo de alianzas** completo (Lovework, etc.) | Media | Presentación |
+| 10 | **Cápsulas educativas** (videos YouTube/Vimeo) | Media | Presentación |
+| 11 | **Pasarela de pago** (MercadoPago) | Alta | Presentación |
+| 12 | **Mostrar Marca/Empresa** en vez de nombre personal | Alta | Grabación 3 |
+| 13 | **Match IA visual** (efecto giratorio/destacado) | Baja | Grabación 3 |
+| 14 | **Panel admin** para concursos | Baja | Presentación |
+| 15 | **Opción agrandar letras** (accesibilidad) | Baja | Presentación |
+| 16 | **Compatibilidad** navegadores antiguos | Baja | Presentación |
+| 17 | **Automatización WhatsApp** a usuarios sin registro completo | Media | Presentación |
+| 18 | **Horarios Tribu** en la web (servicio al cliente) | Baja | Presentación |
+| 19 | **Logo T giratorio** en pantalla de carga | Baja | Presentación |
+| 20 | **Sello certificación** Tribu Impulsa (moneda dorada) | Media | Grabación 3 |
+
+---
+
 ## 📅 Domingo 15 de Diciembre 2025
+
+### 🔧 Mejoras UX Dashboard + Navegación + Fix Duplicados
+**Hora:** 03:30 - 04:00 hrs  
+**Solicitado por:** Usuario (basado en reuniones)  
+**Desarrollador:** Cascade AI
+
+#### Cambios Implementados
+
+**1. Navegación Inferior Rediseñada:**
+- "Inicio" → icono cambiado de Activity a **Home** (casa)
+- "Checklist" → renombrado a **"Mi Tribu"**
+- "Menú" → renombrado a **"Configuración"** con icono **Settings** (engranaje)
+
+**2. Dashboard - Cuadro Amarillo:**
+- "Acusetes enviados" → **"Solicitudes enviadas"**
+- Icono cambiado de AlertTriangle a **HelpCircle**
+- Título cambiado a "Ayuda"
+
+**3. Dashboard - Sección ¿Cómo Funciona?:**
+- Nueva sección colapsable con guía del sistema 10+10
+- Explica los 4 pasos del funcionamiento
+- Accesible en cualquier momento desde el inicio
+
+**4. Fix Bug Duplicados en Tribu:**
+- Corregido: un emprendedor ya no puede aparecer 2 veces en la misma categoría
+- Añadida deduplicación con Set en `generateTribeAssignments`
+
+**5. CompleteProfileScreen - Campo Facturación:**
+- Añadido campo obligatorio "Facturación mensual aproximada"
+- Validación antes de guardar
+- Datos persisten en Firebase para la tómbola/matching
+
+**6. Admin Panel:**
+- "Reportes Acusete" → **"Solicitudes de Ayuda"**
+
+#### Archivos Modificados
+```
+App.tsx - Navegación, Dashboard, CompleteProfileScreen
+services/matchService.ts - Deduplicación en generateTribeAssignments
+```
+
+#### Tiempo: ~45 minutos
+
+---
 
 ### 🎯 Expansión de Lista de Afinidades (38 opciones)
 **Hora:** 00:25 hrs  

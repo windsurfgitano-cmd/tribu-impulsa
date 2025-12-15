@@ -587,13 +587,21 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
     const shuffledMedium = seededShuffle(mediumScore, seed + '-med');
     const shuffledLow = seededShuffle(lowScore, seed + '-low');
     
+    // IMPORTANTE: Eliminar duplicados - un perfil NO puede aparecer 2 veces en la misma categoría
+    const seenIds = new Set<string>();
     const finalList = [
       ...shuffledHigh.slice(0, 8),
       ...shuffledMedium.slice(0, 6),
       ...shuffledLow.slice(0, 4),
       ...shuffledHigh.slice(8),
       ...shuffledMedium.slice(6),
-    ].map(p => p.profile);
+    ]
+      .map(p => p.profile)
+      .filter(profile => {
+        if (seenIds.has(profile.id)) return false;
+        seenIds.add(profile.id);
+        return true;
+      });
     
     // Obtener usuarios de relleno (Dafna, Doraluz, Guillermo)
     const fillerUsers = realUsers
@@ -619,6 +627,7 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
       allProfiles = [...allProfiles, ...mockFiller];
     }
     
+    // Dividir en 2 grupos SIN duplicados dentro de cada grupo
     const toShare = allProfiles.slice(0, 10);
     const shareWithMe = allProfiles.slice(10, 20);
     

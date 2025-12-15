@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
@@ -2789,6 +2789,22 @@ const MyProfileView = () => {
     const [passwordError, setPasswordError] = useState('');
     const [passwordSuccess, setPasswordSuccess] = useState(false);
     
+    // Estado para acceso secreto a Red (Directorio)
+    const [showSecretInput, setShowSecretInput] = useState(false);
+    const [secretCode, setSecretCode] = useState('');
+    const [secretCodeError, setSecretCodeError] = useState('');
+    
+    const handleSecretAccess = () => {
+      if (secretCode === 'TRIBU2026') {
+        navigate('/directory');
+        setSecretCode('');
+        setShowSecretInput(false);
+      } else {
+        setSecretCodeError('Código incorrecto');
+        setTimeout(() => setSecretCodeError(''), 2000);
+      }
+    };
+    
     // Función para cambiar contraseña
     const handleChangePassword = async () => {
       setPasswordError('');
@@ -3548,25 +3564,6 @@ const MyProfileView = () => {
                         {/* Botón de Notificaciones Push */}
                         <NotificationButton />
                         
-                        {/* Accesos rápidos */}
-                        <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
-                            {/* Club de Bienestar */}
-                            <button 
-                                onClick={() => navigate('/beneficios')}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white hover:opacity-90 transition-colors flex items-center justify-center gap-2 text-sm font-bold shadow-md"
-                            >
-                                <Gift size={16} /> Club de Bienestar
-                            </button>
-                            
-                            {/* Santander Academia */}
-                            <button 
-                                onClick={() => navigate('/academia')}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#EC0000] to-[#CC0000] text-white hover:opacity-90 transition-colors flex items-center justify-center gap-2 text-sm font-bold shadow-md"
-                            >
-                                🎓 Santander Academia
-                            </button>
-                        </div>
-                        
                         {/* Opciones de cuenta */}
                         <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
                             {/* Cambiar contraseña */}
@@ -3589,6 +3586,37 @@ const MyProfileView = () => {
                             >
                                 <LogOut size={16} /> Cerrar Sesión
                             </button>
+                            
+                            {/* Acceso secreto a Red/Directorio */}
+                            <div className="pt-4 border-t border-dashed border-[#E4E7EF]">
+                              <button
+                                onClick={() => setShowSecretInput(!showSecretInput)}
+                                className="text-xs text-[#B3B8C6] hover:text-[#7C8193] transition-colors"
+                              >
+                                🔐 Acceso administrador
+                              </button>
+                              {showSecretInput && (
+                                <div className="mt-2 space-y-2 animate-fadeIn">
+                                  <input
+                                    type="password"
+                                    value={secretCode}
+                                    onChange={(e) => setSecretCode(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSecretAccess()}
+                                    placeholder="Código de acceso..."
+                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-sm"
+                                  />
+                                  {secretCodeError && (
+                                    <p className="text-xs text-[#FB275D]">{secretCodeError}</p>
+                                  )}
+                                  <button
+                                    onClick={handleSecretAccess}
+                                    className="w-full py-2 rounded-lg bg-[#181B34] text-white text-sm"
+                                  >
+                                    Acceder a Red Completa
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                         </div>
                         
                         {/* Modal cambio de contraseña */}
@@ -5364,8 +5392,8 @@ const Dashboard = () => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMenu(false)}
           />
-          {/* Menu Panel */}
-          <div className="absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
+          {/* Menu Panel - Slides from LEFT like Santander */}
+          <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
             <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-white">Menú</h2>
@@ -5440,19 +5468,6 @@ const Dashboard = () => {
               </button>
               
               <button 
-                onClick={() => { setShowMenu(false); navigate('/directory'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-              >
-                <div className="w-10 h-10 rounded-lg bg-[#00CA72]/10 flex items-center justify-center">
-                  <Briefcase size={20} className="text-[#00CA72]" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Directorio</p>
-                  <p className="text-xs text-[#7C8193]">Todos los emprendedores</p>
-                </div>
-              </button>
-              
-              <button 
                 onClick={() => { setShowMenu(false); navigate('/my-profile'); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
               >
@@ -5523,16 +5538,16 @@ const Dashboard = () => {
             <span className="text-white/70 text-xs">Pendientes: {tribeStats.pending}</span>
           </div>
           
-          {/* Card: Reportes - Amarillo */}
+          {/* Card: Ayuda - Amarillo */}
           <div className="bg-[#FFCC00] rounded-xl p-4">
             <div className="flex justify-between items-start mb-3">
-              <span className="text-[#181B34]/70 text-xs font-medium">Reportes</span>
+              <span className="text-[#181B34]/70 text-xs font-medium">Ayuda</span>
               <div className="w-8 h-8 rounded-full bg-[#181B34]/10 flex items-center justify-center">
-                <AlertTriangle size={16} className="text-[#181B34]" />
+                <HelpCircle size={16} className="text-[#181B34]" />
               </div>
             </div>
             <p className="text-2xl font-bold text-[#181B34]">{tribeStats.reports}</p>
-            <span className="text-[#181B34]/60 text-xs">Acusetes enviados</span>
+            <span className="text-[#181B34]/60 text-xs">Solicitudes enviadas</span>
           </div>
         </div>
         
@@ -5594,6 +5609,69 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Cómo Funciona - Onboarding Accesible */}
+      <div className="px-4 mb-4">
+        <details className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#6161FF]/20 overflow-hidden group">
+          <summary className="p-4 cursor-pointer list-none flex items-center justify-between hover:bg-[#6161FF]/5 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6161FF] to-[#00CA72] flex items-center justify-center">
+                <HelpCircle size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-[#181B34]">¿Cómo funciona Tribu Impulsa?</p>
+                <p className="text-xs text-[#7C8193]">Guía rápida del sistema 10+10</p>
+              </div>
+            </div>
+            <ChevronRight size={20} className="text-[#7C8193] group-open:rotate-90 transition-transform" />
+          </summary>
+          <div className="px-4 pb-4 space-y-3 border-t border-[#E4E7EF]/50">
+            <div className="pt-3 space-y-3">
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-[#6161FF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">1</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-[#181B34]">Conoce tu Tribu</p>
+                  <p className="text-xs text-[#7C8193]">Cada mes recibes 10 emprendedores asignados para impulsar</p>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-[#00CA72] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">2</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-[#181B34]">Comparte y Colabora</p>
+                  <p className="text-xs text-[#7C8193]">Etiqueta y comparte a tus 10 asignados en tus redes sociales</p>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-[#FFCC00] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[#181B34] text-xs font-bold">3</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-[#181B34]">Recibe Impulso</p>
+                  <p className="text-xs text-[#7C8193]">Otros 10 emprendedores diferentes te compartirán a ti</p>
+                </div>
+              </div>
+              <div className="flex gap-3 items-start">
+                <div className="w-6 h-6 rounded-full bg-[#E91E63] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-white text-xs font-bold">4</span>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-[#181B34]">Crece en Comunidad</p>
+                  <p className="text-xs text-[#7C8193]">Mayor visibilidad, networking real y oportunidades de negocio</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-[#F5F7FB] rounded-lg p-3 mt-2">
+              <p className="text-xs text-[#7C8193]">
+                💡 <span className="font-medium">Tip:</span> Conéctate por WhatsApp con tu Tribu para coordinar cómo compartirse mutuamente. ¡La comunicación es clave!
+              </p>
+            </div>
+          </div>
+        </details>
       </div>
 
       {/* Logros y Gamificación */}
@@ -6956,7 +7034,7 @@ const AdminPanelInline = () => {
         {activeTab === 'reports' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-[#181B34]">Reportes "Acusete"</h1>
+              <h1 className="text-2xl font-bold text-[#181B34]">Solicitudes de Ayuda</h1>
               <div className="flex gap-2 text-sm">
                 <span className="px-3 py-1 rounded-full bg-[#FFCC00]/10 text-[#9D6B00]">
                   {realReports.filter((r: Report | {status?: string}) => !r.status || r.status === 'pending').length} pendientes
@@ -7179,6 +7257,8 @@ const CompleteProfileScreen = () => {
   const currentUser = getCurrentUser();
   const [validation, setValidation] = useState<ProfileValidation>({ isComplete: false, missingFields: [], completionPercent: 0 });
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
     companyName: currentUser?.companyName || '',
@@ -7187,22 +7267,28 @@ const CompleteProfileScreen = () => {
     scope: currentUser?.scope || '',
     phone: currentUser?.phone || currentUser?.whatsapp || '',
     comuna: currentUser?.comuna || '',
-    selectedRegions: currentUser?.selectedRegions || [] as string[]
+    selectedRegions: currentUser?.selectedRegions || [] as string[],
+    revenue: currentUser?.revenue || ''
   });
   const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
 
   useEffect(() => {
-    if (currentUser) {
-      setValidation(validateUserProfile(currentUser));
+    if (currentUser && !isSaved && !isLoading) {
+      const newValidation = validateUserProfile(currentUser);
+      // Solo actualizar si cambió el estado de completado
+      if (newValidation.isComplete !== validation.isComplete) {
+        setValidation(newValidation);
+      }
     }
-  }, [currentUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, isSaved, isLoading]);
 
-  // Si el perfil ya está completo, redirigir al dashboard
+  // Si el perfil ya está completo Y no estamos en proceso de guardado, redirigir al dashboard
   useEffect(() => {
-    if (validation.isComplete) {
+    if (validation.isComplete && !isSaved && !isLoading) {
       navigate('/dashboard', { replace: true });
     }
-  }, [validation.isComplete, navigate]);
+  }, [validation.isComplete, navigate, isSaved, isLoading]);
 
   const comunasDeRegion = selectedRegionForComuna
     ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
@@ -7241,6 +7327,10 @@ const CompleteProfileScreen = () => {
       setSaveError('Por favor selecciona una afinidad');
       return;
     }
+    if (!formData.revenue) {
+      setSaveError('Por favor selecciona tu rango de facturación');
+      return;
+    }
     if (!formData.scope) {
       setSaveError('Por favor selecciona tu alcance geográfico');
       return;
@@ -7268,7 +7358,8 @@ const CompleteProfileScreen = () => {
         phone: formData.phone.trim(),
         whatsapp: formData.phone.trim(),
         comuna: formData.scope === 'LOCAL' ? formData.comuna : undefined,
-        selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : []
+        selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : [],
+        revenue: formData.revenue
       };
 
       // Actualizar en localStorage
@@ -7296,25 +7387,26 @@ const CompleteProfileScreen = () => {
         console.log('⚠️ Error sincronizando:', err);
       }
 
-      // Revalidar con el usuario actualizado desde localStorage
-      const freshUser = getCurrentUser();
-      const newValidation = validateUserProfile(freshUser);
-      console.log('✅ Nueva validación:', newValidation);
-      setValidation(newValidation);
+      // Guardado exitoso - mostrar estado guardado y countdown
+      console.log('🎉 Perfil guardado exitosamente');
+      setIsLoading(false);
+      setIsSaved(true);
       
-      if (newValidation.isComplete) {
-        console.log('🎉 Perfil completo, navegando a dashboard');
-        navigate('/dashboard', { replace: true });
-      } else {
-        console.log('⚠️ Aún faltan campos:', newValidation.missingFields);
-        setSaveError(`Aún faltan campos: ${newValidation.missingFields.join(', ')}`);
-      }
+      // Iniciar countdown 3...2...1...
+      setCountdown(3);
+      setTimeout(() => setCountdown(2), 1000);
+      setTimeout(() => setCountdown(1), 2000);
+      setTimeout(() => {
+        console.log('🚀 Navegando a búsqueda de tribu');
+        window.location.href = '/#/searching';
+      }, 3000);
+      return;
+      
     } catch (err) {
       console.error('Error guardando perfil:', err);
       setSaveError('Error inesperado. Por favor intenta de nuevo.');
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleRegionToggle = (regionId: string) => {
@@ -7444,6 +7536,23 @@ const CompleteProfileScreen = () => {
             </select>
           </div>
 
+          {/* Facturación Mensual */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Facturación mensual aproximada <span className="text-[#FB275D]">*</span>
+            </label>
+            <select
+              value={formData.revenue}
+              onChange={(e) => setFormData(prev => ({ ...prev, revenue: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+            >
+              <option value="">Selecciona un rango</option>
+              {SURVEY_REVENUE_OPTIONS.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Alcance */}
           <div>
             <label className="block text-sm font-semibold text-[#181B34] mb-2">
@@ -7530,13 +7639,22 @@ const CompleteProfileScreen = () => {
           <button
             type="button"
             onClick={handleSave}
-            disabled={isLoading}
-            className="w-full py-4 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#7B61FF] text-white font-bold text-base shadow-lg hover:shadow-xl transition disabled:opacity-50 mt-6"
+            disabled={isLoading || isSaved}
+            className={`w-full py-4 rounded-xl font-bold text-base shadow-lg transition mt-6 ${
+              isSaved 
+                ? 'bg-gradient-to-r from-[#00CA72] to-[#00B865] text-white' 
+                : 'bg-gradient-to-r from-[#6161FF] to-[#7B61FF] text-white hover:shadow-xl disabled:opacity-50'
+            }`}
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Guardando...
+              </span>
+            ) : isSaved ? (
+              <span className="flex items-center justify-center gap-2">
+                <CheckCircle size={20} />
+                {countdown !== null ? `¡Guardado! Redirigiendo en ${countdown}...` : '¡Guardado!'}
               </span>
             ) : (
               '✓ Guardar y continuar'
@@ -7630,21 +7748,12 @@ const AppLayout = () => {
                   !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
                 }`}
               >
-                <Activity size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
+                <Home size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
                 <span className="text-[10px] mt-1 font-medium">Inicio</span>
                 {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
               
-              {/* Actividad - LIBRE para todos */}
-              <button 
-                onClick={() => navigate('/activity')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isActivity ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <Bell size={22} strokeWidth={isActivity ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Actividad</span>
-              </button>
-
-              {/* Checklist - BLOQUEADO para invitados */}
+              {/* Checklist / Mi Tribu - BLOQUEADO para invitados */}
               <button 
                 onClick={() => navigateWithCheck('/tribe', true)}
                 className="flex flex-col items-center justify-center -mt-4 relative"
@@ -7662,29 +7771,16 @@ const AppLayout = () => {
                 </div>
                 <span className={`text-[10px] mt-1 font-semibold ${
                   !isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
-                }`}>Checklist</span>
+                }`}>Mi Tribu</span>
               </button>
 
-              {/* Red - BLOQUEADO para invitados */}
-              <button 
-                onClick={() => navigateWithCheck('/directory', true)}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
-                  isDirectory ? 'text-[#6161FF]' : 
-                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
-                }`}
-              >
-                <Users size={22} strokeWidth={isDirectory ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Red</span>
-                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
-              </button>
-
-              {/* Menu/Perfil - LIBRE para todos */}
+              {/* Configuración/Perfil - LIBRE para todos */}
               <button 
                 onClick={() => navigate('/my-profile')}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
               >
-                <UserIcon size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Menú</span>
+                <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
+                <span className="text-[10px] mt-1 font-medium">Configuración</span>
               </button>
             </div>
           </nav>

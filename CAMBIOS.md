@@ -4,9 +4,75 @@
 
 ---
 
+## 📅 Domingo 15 de Diciembre 2025
+
+### 🔒 Bloqueo de App hasta Completar Perfil Obligatorio
+**Hora:** 23:20 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problema
+- Usuarios podían usar la app sin completar datos obligatorios para matching
+- El algoritmo no funcionaba correctamente sin: nombre, empresa, categoría, afinidad, alcance geográfico, teléfono
+- Perfiles incompletos no recibían buenas recomendaciones de Tribu
+
+#### Solución Implementada
+
+1. **Función de validación `validateUserProfile()`**
+   - Verifica 6 campos obligatorios: nombre, empresa, categoría, afinidad, alcance, teléfono
+   - Validación especial para geografía según alcance (comuna si LOCAL, regiones si REGIONAL)
+   - Retorna lista de campos faltantes y porcentaje de completitud
+
+2. **Nueva pantalla `CompleteProfileScreen`**
+   - Pantalla bloqueante que impide acceso a rutas protegidas
+   - Muestra barra de progreso visual
+   - Lista clara de campos faltantes destacados
+   - Formulario completo con dropdowns de categorías, afinidades, regiones
+   - Selector cascada Región → Comuna para alcance LOCAL
+   - Multi-select de regiones para alcance REGIONAL
+   - Sincronización automática con Firebase al guardar
+
+3. **Modificación de `MemberRoute`**
+   - Ahora verifica PRIMERO si el perfil está completo
+   - Si no está completo → redirige a `/complete-profile`
+   - Si está completo → verifica membresía como antes
+
+4. **Nueva ruta `/complete-profile`**
+   - Agregada a rutas sin navegación inferior
+   - Bloquea acceso hasta completar todos los campos obligatorios
+
+#### Campos Obligatorios para Matching
+| Campo | Descripción |
+|-------|-------------|
+| `name` | Nombre del usuario |
+| `companyName` | Nombre del emprendimiento |
+| `category` | Giro / Rubro del negocio |
+| `affinity` | Con qué tipo de negocios quiere conectar |
+| `scope` | Alcance: LOCAL, REGIONAL o NACIONAL |
+| `phone` | Teléfono / WhatsApp para contacto |
+| `comuna` | Solo si alcance es LOCAL |
+| `selectedRegions` | Solo si alcance es REGIONAL |
+
+#### Archivos Modificados
+```
+App.tsx
+  - Agregada función validateUserProfile() (líneas ~517-553)
+  - Agregada función isProfileComplete() (líneas ~551-553)
+  - Modificado MemberRoute para verificar perfil completo primero (líneas ~6719-6785)
+  - Agregado componente CompleteProfileScreen (líneas ~6787-7094)
+  - Agregada ruta /complete-profile (línea ~7143)
+  - Actualizado hiddenNavRoutes para incluir /complete-profile (línea ~7117)
+CAMBIOS.md
+```
+
+#### Tiempo Estimado
+**Total:** ~25 minutos
+
+---
+
 # 📊 RESUMEN EJECUTIVO - TODOS LOS CAMBIOS
 
-## Estado Actual de la App (8 Dic 2025)
+## Estado Actual de la App (15 Dic 2025)
 
 | Métrica | Valor |
 |---------|-------|

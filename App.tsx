@@ -495,6 +495,63 @@ const useSurveyGuard = () => {
   }, [navigate]);
 };
 
+// ============================================
+// VALIDACIÓN DE PERFIL COMPLETO - CAMPOS OBLIGATORIOS
+// ============================================
+
+type ProfileValidation = {
+  isComplete: boolean;
+  missingFields: string[];
+  completionPercent: number;
+};
+
+const MANDATORY_FIELDS = [
+  { key: 'name', label: 'Nombre' },
+  { key: 'companyName', label: 'Nombre de tu emprendimiento' },
+  { key: 'category', label: 'Giro / Rubro' },
+  { key: 'affinity', label: 'Afinidad / Intereses' },
+  { key: 'scope', label: 'Alcance geográfico' },
+  { key: 'phone', label: 'Teléfono / WhatsApp' },
+];
+
+const validateUserProfile = (user: UserProfile | null): ProfileValidation => {
+  if (!user) {
+    return { isComplete: false, missingFields: MANDATORY_FIELDS.map(f => f.label), completionPercent: 0 };
+  }
+
+  const missingFields: string[] = [];
+  
+  // Validar campos básicos obligatorios
+  if (!user.name?.trim()) missingFields.push('Nombre');
+  if (!user.companyName?.trim()) missingFields.push('Nombre de tu emprendimiento');
+  if (!user.category?.trim()) missingFields.push('Giro / Rubro');
+  if (!user.affinity?.trim()) missingFields.push('Afinidad / Intereses');
+  if (!user.scope) missingFields.push('Alcance geográfico');
+  if (!user.phone?.trim() && !user.whatsapp?.trim()) missingFields.push('Teléfono / WhatsApp');
+
+  // Validación especial para geografía según alcance
+  if (user.scope === 'LOCAL' && !user.comuna) {
+    missingFields.push('Comuna (requerida para alcance LOCAL)');
+  }
+  if (user.scope === 'REGIONAL' && (!user.selectedRegions || user.selectedRegions.length === 0)) {
+    missingFields.push('Regiones (requeridas para alcance REGIONAL)');
+  }
+
+  const totalFields = MANDATORY_FIELDS.length + 1; // +1 por geografía
+  const completedFields = totalFields - missingFields.length;
+  const completionPercent = Math.round((completedFields / totalFields) * 100);
+
+  return {
+    isComplete: missingFields.length === 0,
+    missingFields,
+    completionPercent
+  };
+};
+
+const isProfileComplete = (user: UserProfile | null): boolean => {
+  return validateUserProfile(user).isComplete;
+};
+
 // --- Components defined here for file constraint compliance ---
 
 // Auth storage
@@ -6659,20 +6716,31 @@ const AdminPanelInline = () => {
   );
 };
 
-// Componente de ruta protegida para miembros
+// Componente de ruta protegida para miembros CON VALIDACIÓN DE PERFIL COMPLETO
 const MemberRoute = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [isMember, setIsMember] = useState<boolean | null>(null);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   
   useEffect(() => {
-    const checkMembership = async () => {
+    const checkAccess = async () => {
       if (!currentUser) {
         navigate('/');
         return;
       }
       
-      // Verificar en localStorage
+      // PRIMERO: Verificar que el perfil esté completo
+      const profileValidation = validateUserProfile(currentUser);
+      if (!profileValidation.isComplete) {
+        console.log('⚠️ Perfil incompleto, campos faltantes:', profileValidation.missingFields);
+        setProfileComplete(false);
+        navigate('/complete-profile');
+        return;
+      }
+      setProfileComplete(true);
+      
+      // SEGUNDO: Verificar membresía
       const status = localStorage.getItem(`membership_status_${currentUser.id}`);
       if (status === 'miembro' || status === 'admin') {
         setIsMember(true);
@@ -6704,7 +6772,7 @@ const MemberRoute = ({ children }: { children: React.ReactNode }) => {
       navigate('/membership');
     };
     
-    checkMembership();
+    checkAccess();
   }, [currentUser, navigate]);
   
   if (isMember === null) {
@@ -6714,6 +6782,319 @@ const MemberRoute = ({ children }: { children: React.ReactNode }) => {
   }
   
   return isMember ? <>{children}</> : null;
+};
+
+// ============================================
+// PANTALLA DE COMPLETAR PERFIL OBLIGATORIO
+// ============================================
+const CompleteProfileScreen = () => {
+  const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const [validation, setValidation] = useState<ProfileValidation>({ isComplete: false, missingFields: [], completionPercent: 0 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: currentUser?.name || '',
+    companyName: currentUser?.companyName || '',
+    category: currentUser?.category || '',
+    affinity: currentUser?.affinity || '',
+    scope: currentUser?.scope || '',
+    phone: currentUser?.phone || currentUser?.whatsapp || '',
+    comuna: currentUser?.comuna || '',
+    selectedRegions: currentUser?.selectedRegions || [] as string[]
+  });
+  const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
+
+  useEffect(() => {
+    if (currentUser) {
+      setValidation(validateUserProfile(currentUser));
+    }
+  }, [currentUser]);
+
+  // Si el perfil ya está completo, redirigir al dashboard
+  useEffect(() => {
+    if (validation.isComplete) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [validation.isComplete, navigate]);
+
+  const comunasDeRegion = selectedRegionForComuna
+    ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
+    : [];
+
+  const handleSave = async () => {
+    if (!currentUser) return;
+    setIsLoading(true);
+
+    try {
+      const updatedUser = {
+        ...currentUser,
+        name: formData.name,
+        companyName: formData.companyName,
+        category: formData.category,
+        affinity: formData.affinity,
+        scope: formData.scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL',
+        phone: formData.phone,
+        whatsapp: formData.phone,
+        comuna: formData.scope === 'LOCAL' ? formData.comuna : undefined,
+        selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : []
+      };
+
+      // Actualizar en localStorage
+      updateUser(currentUser.id, updatedUser);
+      setCurrentUser(currentUser.id);
+
+      // Sincronizar con Firebase
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, setDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (db) {
+          await setDoc(doc(db, 'users', currentUser.id), updatedUser, { merge: true });
+          console.log('✅ Perfil sincronizado con Firebase');
+        }
+      } catch (err) {
+        console.log('⚠️ Error sincronizando:', err);
+      }
+
+      // Revalidar
+      const newValidation = validateUserProfile(updatedUser);
+      setValidation(newValidation);
+      
+      if (newValidation.isComplete) {
+        navigate('/dashboard', { replace: true });
+      }
+    } catch (err) {
+      console.error('Error guardando perfil:', err);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const handleRegionToggle = (regionId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedRegions: prev.selectedRegions.includes(regionId)
+        ? prev.selectedRegions.filter(r => r !== regionId)
+        : [...prev.selectedRegions, regionId]
+    }));
+  };
+
+  if (!currentUser) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#7B61FF] to-[#9D61FF] flex flex-col">
+      {/* Header */}
+      <div className="pt-12 pb-6 px-6 text-center">
+        <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-xl">
+          <AlertTriangle size={40} className="text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-white mb-2">¡Completa tu perfil!</h1>
+        <p className="text-white/80 text-sm">
+          Para poder conectarte con tu Tribu, necesitamos algunos datos obligatorios
+        </p>
+        
+        {/* Barra de progreso */}
+        <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
+          <div 
+            className="h-full bg-[#00CA72] transition-all duration-500"
+            style={{ width: `${validation.completionPercent}%` }}
+          />
+        </div>
+        <p className="text-white/60 text-xs mt-2">{validation.completionPercent}% completado</p>
+      </div>
+
+      {/* Formulario */}
+      <div className="flex-1 bg-white rounded-t-3xl px-6 py-8 overflow-y-auto">
+        <div className="max-w-md mx-auto space-y-5">
+          
+          {/* Campos faltantes destacados */}
+          {validation.missingFields.length > 0 && (
+            <div className="bg-[#FFF3E6] border border-[#FF9500] rounded-xl p-4 mb-6">
+              <p className="text-sm font-semibold text-[#FF6B00] mb-2">📝 Te faltan estos datos:</p>
+              <ul className="text-xs text-[#FF6B00]/80 space-y-1">
+                {validation.missingFields.map((field, i) => (
+                  <li key={i}>• {field}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Nombre */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Tu nombre <span className="text-[#FB275D]">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+              placeholder="Ej: María González"
+            />
+          </div>
+
+          {/* Nombre emprendimiento */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Nombre de tu emprendimiento <span className="text-[#FB275D]">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.companyName}
+              onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+              placeholder="Ej: Dulces María"
+            />
+          </div>
+
+          {/* Teléfono */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Teléfono / WhatsApp <span className="text-[#FB275D]">*</span>
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+              placeholder="+56 9 1234 5678"
+            />
+          </div>
+
+          {/* Categoría/Giro */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Giro / Rubro <span className="text-[#FB275D]">*</span>
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+            >
+              <option value="">Selecciona tu rubro</option>
+              {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Afinidad */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Afinidad / Intereses <span className="text-[#FB275D]">*</span>
+            </label>
+            <select
+              value={formData.affinity}
+              onChange={(e) => setFormData(prev => ({ ...prev, affinity: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+            >
+              <option value="">¿Con qué tipo de negocios quieres conectar?</option>
+              {[...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(aff => (
+                <option key={aff} value={aff}>{aff}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Alcance */}
+          <div>
+            <label className="block text-sm font-semibold text-[#181B34] mb-2">
+              Alcance geográfico <span className="text-[#FB275D]">*</span>
+            </label>
+            <select
+              value={formData.scope}
+              onChange={(e) => setFormData(prev => ({ ...prev, scope: e.target.value }))}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+            >
+              <option value="">¿Dónde operas?</option>
+              {SURVEY_SCOPE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Comuna - solo si LOCAL */}
+          {formData.scope === 'LOCAL' && (
+            <div>
+              <label className="block text-sm font-semibold text-[#181B34] mb-2">
+                Tu comuna <span className="text-[#FB275D]">*</span>
+              </label>
+              <select
+                value={selectedRegionForComuna}
+                onChange={(e) => setSelectedRegionForComuna(e.target.value)}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF] mb-2"
+              >
+                <option value="">Primero selecciona tu región</option>
+                {REGIONS.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </select>
+              {selectedRegionForComuna && (
+                <select
+                  value={formData.comuna}
+                  onChange={(e) => setFormData(prev => ({ ...prev, comuna: e.target.value }))}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
+                >
+                  <option value="">Selecciona tu comuna</option>
+                  {comunasDeRegion.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          {/* Regiones - solo si REGIONAL */}
+          {formData.scope === 'REGIONAL' && (
+            <div>
+              <label className="block text-sm font-semibold text-[#181B34] mb-2">
+                Regiones donde operas <span className="text-[#FB275D]">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto bg-[#F5F7FB] rounded-xl p-3">
+                {REGIONS.map(r => (
+                  <label key={r.id} className="flex items-center gap-2 text-xs cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedRegions.includes(r.id)}
+                      onChange={() => handleRegionToggle(r.id)}
+                      className="rounded border-[#E4E7EF]"
+                    />
+                    <span className="truncate">{r.name}</span>
+                  </label>
+                ))}
+              </div>
+              {formData.selectedRegions.length > 0 && (
+                <p className="text-xs text-[#00CA72] mt-2">
+                  ✓ {formData.selectedRegions.length} región(es) seleccionada(s)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Botón guardar */}
+          <button
+            onClick={handleSave}
+            disabled={isLoading}
+            className="w-full py-4 rounded-xl bg-gradient-to-r from-[#6161FF] to-[#7B61FF] text-white font-bold text-base shadow-lg hover:shadow-xl transition disabled:opacity-50 mt-6"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Guardando...
+              </span>
+            ) : (
+              '✓ Guardar y continuar'
+            )}
+          </button>
+
+          <p className="text-center text-xs text-[#7C8193] mt-4">
+            Estos datos son necesarios para el algoritmo de matching y para que tu Tribu pueda contactarte
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 // Main Layout with Navigation
@@ -6732,8 +7113,8 @@ const AppLayout = () => {
     }
   }, [currentUser, location.pathname]);
   
-  // Hide nav on login, register, survey, admin and membership pages
-  const hiddenNavRoutes = ['/', '/register', '/survey', '/admin', '/membership', '/searching'];
+  // Hide nav on login, register, survey, admin, membership and complete-profile pages
+  const hiddenNavRoutes = ['/', '/register', '/survey', '/admin', '/membership', '/searching', '/complete-profile'];
   const showNav = !hiddenNavRoutes.includes(location.pathname) && !location.pathname.startsWith('/admin');
   const isDashboard = location.pathname.includes('/dashboard');
   const isActivity = location.pathname.includes('/activity');
@@ -6759,7 +7140,8 @@ const AppLayout = () => {
                 <Route path="/searching" element={<SearchingScreen />} />
                 <Route path="/survey" element={<SurveyScreen />} />
                 <Route path="/membership" element={<MembershipScreen />} />
-                {/* Rutas PROTEGIDAS - solo para MIEMBROS */}
+                <Route path="/complete-profile" element={<CompleteProfileScreen />} />
+                {/* Rutas PROTEGIDAS - solo para MIEMBROS (requiere perfil completo) */}
                 <Route path="/dashboard" element={<MemberRoute><Dashboard /></MemberRoute>} />
                 <Route path="/tribe" element={<MemberRoute><TribeAssignmentsView /></MemberRoute>} />
                 <Route path="/directory" element={<MemberRoute><DirectoryView /></MemberRoute>} />

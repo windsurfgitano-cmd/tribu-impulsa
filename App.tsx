@@ -11,6 +11,7 @@ import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
 import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
+import { AFFINITIES } from './constants/affinities';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { 
   exportForGoogleDrive, 
@@ -182,28 +183,8 @@ const loadUserFromCloud = async (userId: string): Promise<UserProfile | null> =>
 
 const SURVEY_CATEGORY_OPTIONS = TRIBE_CATEGORY_OPTIONS;
 
-const SURVEY_AFFINITY_OPTIONS = [
-  "Bienestar y Salud  Bienestar emocional / espiritualidad / terapias alternativas",
-  "Bienestar y Salud  Nutrición / alimentación saludable",
-  "Bienestar y Salud  Fitness /wellness / suplementos alimenticios",
-  "Bienestar y Salud  Aire libre / naturaleza",
-  "Bienestar y Salud  Medicina preventiva / longevidad / medicina estética",
-  "Diseño y Estilo Diseño / arte / decoración",
-  "Diseño y Estilo Fotografía / cine / teatro",
-  "Diseño y Estilo Moda",
-  "Diseño y Estilo Lujo",
-  "Digital y Tecnología Negocios digitales",
-  "Digital y Tecnología Marketing digital / RRSS/ contenido",
-  "Sustentabilidad Proyectos sustentables / economía circular",
-  "Conciencia y Propósito Diversidad / inclusión",
-  "Estilo de Vida y Experiencias Viajes",
-  "Estilo de Vida y Experiencias Gastronomía",
-  "Estilo de Vida y Experiencias Cultura",
-  "Estilo de Vida y Experiencias Mascotas / pet friendly",
-  "Educación y Desarrollo Formación / cursos / educación",
-  "Educación y Desarrollo Coaching / mentorías",
-  "Economía y Negocios Finanzas /"
-];
+// Afinidades generadas desde constants/affinities.ts - formato "Grupo - Label"
+const SURVEY_AFFINITY_OPTIONS = AFFINITIES.map(aff => `${aff.group} - ${aff.label}`);
 
 const SURVEY_SCOPE_OPTIONS = [
   { value: 'LOCAL', label: 'LOCAL (sólo si operas en una comuna específica)' },

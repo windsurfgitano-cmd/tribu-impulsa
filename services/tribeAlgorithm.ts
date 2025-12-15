@@ -252,14 +252,54 @@ export const shouldRegenerateTribe = (): boolean => {
   return lastMonth !== currentMonth;
 };
 
-// Regenerar si es necesario
+// Obtener la Tribu del mes anterior (para evitar repetir)
+export const getPreviousMonthTribe = (userId: string): Set<string> => {
+  const stored = localStorage.getItem('tribu_previous_month');
+  if (!stored) return new Set();
+  
+  try {
+    const obj = JSON.parse(stored);
+    const userPrevious = obj[userId];
+    if (!userPrevious) return new Set();
+    return new Set([...userPrevious.iShareTo || [], ...userPrevious.theyShareToMe || []]);
+  } catch {
+    return new Set();
+  }
+};
+
+// Guardar Tribu actual como "anterior" antes de rotar
+const archivePreviousMonth = (): void => {
+  const current = localStorage.getItem('tribu_assignments');
+  if (current) {
+    localStorage.setItem('tribu_previous_month', current);
+  }
+};
+
+// Regenerar si es necesario - ROTACIÓN MENSUAL
 export const ensureTribeAssignments = (): void => {
   if (shouldRegenerateTribe()) {
-    console.log('🔄 Regenerando asignaciones de tribu para nuevo mes...');
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    console.log(`🔄 ROTACIÓN MENSUAL: Generando nueva Tribu para ${currentMonth}...`);
+    
+    // Archivar la Tribu actual antes de regenerar
+    archivePreviousMonth();
+    
+    // Generar nuevas asignaciones
     const assignments = generateAllTribeAssignments();
     saveTribeAssignments(assignments);
-    console.log(`✅ ${assignments.size} asignaciones generadas`);
+    
+    console.log(`✅ ${assignments.size} asignaciones generadas para ${currentMonth}`);
+    console.log('📅 La próxima rotación será el 1° del próximo mes');
   }
+};
+
+// Forzar regeneración manual (admin)
+export const forceRegenerateTribe = (): void => {
+  console.log('⚠️ Forzando regeneración de Tribu...');
+  archivePreviousMonth();
+  const assignments = generateAllTribeAssignments();
+  saveTribeAssignments(assignments);
+  console.log(`✅ ${assignments.size} asignaciones regeneradas`);
 };
 
 export default {

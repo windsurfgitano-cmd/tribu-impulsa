@@ -41,6 +41,81 @@ App.tsx - Usa AFFINITIES dinámicamente (línea ~186)
 
 ---
 
+### 💬 Mejoras UX: Mensajes y WhatsApp Rompehielo
+**Hora:** 00:50 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambios Implementados
+
+1. **Cambio de mensaje "Acciones pendientes"**
+   - Antes: "Tienes X acciones pendientes"
+   - Ahora: "¡X emprendedores esperan tu colaboración!"
+   - Subtítulo: "Conéctate con tu Tribu este mes"
+
+2. **WhatsApp Rompehielo Automático**
+   - Botón "💬 Avisarle" (para los que YO comparto):
+     > "¡Hola [Nombre]! 👋 Soy parte de tu Tribu Impulsa este mes. Te acabo de compartir en mis redes 🚀 ¿Me cuentas cómo te va con tu emprendimiento [Empresa]?"
+   - Botón "💬 Preguntar" (para los que ME comparten):
+     > "¡Hola [Nombre]! 👋 Vi que somos parte de la misma Tribu Impulsa este mes. ¿Ya pudiste compartirme en tus redes? 🙏 ¡Muchas gracias de antemano!"
+
+#### Archivos Modificados
+```
+App.tsx
+  - Línea ~5336: Nuevo mensaje de alerta
+  - Líneas ~2392-2412: WhatsApp con mensajes pre-armados
+```
+
+#### Tiempo: ~10 minutos
+
+---
+
+### 📚 Onboarding Mejorado "CONOCE A TU TRIBU"
+**Hora:** 00:55 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Tutorial paso a paso mejorado con 5 pantallas:
+  1. **¡Conoce a tu Tribu!** - Bienvenida y concepto
+  2. **¿Cómo funciona?** - Dar y recibir (10+10)
+  3. **Matching Inteligente** - Algoritmo y rotación mensual
+  4. **Tu Checklist Mensual** - Pasos para completar
+  5. **¡Listo para empezar!** - Call to action
+
+#### Archivos Modificados
+```
+App.tsx - TUTORIAL_STEPS actualizado (líneas ~4919-4960)
+```
+
+#### Tiempo: ~10 minutos
+
+---
+
+### 🔄 Rotación Mensual de Tribu
+**Hora:** 01:00 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Mejorado algoritmo de rotación mensual
+- Nuevas funciones:
+  - `getPreviousMonthTribe()` - Obtener Tribu del mes anterior
+  - `archivePreviousMonth()` - Guardar antes de rotar
+  - `forceRegenerateTribe()` - Regeneración manual (admin)
+- El 1° de cada mes se genera automáticamente nueva Tribu
+- Se archiva la Tribu anterior para evitar repeticiones
+
+#### Archivos Modificados
+```
+services/tribeAlgorithm.ts
+  - Líneas ~255-303: Nuevas funciones de rotación
+```
+
+#### Tiempo: ~10 minutos
+
+---
+
 ### 🔒 Bloqueo de App hasta Completar Perfil Obligatorio
 **Hora:** 23:20 hrs  
 **Solicitado por:** Usuario  

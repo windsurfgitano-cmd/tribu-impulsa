@@ -2390,25 +2390,25 @@ const TribeAssignmentsView = () => {
                         </button>
                       )}
                       <a
-                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
+                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`¡Hola ${profile.name.split(' ')[0]}! 👋 Soy parte de tu Tribu Impulsa este mes. Te acabo de compartir en mis redes 🚀 ¿Me cuentas cómo te va con tu emprendimiento ${profile.companyName}?`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                       >
-                        💬 WhatsApp
+                        💬 Avisarle
                       </a>
                     </>
                   )}
                   
-                  {/* ME IMPULSAN: Solo WhatsApp para preguntar */}
+                  {/* ME IMPULSAN: WhatsApp para agradecer/preguntar */}
                   {!isToShare && (
                     <a
-                      href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}`}
+                      href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`¡Hola ${profile.name.split(' ')[0]}! 👋 Vi que somos parte de la misma Tribu Impulsa este mes. ¿Ya pudiste compartirme en tus redes? 🙏 ¡Muchas gracias de antemano!`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                     >
-                      💬 WhatsApp
+                      💬 Preguntar
                     </a>
                   )}
                   
@@ -4919,35 +4919,43 @@ const DirectoryView = () => {
 const TUTORIAL_STEPS = [
   {
     id: 'welcome',
-    title: '¡Bienvenido/a a Tribu Impulsa!',
-    subtitle: 'Tu comunidad de emprendedores para crecer juntos',
-    content: 'Tribu Impulsa te conecta con otros emprendedores para hacer cross-promotion: tú compartes su contenido y ellos comparten el tuyo. Crecemos juntos.',
+    title: '¡Conoce a tu Tribu!',
+    subtitle: 'Bienvenido/a a la comunidad de emprendedores',
+    content: '🎯 Tribu Impulsa es una red de apoyo mutuo donde emprendedores se impulsan entre sí.\n\nCada mes recibes TU TRIBU: un grupo de emprendedores seleccionados especialmente para ti.',
     iconType: 'zap',
     color: 'from-[#6161FF] to-[#00CA72]'
   },
   {
-    id: 'tribe',
-    title: 'Tu Tribu 10 + 10',
-    subtitle: 'Cada mes recibirás nuevas asignaciones',
-    content: '• 10 cuentas a las que TÚ compartes\n• 10 cuentas que te comparten A TI\n\nEl algoritmo te asigna matches complementarios, evitando competencia directa.',
+    id: 'howItWorks',
+    title: '¿Cómo funciona?',
+    subtitle: 'Es simple: dar y recibir',
+    content: '📤 YO DOY: Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)\n\n📥 YO RECIBO: 10 emprendedores diferentes comparten TU contenido en sus redes\n\n¡Así todos ganamos exposición!',
     iconType: 'users',
     color: 'from-[#00CA72] to-[#4AE698]'
   },
   {
+    id: 'matching',
+    title: 'Matching Inteligente',
+    subtitle: 'El algoritmo trabaja por ti',
+    content: '🧠 Nuestro algoritmo te conecta con emprendedores:\n\n✓ Complementarios a tu negocio (no competencia)\n✓ De tu misma zona geográfica\n✓ Con intereses y afinidades similares\n\nEl 1° de cada mes recibes una NUEVA Tribu.',
+    iconType: 'zap',
+    color: 'from-[#A78BFA] to-[#C9A8FF]'
+  },
+  {
     id: 'checklist',
-    title: 'Checklist de Reciprocidad',
-    subtitle: 'Marca lo que vas completando',
-    content: '1. Ve a "Mi Tribu" en el menú inferior\n2. Revisa tus 10+10 asignaciones\n3. Marca cuando compartas algo\n4. Si alguien no cumple, usa "Reportar"',
+    title: 'Tu Checklist Mensual',
+    subtitle: 'Mantén el control de tus colaboraciones',
+    content: '✅ Paso 1: Ve a "Checklist" en el menú\n✅ Paso 2: Revisa tus 10+10 asignaciones\n✅ Paso 3: Comparte y marca "Ya compartí"\n✅ Paso 4: Escríbeles por WhatsApp\n\nSi alguien no cumple, puedes reportarlo.',
     iconType: 'check',
     color: 'from-[#FFCC00] to-[#FFE066]'
   },
   {
-    id: 'profile',
-    title: 'Tu Perfil Profesional',
-    subtitle: 'Preséntate ante la comunidad',
-    content: 'Tu perfil muestra tu emprendimiento a otros miembros. Asegúrate de tener:\n• Foto de perfil\n• Instagram actualizado\n• Descripción atractiva',
+    id: 'start',
+    title: '¡Listo para empezar!',
+    subtitle: 'Tu Tribu te está esperando',
+    content: '🚀 Ya tienes todo lo que necesitas:\n\n1. Revisa tu Tribu del mes\n2. Comparte a tus 10 asignados\n3. Conéctate por WhatsApp\n4. ¡Crece junto a la comunidad!\n\n¿Empezamos?',
     iconType: 'user',
-    color: 'from-[#A78BFA] to-[#C9A8FF]'
+    color: 'from-[#E91E63] to-[#FF6B9D]'
   }
 ];
 
@@ -5333,8 +5341,8 @@ const Dashboard = () => {
               <Clock size={20} className="text-white" />
             </div>
             <div className="flex-1">
-              <p className="text-white font-semibold">Tienes {tribeStats.pending} acciones pendientes</p>
-              <p className="text-white/70 text-xs">Completa tu checklist mensual</p>
+              <p className="text-white font-semibold">¡{tribeStats.pending} emprendedores esperan tu colaboración!</p>
+              <p className="text-white/70 text-xs">Conéctate con tu Tribu este mes</p>
             </div>
             <ChevronRight size={20} className="text-white/70" />
           </div>

@@ -2603,6 +2603,65 @@ const TribeAssignmentsView = () => {
       </header>
 
       <section className="px-4 py-4 space-y-4">
+        {/* Stats Cards - Acciones y Ayuda */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Card: Acciones */}
+          <div className="bg-[#6161FF] rounded-xl p-4">
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-white/80 text-xs font-medium">Acciones</span>
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <CheckCircle size={16} className="text-white" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length}/{assignments.toShare.length + assignments.shareWithMe.length}
+            </p>
+            <span className="text-white/70 text-xs">
+              Pendientes: {(assignments.toShare.length + assignments.shareWithMe.length) - (Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length)}
+            </span>
+          </div>
+          
+          {/* Card: Ayuda - Amarillo */}
+          <div className="bg-[#FFCC00] rounded-xl p-4">
+            <div className="flex justify-between items-start mb-3">
+              <span className="text-[#181B34]/70 text-xs font-medium">Ayuda</span>
+              <div className="w-8 h-8 rounded-full bg-[#181B34]/10 flex items-center justify-center">
+                <HelpCircle size={16} className="text-[#181B34]" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-[#181B34]">{reports.length}</p>
+            <span className="text-[#181B34]/60 text-xs">Solicitudes enviadas</span>
+          </div>
+        </div>
+        
+        {/* Alert Card - if pending actions */}
+        {(assignments.toShare.length + assignments.shareWithMe.length) - (Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length) > 0 && (
+          <div className="bg-[#FB275D] rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Clock size={20} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-semibold">
+                ¡{(assignments.toShare.length + assignments.shareWithMe.length) - (Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length)} emprendedores esperan tu colaboración!
+              </p>
+              <p className="text-white/70 text-xs">Conéctate con tu Tribu este mes</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Success Card - if all completed */}
+        {completion === 100 && (
+          <div className="bg-[#00CA72] rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+              <CheckCircle size={20} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-semibold">¡Checklist completado!</p>
+              <p className="text-white/70 text-xs">Excelente trabajo este mes</p>
+            </div>
+          </div>
+        )}
+
         {/* Progress Card - Solid color */}
         <div className="bg-[#6161FF] rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
@@ -5519,68 +5578,6 @@ const Dashboard = () => {
            />
         </button>
       </header>
-
-      {/* Stats Cards - Solid colors, no gradients */}
-      <div className="px-4 mt-4 mb-6">
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card: Acciones */}
-          <div 
-            onClick={() => navigate('/tribe')}
-            className="bg-[#6161FF] rounded-xl p-4 cursor-pointer hover:opacity-90 transition-opacity"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-white/80 text-xs font-medium">Acciones</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <CheckCircle size={16} className="text-white" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-white">{tribeStats.completed}/{tribeStats.total}</p>
-            <span className="text-white/70 text-xs">Pendientes: {tribeStats.pending}</span>
-          </div>
-          
-          {/* Card: Ayuda - Amarillo */}
-          <div className="bg-[#FFCC00] rounded-xl p-4">
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-[#181B34]/70 text-xs font-medium">Ayuda</span>
-              <div className="w-8 h-8 rounded-full bg-[#181B34]/10 flex items-center justify-center">
-                <HelpCircle size={16} className="text-[#181B34]" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-[#181B34]">{tribeStats.reports}</p>
-            <span className="text-[#181B34]/60 text-xs">Solicitudes enviadas</span>
-          </div>
-        </div>
-        
-        {/* Alert Card - if pending actions */}
-        {tribeStats.pending > 0 && (
-          <div 
-            onClick={() => navigate('/tribe')}
-            className="mt-3 bg-[#FB275D] rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
-          >
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <Clock size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-semibold">¡{tribeStats.pending} emprendedores esperan tu colaboración!</p>
-              <p className="text-white/70 text-xs">Conéctate con tu Tribu este mes</p>
-            </div>
-            <ChevronRight size={20} className="text-white/70" />
-          </div>
-        )}
-        
-        {/* Success Card - if all completed */}
-        {tribeStats.pending === 0 && tribeStats.completed > 0 && (
-          <div className="mt-3 bg-[#00CA72] rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-white font-semibold">Checklist completado</p>
-              <p className="text-white/70 text-xs">Excelente trabajo esta semana</p>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Tip del Día */}
       <div className="px-4 mb-4">

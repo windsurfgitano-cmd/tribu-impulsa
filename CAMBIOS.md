@@ -60,6 +60,45 @@
 
 ## 📅 Domingo 15 de Diciembre 2025
 
+### 🧹 Cierre Fase 1 - Cabos Sueltos
+**Hora:** 21:40 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Fixes Aplicados
+
+1. **`undefined` → `null` en campos opcionales**
+   - `sector`, `facebook`, `tiktok`, `website` ahora usan `null` en vez de `undefined`
+   - Firebase no acepta `undefined`, esto prevenía errores de sync
+
+2. **Admin Panel - Eliminado `window.location.reload()`**
+   - Antes: 4 lugares usaban reload completo de página
+   - Ahora: Usa `refreshData()` con estado React
+   - UX mucho más fluida, no pierde contexto
+
+3. **Admin Panel - Toasts en vez de `alert()`**
+   - Antes: `alert('✅ Reporte resuelto')` nativo feo
+   - Ahora: Toast elegante con auto-dismiss 3s
+   - Consistente con el diseño de la app
+
+4. **Documento FASEII-PARTE1.md**
+   - Removido texto random "restaurant el japonés"
+   - Eliminado doble separador `---` redundante
+
+#### Archivos Modificados
+```
+App.tsx - Líneas 1265-1269: undefined→null
+App.tsx - Líneas 6458-6472: Toast y refresh state en admin
+App.tsx - Líneas 6572-6579: Toast UI component
+App.tsx - Líneas 7121-7172: Reemplazados reload/alert por toast/refresh
+FASEII-PARTE1.md - Limpieza de texto
+```
+
+#### Commit: `e2f28b1`
+#### Tiempo: ~25 minutos
+
+---
+
 ### 🔄 Mover Stats Cards de Dashboard a Mi Tribu
 **Hora:** 12:58 hrs  
 **Solicitado por:** Usuario  

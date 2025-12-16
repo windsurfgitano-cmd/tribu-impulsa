@@ -60,6 +60,47 @@
 
 ## 📅 Domingo 15 de Diciembre 2025
 
+### 🔄 Mover Stats Cards de Dashboard a Mi Tribu
+**Hora:** 12:58 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Cards de Acciones (morado), Ayuda (amarillo) y Alerta Fucsia movidos de Inicio a Mi Tribu
+- Dashboard ahora más limpio con solo Tip del Día y ¿Cómo funciona?
+
+#### Commit: `fdb4ac7`
+#### Tiempo: ~10 minutos
+
+---
+
+### 🔙 Fix Botón Volver en Beneficios
+**Hora:** 12:58 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Cambio
+- Botón "Volver" en Club de Bienestar ahora va a `/dashboard` (antes iba a `/my-profile`)
+
+#### Commit: `0a18206`
+#### Tiempo: ~5 minutos
+
+---
+
+### 🔧 Fix Firebase Error + Escape de Loop
+**Hora:** 11:30 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Problemas Resueltos
+1. **Firebase rechazaba `comuna: undefined`** → Cambiado a `null`
+2. **Loop infinito en CompleteProfileScreen** → Añadido botón "Ir a mi perfil para editar después"
+
+#### Commit: `0ff9c00`
+#### Tiempo: ~15 minutos
+
+---
+
 ### 🔧 Mejoras UX Dashboard + Navegación + Fix Duplicados
 **Hora:** 03:30 - 04:00 hrs  
 **Solicitado por:** Usuario (basado en reuniones)  

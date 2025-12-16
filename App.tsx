@@ -1262,11 +1262,11 @@ const RegisterScreen = () => {
         password: formData.password, // Contraseña incluida en el perfil
         companyName: formData.companyName,
         city: formData.city,
-        sector: formData.sector || undefined,
+        sector: formData.sector || null,
         instagram: formData.instagram,
-        facebook: formData.facebook || undefined,
-        tiktok: formData.tiktok || undefined,
-        website: formData.website || undefined,
+        facebook: formData.facebook || null,
+        tiktok: formData.tiktok || null,
+        website: formData.website || null,
         category: formData.category,
         affinity: formData.affinity,
         scope: formData.scope,
@@ -6462,6 +6462,14 @@ const AdminPanelInline = () => {
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
   const [error, setError] = useState('');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  const refreshData = () => setRefreshKey(k => k + 1);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Check admin session
   useEffect(() => {
@@ -6498,9 +6506,11 @@ const AdminPanelInline = () => {
   // Usuarios REALES
   const realUsers = getAllUsers();
   
-  // Reportes REALES (nuevo sistema mejorado + legacy)
+  // Reportes REALES (nuevo sistema mejorado + legacy) - se refresca con refreshKey
   const legacyReports = JSON.parse(localStorage.getItem('tribeReportsLog') || '[]');
   const newReports = getAllReports();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _refresh = refreshKey; // Trigger re-render when reports change
   const realReports = newReports.length > 0 ? newReports : legacyReports;
   
   // Cumplimiento
@@ -6561,6 +6571,12 @@ const AdminPanelInline = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F7FB] flex">
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 z-50 bg-[#181B34] text-white px-4 py-3 rounded-xl shadow-lg animate-slideDown">
+          {toastMessage}
+        </div>
+      )}
       {/* Sidebar */}
       <div className="w-64 bg-white min-h-screen p-4 flex flex-col border-r border-[#E4E7EF]">
         <div className="flex items-center gap-3 mb-8 p-2">
@@ -7111,7 +7127,8 @@ const AdminPanelInline = () => {
                               onClick={() => {
                                 if (report.id) {
                                   updateReportStatus(report.id, 'in_review');
-                                  window.location.reload();
+                                  showToast('📋 Reporte en revisión');
+                                  refreshData();
                                 }
                               }}
                               className="flex-1 bg-[#A78BFA] text-white py-2 rounded-lg hover:bg-[#7C3AED] text-sm font-medium transition flex items-center justify-center gap-1"
@@ -7123,9 +7140,9 @@ const AdminPanelInline = () => {
                             onClick={() => {
                               const notes = prompt('Notas de resolución (opcional):');
                               if (report.id) {
-                                updateReportStatus(report.id, 'resolved', notes || undefined);
-                                alert('✅ Reporte marcado como resuelto');
-                                window.location.reload();
+                                updateReportStatus(report.id, 'resolved', notes || null);
+                                showToast('✅ Reporte marcado como resuelto');
+                                refreshData();
                               }
                             }}
                             className="flex-1 bg-[#00CA72] text-white py-2 rounded-lg hover:bg-[#00B366] text-sm font-medium transition"
@@ -7137,9 +7154,9 @@ const AdminPanelInline = () => {
                               if (confirm('¿Sancionar a este usuario? Se suspenderá su cuenta.')) {
                                 const notes = prompt('Motivo de la sanción:');
                                 if (report.id) {
-                                  updateReportStatus(report.id, 'sanctioned', notes || undefined);
-                                  alert('🚫 Usuario sancionado y cuenta suspendida');
-                                  window.location.reload();
+                                  updateReportStatus(report.id, 'sanctioned', notes || null);
+                                  showToast('🚫 Usuario sancionado y cuenta suspendida');
+                                  refreshData();
                                 }
                               }
                             }}
@@ -7151,9 +7168,9 @@ const AdminPanelInline = () => {
                             onClick={() => {
                               const notes = prompt('Motivo del desestimo:');
                               if (report.id) {
-                                updateReportStatus(report.id, 'dismissed', notes || undefined);
-                                alert('Reporte desestimado');
-                                window.location.reload();
+                                updateReportStatus(report.id, 'dismissed', notes || null);
+                                showToast('Reporte desestimado');
+                                refreshData();
                               }
                             }}
                             className="bg-[#7C8193]/10 text-[#7C8193] py-2 px-3 rounded-lg hover:bg-[#7C8193]/20 text-sm font-medium transition"

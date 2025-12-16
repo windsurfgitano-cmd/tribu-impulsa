@@ -2688,7 +2688,7 @@ const TribeAssignmentsView = () => {
                     <Sparkles size={28} className="text-white animate-spin" />
                   </div>
                   <p className="text-sm font-medium text-[#181B34]">Analizando compatibilidad...</p>
-                  <p className="text-xs text-[#7C8193]">Powered by Azure AI</p>
+                  <p className="text-xs text-[#7C8193]">Powered by TRIBU X AI</p>
                 </div>
               )}
               

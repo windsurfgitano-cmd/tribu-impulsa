@@ -786,7 +786,10 @@ const LoginScreen = () => {
       city: loggedUser.city || '',
       category: loggedUser.category || '',
       affinity: loggedUser.affinity || loggedUser.category || '',
-      scope: 'NACIONAL'
+      scope: loggedUser.scope || 'NACIONAL',
+      revenue: loggedUser.revenue || '',
+      comuna: loggedUser.comuna || '',
+      selectedRegions: loggedUser.selectedRegions || []
     };
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
     

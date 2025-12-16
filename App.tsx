@@ -2452,7 +2452,7 @@ const TribeAssignmentsView = () => {
                         rel="noopener noreferrer"
                         className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                       >
-                        💬 Avisarle
+                        💬 Rompehielo
                       </a>
                     </>
                   )}
@@ -2465,9 +2465,30 @@ const TribeAssignmentsView = () => {
                       rel="noopener noreferrer"
                       className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                     >
-                      💬 Preguntar
+                      💬 Rompehielo
                     </a>
                   )}
+                  
+                  {/* Análisis Inteligente TRIBU X */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const p = profile as any;
+                      const analysis = `🔍 *Análisis TRIBU X de ${profile.companyName}*\n\n` +
+                        `👤 *Emprendedor:* ${profile.name}\n` +
+                        `🏢 *Empresa:* ${profile.companyName}\n` +
+                        `📂 *Rubro:* ${profile.category || profile.subCategory || 'No especificado'}\n` +
+                        `🎯 *Afinidad:* ${p.affinity || 'No especificada'}\n` +
+                        `📍 *Alcance:* ${p.scope || 'No especificado'}\n` +
+                        `${profile.instagram ? `📸 IG: @${profile.instagram.replace('@', '')}\n` : ''}` +
+                        `\n💡 *Tip de colaboración:*\n` +
+                        `Podrías mencionarle en una story hablando sobre "${profile.category || profile.subCategory}" y etiquetar su cuenta.`;
+                      alert(analysis);
+                    }}
+                    className="text-[12px] px-3 py-2 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#A78BFA] text-white font-medium"
+                  >
+                    🔮 Análisis TRIBU X
+                  </button>
                   
                   {/* Ver perfil */}
                   <button

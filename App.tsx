@@ -2648,15 +2648,15 @@ const TribeAssignmentsView = () => {
         document.body
       )}
       
-      {/* Modal de Análisis TRIBU X */}
+      {/* Modal de Análisis TRIBU X - FULL SCREEN */}
       {analysisProfile && ReactDOM.createPortal(
         <div 
-          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-[99999] backdrop-blur-sm"
+          className="fixed inset-0 bg-black/80 flex flex-col z-[99999] backdrop-blur-sm"
           onClick={() => setAnalysisProfile(null)}
         >
           <div 
-            className="bg-gradient-to-br from-[#F5F7FB] to-white w-full sm:w-[90%] sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl animate-slideUp overflow-hidden max-h-[85vh] flex flex-col"
-            style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+            className="bg-gradient-to-br from-[#F5F7FB] to-white w-full h-full flex flex-col"
+            style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Header con gradiente - fixed */}
@@ -5254,7 +5254,7 @@ const TUTORIAL_STEPS = [
     id: 'matching',
     title: 'Matching Inteligente',
     subtitle: 'El algoritmo trabaja por ti',
-    content: '🧠 Nuestro algoritmo te conecta con emprendedores:\n\n✓ Complementarios a tu negocio (no competencia)\n✓ De tu misma zona geográfica\n✓ Con intereses y afinidades similares\n\nEl 1° de cada mes recibes una NUEVA Tribu.',
+    content: '🧠 Nuestro algoritmo te conecta con emprendedores:\n\n✓ Complementarios a tu negocio (no competencia)\n✓ De la zona geográfica que tú hayas elegido\n✓ Con intereses y afinidades similares\n\nEl 1° de cada mes recibes una NUEVA Tribu.',
     iconType: 'zap',
     color: 'from-[#A78BFA] to-[#C9A8FF]'
   },
@@ -5767,7 +5767,7 @@ const Dashboard = () => {
 
       {/* Cómo Funciona - Onboarding Accesible */}
       <div className="px-4 mb-4">
-        <details className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#6161FF]/20 overflow-hidden group">
+        <details open className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#6161FF]/20 overflow-hidden group">
           <summary className="p-4 cursor-pointer list-none flex items-center justify-between hover:bg-[#6161FF]/5 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#6161FF] to-[#00CA72] flex items-center justify-center">

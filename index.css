@@ -454,3 +454,105 @@ body {
 .bg-fucsia-100 { background-color: var(--color-fucsia-100); }
 .bg-lavanda { background-color: var(--color-lavanda); }
 .bg-rosa-suave { background-color: var(--color-rosa-suave); }
+
+/* ===== iPHONE 14 PRO MAX OPTIMIZATIONS ===== */
+/* Retina Display Ready - 3x pixel density */
+
+/* High-DPI media query for Retina displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Sharper borders on Retina */
+  .card, .card-elevated, .glass {
+    border-width: 0.5px;
+  }
+  
+  /* Crisper text rendering */
+  body {
+    -webkit-font-smoothing: subpixel-antialiased;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* iPhone 14 Pro Max specific (430x932 @ 3x) */
+@media only screen 
+  and (device-width: 430px) 
+  and (device-height: 932px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  
+  /* Dynamic Island safe area */
+  .pt-safe, .pt-safe-min {
+    padding-top: max(env(safe-area-inset-top, 59px), 59px);
+  }
+  
+  /* Home indicator area */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom, 34px), 34px);
+  }
+  
+  /* Larger touch targets for Pro Max */
+  button, .btn-primary, .btn-secondary, a[role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Better spacing for larger screen */
+  .card, .card-elevated {
+    padding: 24px;
+  }
+}
+
+/* iPhone Pro models (Dynamic Island) */
+@media only screen and (min-width: 390px) and (-webkit-device-pixel-ratio: 3) {
+  /* Ensure content doesn't overlap with Dynamic Island */
+  .header-safe {
+    padding-top: max(env(safe-area-inset-top, 47px), 47px);
+  }
+}
+
+/* iOS touch optimization */
+@supports (-webkit-touch-callout: none) {
+  /* Disable text selection on interactive elements */
+  button, a, .interactive {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Smooth momentum scrolling */
+  .scroll-container {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+  }
+  
+  /* Remove tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Fix for iOS input zoom */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Slide down animation for toasts */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+/* Profile reminder banner */
+.profile-reminder-banner {
+  background: linear-gradient(135deg, var(--color-warning-100), var(--color-warning-050));
+  border: 1px solid var(--color-warning-300);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(255, 204, 0, 0.2);
+}

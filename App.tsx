@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
@@ -5579,6 +5579,9 @@ const Dashboard = () => {
         </button>
       </header>
 
+      {/* Banner de recordatorio si perfil incompleto */}
+      <ProfileReminderBanner />
+
       {/* Tip del Día */}
       <div className="px-4 mb-4">
         <div className="bg-gradient-to-r from-[#F5F7FB] to-white rounded-xl p-4 border border-[#E4E7EF]">
@@ -7195,12 +7198,51 @@ const AdminPanelInline = () => {
   );
 };
 
-// Componente de ruta protegida para miembros CON VALIDACIÓN DE PERFIL COMPLETO
+// Banner de recordatorio de perfil incompleto
+const ProfileReminderBanner = () => {
+  const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const [dismissed, setDismissed] = useState(false);
+  
+  if (!currentUser || dismissed) return null;
+  
+  const validation = validateUserProfile(currentUser);
+  if (validation.isComplete) return null;
+  
+  return (
+    <div className="profile-reminder-banner animate-slideDown">
+      <div className="w-10 h-10 bg-[#FFCC00] rounded-full flex items-center justify-center flex-shrink-0">
+        <AlertCircle size={20} className="text-[#181B34]" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-[#181B34]">
+          ⚠️ Recuerda completar tus datos
+        </p>
+        <p className="text-xs text-[#7C8193] mt-0.5">
+          Faltan: {validation.missingFields.slice(0, 2).join(', ')}{validation.missingFields.length > 2 ? ` y ${validation.missingFields.length - 2} más` : ''}
+        </p>
+      </div>
+      <button 
+        onClick={() => navigate('/my-profile')}
+        className="px-3 py-1.5 bg-[#FFCC00] text-[#181B34] rounded-lg text-xs font-semibold hover:bg-[#E0A800] transition flex-shrink-0"
+      >
+        Completar
+      </button>
+      <button 
+        onClick={() => setDismissed(true)}
+        className="p-1 text-[#7C8193] hover:text-[#181B34] transition flex-shrink-0"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+};
+
+// Componente de ruta protegida para miembros - SIN bloqueo por perfil incompleto
 const MemberRoute = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [isMember, setIsMember] = useState<boolean | null>(null);
-  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   
   useEffect(() => {
     const checkAccess = async () => {
@@ -7209,17 +7251,10 @@ const MemberRoute = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       
-      // PRIMERO: Verificar que el perfil esté completo
-      const profileValidation = validateUserProfile(currentUser);
-      if (!profileValidation.isComplete) {
-        console.log('⚠️ Perfil incompleto, campos faltantes:', profileValidation.missingFields);
-        setProfileComplete(false);
-        navigate('/complete-profile');
-        return;
-      }
-      setProfileComplete(true);
+      // Ya NO bloqueamos por perfil incompleto - solo mostramos banner
+      // El banner ProfileReminderBanner se muestra en el Dashboard
       
-      // SEGUNDO: Verificar membresía
+      // Verificar membresía
       const status = localStorage.getItem(`membership_status_${currentUser.id}`);
       if (status === 'miembro' || status === 'admin') {
         setIsMember(true);

@@ -58,6 +58,49 @@
 
 ---
 
+## 📅 Lunes 16 de Diciembre 2025
+
+### 📱 Optimización iPhone 14 Pro Max + Eliminación Loop Registro
+**Hora:** 11:20 hrs  
+**Solicitado por:** Usuario (reporte de Doraluz)  
+**Desarrollador:** Cascade AI
+
+#### Cambios Implementados
+
+1. **iPhone 14 Pro Max / Retina Display Ready**
+   - Media queries específicas para 430x932 @ 3x pixel density
+   - Dynamic Island safe area (59px top padding)
+   - Home indicator safe area (34px bottom)
+   - Touch targets mínimos de 48px para mejor usabilidad
+   - Fix zoom en inputs iOS (font-size: 16px)
+   - Momentum scrolling (-webkit-overflow-scrolling: touch)
+   - Bordes más finos (0.5px) en displays Retina
+
+2. **Eliminación Loop de Registro Obligatorio**
+   - Ya NO redirige automáticamente a `/complete-profile`
+   - Usuario puede usar la app aunque no complete perfil
+   - Perfil se puede completar después desde "Mi Perfil"
+
+3. **Banner de Recordatorio Persistente**
+   - Nuevo componente `ProfileReminderBanner`
+   - Aparece en Dashboard si perfil incompleto
+   - Muestra campos faltantes
+   - Botón directo a "Completar"
+   - Se puede cerrar temporalmente (vuelve al recargar)
+
+#### Archivos Modificados
+```
+index.css - Líneas 458-558: CSS iPhone 14 Pro Max + Retina
+App.tsx - Línea 5: Import AlertCircle
+App.tsx - Líneas 7198-7235: ProfileReminderBanner component
+App.tsx - Líneas 7238-7295: MemberRoute sin redirect a complete-profile
+App.tsx - Línea 5583: Banner en Dashboard
+```
+
+#### Tiempo: ~30 minutos
+
+---
+
 ## 📅 Domingo 15 de Diciembre 2025
 
 ### 🧹 Cierre Fase 1 - Cabos Sueltos

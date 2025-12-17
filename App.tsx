@@ -3293,13 +3293,36 @@ const MyProfileView = () => {
                 />
                 
                 {/* Top Navigation Actions (con safe-area para iPhone) */}
-                <div className="absolute top-14 left-4 z-30 flex items-center gap-4">
+                <div className="absolute top-14 left-4 right-4 z-30 flex items-center justify-between">
                     <button 
                         onClick={() => navigate('/dashboard')}
                         className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
                     >
                         <ArrowLeft size={18} />
                         <span className="text-sm font-medium">Volver</span>
+                    </button>
+                    <button 
+                        onClick={() => {
+                          setSaveMessage('🔄 Actualizando datos...');
+                          setTimeout(() => {
+                            setProfile(getMyProfile());
+                            const user = getCurrentUser();
+                            if (user) {
+                              setEditScope(user.scope || 'NACIONAL');
+                              setEditSelectedRegions(user.selectedRegions || []);
+                              setEditComuna(user.comuna || '');
+                              setEditCategory(user.category || '');
+                              setEditAffinity(user.affinity || '');
+                              setEditRevenue(user.revenue || '');
+                            }
+                            setSaveMessage('✅ Datos actualizados');
+                            setTimeout(() => setSaveMessage(null), 2000);
+                          }, 500);
+                        }}
+                        className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
+                    >
+                        <RefreshCw size={18} />
+                        <span className="text-sm font-medium">Refrescar</span>
                     </button>
                 </div>
             </div>

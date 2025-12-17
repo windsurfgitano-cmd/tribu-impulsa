@@ -60,6 +60,50 @@
 
 ## 📅 Lunes 16 de Diciembre 2025
 
+### 🔧 Fixes UX Doraluz + Modal TRIBU X Fullscreen
+**Hora:** 21:00 hrs  
+**Solicitado por:** Usuario (reporte de Doraluz)  
+**Desarrollador:** Cascade AI
+
+#### Cambios Implementados
+
+1. **Fix Persistencia de Datos (Bug Crítico)**
+   - `scope: 'NACIONAL'` estaba hardcodeado en `completeLogin()`
+   - Ahora preserva: `scope`, `revenue`, `comuna`, `selectedRegions` del usuario
+   - Los datos ya no se pierden al iniciar sesión
+
+2. **Sección "¿Cómo funciona?" expandida por defecto**
+   - Agregado atributo `open` al elemento `<details>`
+   - Usuario ve instrucciones inmediatamente sin tener que expandir
+
+3. **Texto Onboarding Corregido**
+   - Antes: "De tu misma zona geográfica"
+   - Ahora: "De la zona geográfica que tú hayas elegido"
+
+4. **Modal TRIBU X Análisis - Fullscreen**
+   - Modal ahora ocupa pantalla completa
+   - Safe areas para iPhone (top + bottom)
+   - Mejor experiencia de lectura del análisis IA
+
+5. **Botón "Refrescar" en Mi Perfil**
+   - Nuevo botón en header del perfil
+   - Recarga datos sin necesidad de cerrar/iniciar sesión
+   - Actualiza: scope, regiones, comuna, categoría, afinidad, facturación
+
+#### Archivos Modificados
+```
+App.tsx - Línea 789: Fix surveyData preserva scope/revenue/comuna/regions
+App.tsx - Línea 5257: Texto onboarding corregido
+App.tsx - Línea 5770: details open por defecto
+App.tsx - Líneas 2651-2661: Modal TRIBU X fullscreen
+App.tsx - Líneas 3296-3327: Botón refrescar en perfil
+```
+
+#### Commits: `85de987`, `c59b101`
+#### Tiempo: ~45 minutos
+
+---
+
 ### 📱 Optimización iPhone 14 Pro Max + Eliminación Loop Registro
 **Hora:** 11:20 hrs  
 **Solicitado por:** Usuario (reporte de Doraluz)  

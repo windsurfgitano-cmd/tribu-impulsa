@@ -10,26 +10,33 @@
 
 ### ✅ COMPLETADO (Diciembre 2025)
 
-| # | Item | Estado |
-|---|------|--------|
-| 1 | Cambiar "Editar Perfil" a "Completar Perfil" | ✅ |
-| 2 | Checklist paso a paso (Mi Tribu) | ✅ |
-| 3 | Cambiar "Acciones pendientes" → "X emprendedores esperan tu colaboración" | ✅ |
-| 4 | Eliminar palabra "Acusete" → "Solicitudes de ayuda" | ✅ |
-| 5 | Sistema 10+10 explicado en UI | ✅ |
-| 6 | Mensaje WhatsApp rompehielo automático | ✅ |
-| 7 | Menú hamburguesa lateral (slide izquierda) | ✅ |
-| 8 | Segmentación geográfica (Local/Regional/Nacional) | ✅ |
-| 9 | Segmentación por facturación mensual | ✅ |
-| 10 | Sección "¿Cómo funciona?" colapsable en Dashboard | ✅ |
-| 11 | Navegación: Checklist → "Mi Tribu" | ✅ |
-| 12 | Navegación: Menú → "Configuración" con engranaje | ✅ |
-| 13 | Navegación: Inicio con icono casa | ✅ |
-| 14 | Fix duplicados en asignaciones de tribu | ✅ |
-| 15 | Datos perfil persisten en Firebase (para tómbola) | ✅ |
-| 16 | Integración Santander Academia (link-out + tracking) | ✅ |
-| 17 | Módulo Bienestar separado | ✅ |
-| 18 | 38 afinidades en 11 grupos | ✅ |
+| # | Item | Estado | Fecha |
+|---|------|--------|-------|
+| 1 | Cambiar "Editar Perfil" a "Completar Perfil" | ✅ | 14 Dic |
+| 2 | Checklist paso a paso (Mi Tribu) | ✅ | 14 Dic |
+| 3 | Cambiar "Acciones pendientes" → "X emprendedores esperan tu colaboración" | ✅ | 14 Dic |
+| 4 | Eliminar palabra "Acusete" → "Solicitudes de ayuda" | ✅ | 14 Dic |
+| 5 | Sistema 10+10 explicado en UI | ✅ | 14 Dic |
+| 6 | Mensaje WhatsApp rompehielo automático | ✅ | 14 Dic |
+| 7 | Menú hamburguesa lateral (slide izquierda) | ✅ | 14 Dic |
+| 8 | Segmentación geográfica (Local/Regional/Nacional) | ✅ | 7 Dic |
+| 9 | Segmentación por facturación mensual | ✅ | 7 Dic |
+| 10 | Sección "¿Cómo funciona?" colapsable en Dashboard | ✅ | 15 Dic |
+| 11 | Navegación: Checklist → "Mi Tribu" | ✅ | 15 Dic |
+| 12 | Navegación: Menú → "Configuración" con engranaje | ✅ | 15 Dic |
+| 13 | Navegación: Inicio con icono casa | ✅ | 15 Dic |
+| 14 | Fix duplicados en asignaciones de tribu | ✅ | 8 Dic |
+| 15 | Datos perfil persisten en Firebase (para tómbola) | ✅ | 8 Dic |
+| 16 | Integración Santander Academia (link-out + tracking) | ✅ | 9 Dic |
+| 17 | Módulo Bienestar separado | ✅ | 14 Dic |
+| 18 | 38 afinidades en 11 grupos | ✅ | 14 Dic |
+| 19 | **Análisis TRIBU X con Azure AI** | ✅ | 16 Dic |
+| 20 | **Modal fullscreen responsivo** | ✅ | 16 Dic |
+| 21 | **Botones Rompehielo WhatsApp** | ✅ | 16 Dic |
+| 22 | **Optimización iPhone 14 Pro Max** | ✅ | 16 Dic |
+| 23 | **Fix persistencia datos al login** | ✅ | 16 Dic |
+| 24 | **Botón Refrescar en perfil** | ✅ | 16 Dic |
+| 25 | **"¿Cómo funciona?" expandido por defecto** | ✅ | 16 Dic |
 
 ### 🔴 PENDIENTE (Por Implementar)
 
@@ -60,8 +67,8 @@
 
 ## 📅 Lunes 16 de Diciembre 2025
 
-### 🔧 Fixes UX Doraluz + Modal TRIBU X Fullscreen
-**Hora:** 21:00 hrs  
+### 🔧 Fixes UX Doraluz + Modal TRIBU X Fullscreen + Refrescar
+**Hora:** 21:00 - 21:15 hrs  
 **Solicitado por:** Usuario (reporte de Doraluz)  
 **Desarrollador:** Cascade AI
 
@@ -81,14 +88,15 @@
    - Ahora: "De la zona geográfica que tú hayas elegido"
 
 4. **Modal TRIBU X Análisis - Fullscreen**
-   - Modal ahora ocupa pantalla completa
+   - Modal ahora ocupa pantalla completa (antes era bottom-sheet)
    - Safe areas para iPhone (top + bottom)
    - Mejor experiencia de lectura del análisis IA
 
 5. **Botón "Refrescar" en Mi Perfil**
-   - Nuevo botón en header del perfil
+   - Nuevo botón en header del perfil (junto a "Volver")
    - Recarga datos sin necesidad de cerrar/iniciar sesión
    - Actualiza: scope, regiones, comuna, categoría, afinidad, facturación
+   - Feedback visual con toast "Datos actualizados"
 
 #### Archivos Modificados
 ```
@@ -99,8 +107,63 @@ App.tsx - Líneas 2651-2661: Modal TRIBU X fullscreen
 App.tsx - Líneas 3296-3327: Botón refrescar en perfil
 ```
 
-#### Commits: `85de987`, `c59b101`
-#### Tiempo: ~45 minutos
+#### Commits: `85de987`, `c59b101`, `f45069e`
+#### Tiempo: ~50 minutos
+
+---
+
+### 🔮 Sistema Análisis TRIBU X con IA Azure
+**Hora:** 17:00 - 20:30 hrs  
+**Solicitado por:** Usuario  
+**Desarrollador:** Cascade AI
+
+#### Nuevo Sistema Completo
+
+1. **Botón "🔮 Análisis TRIBU X" en cada perfil de Mi Tribu**
+   - Aparece en perfiles de "Me impulsan" y "Yo debo impulsar"
+   - Gradiente morado característico de TRIBU X
+   - Abre modal con análisis de compatibilidad
+
+2. **Modal de Análisis TRIBU X**
+   - Header con gradiente y logo Sparkles
+   - Contenido generado por Azure OpenAI (GPT-4o)
+   - Secciones:
+     - 💡 **Insight de IA**: Análisis de compatibilidad personalizado
+     - 🎯 **Oportunidades**: 3 oportunidades de colaboración
+     - 💬 **Mensaje Rompehielo**: Mensaje personalizado para WhatsApp
+   - Botón "Enviar por WhatsApp" con mensaje pre-armado por IA
+   - Loading state con spinner y "Powered by TRIBU X AI"
+   - Fallback local si Azure falla
+
+3. **Integración Azure OpenAI**
+   - Servicio `aiMatchingService.ts` con función `analyzeCompatibility()`
+   - Prompt especializado para networking entre emprendedores chilenos
+   - Timeout y manejo de errores robusto
+   - Branding cambiado de "Azure AI" a "TRIBU X AI"
+
+4. **Botones "💬 Rompehielo" en Mi Tribu**
+   - Reemplaza botones genéricos de WhatsApp
+   - Mensajes personalizados según contexto:
+     - **Yo debo impulsar**: "¡Hola! Te acabo de compartir en mis redes..."
+     - **Me impulsan**: "¡Hola! ¿Ya pudiste compartirme en tus redes?"
+
+5. **Evolución del Modal (4 iteraciones)**
+   - v1: Alert básico → Modal bonito
+   - v2: Modal estático → Con Azure AI integrado
+   - v3: Modal grande → Bottom-sheet responsivo (85vh)
+   - v4: Bottom-sheet → Fullscreen para mejor lectura
+
+#### Archivos Modificados
+```
+App.tsx - Líneas 2250-2260: Estados para modal (analysisProfile, analysisResult, isAnalyzing)
+App.tsx - Líneas 2255-2307: useEffect con llamada a Azure AI
+App.tsx - Líneas 2473-2533: Botones Análisis TRIBU X y Rompehielo
+App.tsx - Líneas 2651-2780: Modal completo con portal React
+services/aiMatchingService.ts - Servicio Azure OpenAI
+```
+
+#### Commits: `2633c6e`, `030103b`, `04aa534`, `fc93cf0`, `69c6e81`
+#### Tiempo: ~3.5 horas
 
 ---
 

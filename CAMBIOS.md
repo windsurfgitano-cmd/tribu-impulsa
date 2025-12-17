@@ -69,8 +69,8 @@
 
 ### 🔧 Fixes UX Doraluz + Modal TRIBU X Fullscreen + Refrescar
 **Hora:** 21:00 - 21:15 hrs  
-**Solicitado por:** Usuario (reporte de Doraluz)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Doraluz Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Implementados
 
@@ -114,8 +114,8 @@ App.tsx - Líneas 3296-3327: Botón refrescar en perfil
 
 ### 🔮 Sistema Análisis TRIBU X con IA Azure
 **Hora:** 17:00 - 20:30 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Nuevo Sistema Completo
 
@@ -169,8 +169,8 @@ services/aiMatchingService.ts - Servicio Azure OpenAI
 
 ### 📱 Optimización iPhone 14 Pro Max + Eliminación Loop Registro
 **Hora:** 11:20 hrs  
-**Solicitado por:** Usuario (reporte de Doraluz)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Doraluz Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Implementados
 
@@ -212,8 +212,8 @@ App.tsx - Línea 5583: Banner en Dashboard
 
 ### 🧹 Cierre Fase 1 - Cabos Sueltos
 **Hora:** 21:40 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Fixes Aplicados
 
@@ -251,8 +251,8 @@ FASEII-PARTE1.md - Limpieza de texto
 
 ### 🔄 Mover Stats Cards de Dashboard a Mi Tribu
 **Hora:** 12:58 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Cards de Acciones (morado), Ayuda (amarillo) y Alerta Fucsia movidos de Inicio a Mi Tribu
@@ -265,8 +265,8 @@ FASEII-PARTE1.md - Limpieza de texto
 
 ### 🔙 Fix Botón Volver en Beneficios
 **Hora:** 12:58 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Botón "Volver" en Club de Bienestar ahora va a `/dashboard` (antes iba a `/my-profile`)
@@ -278,8 +278,8 @@ FASEII-PARTE1.md - Limpieza de texto
 
 ### 🔧 Fix Firebase Error + Escape de Loop
 **Hora:** 11:30 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problemas Resueltos
 1. **Firebase rechazaba `comuna: undefined`** → Cambiado a `null`
@@ -292,8 +292,8 @@ FASEII-PARTE1.md - Limpieza de texto
 
 ### 🔧 Mejoras UX Dashboard + Navegación + Fix Duplicados
 **Hora:** 03:30 - 04:00 hrs  
-**Solicitado por:** Usuario (basado en reuniones)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Implementados
 
@@ -336,8 +336,8 @@ services/matchService.ts - Deduplicación en generateTribeAssignments
 
 ### 🎯 Expansión de Lista de Afinidades (38 opciones)
 **Hora:** 00:25 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Expandida lista de afinidades de 20 a **38 opciones** en **11 grupos**
@@ -371,8 +371,8 @@ App.tsx - Usa AFFINITIES dinámicamente (línea ~186)
 
 ### 💬 Mejoras UX: Mensajes y WhatsApp Rompehielo
 **Hora:** 00:50 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Implementados
 
@@ -400,8 +400,8 @@ App.tsx
 
 ### 📚 Onboarding Mejorado "CONOCE A TU TRIBU"
 **Hora:** 00:55 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Tutorial paso a paso mejorado con 5 pantallas:
@@ -422,8 +422,8 @@ App.tsx - TUTORIAL_STEPS actualizado (líneas ~4919-4960)
 
 ### 🔄 Rotación Mensual de Tribu
 **Hora:** 01:00 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Mejorado algoritmo de rotación mensual
@@ -446,8 +446,8 @@ services/tribeAlgorithm.ts
 
 ### 🎁 Club de Bienestar - Alianzas y Beneficios
 **Hora:** 01:10 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Nuevo Componente
 - Nueva sección `/beneficios` con alianzas y descuentos exclusivos para miembros
@@ -483,8 +483,8 @@ App.tsx
 
 ### 🏠 Landing Page con Explicación
 **Hora:** 01:15 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Nuevo paso "landing" antes del login con explicación de Tribu Impulsa
@@ -507,8 +507,8 @@ App.tsx
 
 ### 🐛 Fix: Botón "Guardar y continuar" en CompleteProfileScreen
 **Hora:** 01:25 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - El botón "Guardar y continuar" no hacía nada al presionarlo
@@ -534,8 +534,8 @@ App.tsx
 
 ### 🍔 Menú Hamburguesa en Dashboard
 **Hora:** 01:30 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 - Nuevo menú hamburguesa en el header del Dashboard
@@ -562,8 +562,8 @@ App.tsx
 
 ### 🔒 Bloqueo de App hasta Completar Perfil Obligatorio
 **Hora:** 23:20 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - Usuarios podían usar la app sin completar datos obligatorios para matching
@@ -772,8 +772,8 @@ data/tribeCategories.ts          - Opciones de categoría
 
 ### 📄 Docs: Agregar presentación ejecutiva a recursos de reuniones
 **Hora:** 13:36 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -796,8 +796,8 @@ CAMBIOS.md
 
 ### 🔒 Chore: Ignorar carpeta reuniones/ (archivos internos)
 **Hora:** 18:30 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Motivo
 - Se detectó la carpeta `reuniones/` con material interno (grabaciones / extracción) que no debe versionarse.
@@ -825,8 +825,8 @@ CAMBIOS.md
 
 ### 🎓 Integración Santander Academia en Main
 **Hora:** 09:55 - 10:15 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -868,8 +868,8 @@ components/academia/AcademiaDashboard.tsx - SantanderCard, colores
 
 ### 💬 Fix Mensajes de Matching
 **Hora:** 09:45 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - Mensaje "Rubros sin relación clara" era técnico y confuso para usuarios
@@ -895,8 +895,8 @@ services/matchService.ts - Líneas 312-315
 
 ### 🧹 Limpieza de Datos y Mejoras de Matching
 **Hora:** 13:50 - 14:10 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -979,8 +979,8 @@ services/databaseService.ts - detectDuplicateUsers() + campo twitter
 
 ### 🎁 Beta Pública - Mes Gratis + TikTok en Perfil
 **Hora:** 19:48 - 20:15 hrs  
-**Solicitado por:** Usuario (Doraluz)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Doraluz Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1043,8 +1043,8 @@ App.tsx
 
 ### 📦 FASE 1: Estructura de Datos - Categorías, Afinidades y Geografía
 **Hora:** 20:15 - 20:45 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1091,8 +1091,8 @@ constants/
 
 ### 🎯 FASE 2: Algoritmo de Matching Mejorado v2.0
 **Hora:** 20:50 - 21:30 hrs  
-**Solicitado por:** Usuario (problema reportado por Doraluz: matches malos)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Doraluz Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema Resuelto
 - Doraluz reportó que le aparecía "un emprendimiento de construcción, 0 en común"
@@ -1148,8 +1148,8 @@ services/matchService.ts
 
 ### 🌍 FASE 3: Selector de Geografía (Comunas y Regiones)
 **Hora:** 21:15 - 21:45 hrs  
-**Solicitado por:** Usuario (formulario Google Forms)  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1193,8 +1193,8 @@ App.tsx
 
 ### 🎯 FASE 4: Algoritmo con Compatibilidad Geográfica
 **Hora:** 21:30 - 22:00 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1245,8 +1245,8 @@ services/matchService.ts
 
 ### 🎨 FASE 5: UI/UX Selector de Comunas
 **Hora:** 22:00 - 22:15 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 El selector de comunas tenía ~346 opciones en un `<select>` simple, imposible de usar.
@@ -1274,8 +1274,8 @@ App.tsx
 
 ### 🔄 FASE 5b: Selector Cascada Región → Comuna
 **Hora:** 22:15 - 22:20 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambio
 Selector de comunas ahora funciona en cascada:
@@ -1304,8 +1304,8 @@ App.tsx
 
 ### 💰 FASE 6: Compatibilidad por Facturación + Validaciones
 **Hora:** 22:20 - 22:35 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1354,8 +1354,8 @@ services/matchService.ts
 
 ### 🎨 FASE 7: UI Cards + Fix Registro + Sistema 10+10
 **Hora:** 23:00 - 23:20 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 
@@ -1392,8 +1392,8 @@ services/matchService.ts
 
 ### 🌍 FASE 8: Matching Geográfico ESTRICTO + Inferencia
 **Hora:** 23:20 - 23:40 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Reglas de Matching Geográfico (ESTRICTAS)
 
@@ -1442,8 +1442,8 @@ services/matchService.ts
 
 ### 📝 FASE 9: Perfil Editable con Selectores de Matching
 **Hora:** 23:57 - 00:10 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema Identificado
 - Campos de texto libre no permiten matching correcto
@@ -1494,8 +1494,8 @@ App.tsx
 
 ### 📍 Banner de Perfil Incompleto + Mejoras UX
 **Hora:** 13:50 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - 108 usuarios base sin SCOPE definido (LOCAL/REGIONAL/NACIONAL)
@@ -1533,8 +1533,8 @@ App.tsx - Banner incompleto + dropdowns ordenados
 
 ### 🌐 Redes Sociales Facebook y X.com
 **Hora:** 00:25 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios
 1. **Nuevos campos en perfil**: Facebook, X (Twitter)
@@ -1556,8 +1556,8 @@ services/databaseService.ts - detectDuplicateUsers() + campo twitter
 
 ### 🧹 Fix: Secciones Duplicadas en Perfil
 **Hora:** 00:15 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - Campos de texto libre duplicaban los dropdowns de matching
@@ -1590,8 +1590,8 @@ App.tsx - Eliminación de ~25 líneas duplicadas
 
 ### 📋 Fix: Registro muestra lista completa de rubros (LoginScreen)
 **Hora:** 13:30 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Problema
 - En el registro rápido del login (`step="register"`) el selector de rubro usaba un árbol hardcodeado (`CATEGORY_TREE`), mostrando pocos rubros.
@@ -1614,8 +1614,8 @@ CAMBIOS.md
 
 ### 🎨 Actualización de Branding - Logo y Favicon
 **Hora:** 21:00 - 21:41 hrs  
-**Solicitado por:** Usuario  
-**Desarrollador:** Cascade AI
+**Solicitado por:** Dafna Tribu Impulsa  
+**Desarrollador:** Oscar Zambrano D.
 
 #### Cambios Realizados
 

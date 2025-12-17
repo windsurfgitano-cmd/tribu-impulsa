@@ -7969,32 +7969,18 @@ const AppLayout = () => {
                 
                 <div className="border-t border-[#E4E7EF] my-3" />
                 
-                <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Navegación</p>
-                
                 <button 
-                  onClick={() => { setShowMenu(false); navigateWithCheck('/tribe', true); }}
+                  onClick={() => { setShowMenu(false); navigateWithCheck('/beneficios', true); }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-[#6161FF]/10 flex items-center justify-center">
-                    <Users size={20} className="text-[#6161FF]" />
+                  <div className="w-10 h-10 rounded-lg bg-[#00CA72]/10 flex items-center justify-center">
+                    <Gift size={20} className="text-[#00CA72]" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="font-semibold text-[#181B34]">Mi Tribu</p>
-                    <p className="text-xs text-[#7C8193]">Checklist y asignaciones</p>
+                    <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
+                    <p className="text-xs text-[#7C8193]">Descuentos y beneficios exclusivos</p>
                   </div>
-                </button>
-                
-                <button 
-                  onClick={() => { setShowMenu(false); navigate('/my-profile'); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-[#FFCC00]/10 flex items-center justify-center">
-                    <UserIcon size={20} className="text-[#FFCC00]" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-[#181B34]">Mi Perfil</p>
-                    <p className="text-xs text-[#7C8193]">Configuración y cuenta</p>
-                  </div>
+                  <ChevronRight size={16} className="text-[#7C8193]" />
                 </button>
               </div>
             </div>
@@ -8102,7 +8088,7 @@ const AppLayout = () => {
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
               >
                 <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Configuración</span>
+                <span className="text-[10px] mt-1 font-medium">Ajustes</span>
               </button>
             </div>
           </nav>

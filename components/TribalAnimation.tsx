@@ -217,7 +217,7 @@ export const TribalLoadingAnimation: React.FC<TribalLoadingProps> = ({
   if (!isLoading) return null;
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: '220px' }}>
+    <div className="relative w-full h-full min-h-[300px] overflow-hidden">
       <canvas 
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"

@@ -2522,7 +2522,7 @@ const TribeAssignmentsView = () => {
                       rel="noopener noreferrer"
                       className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                     >
-                      💬 Rompehielo
+                      💬 Enviar WhatsApp
                     </a>
                   )}
                   
@@ -2683,12 +2683,16 @@ const TribeAssignmentsView = () => {
               </div>
             </div>
             
-            {/* Contenido - scrollable */}
-            <div className="p-4 space-y-3 overflow-y-auto flex-1">
-              {/* Loading state - Animación Tribal épica */}
-              {isAnalyzing && (
+            {/* Loading state - Animación Tribal épica FULLSCREEN */}
+            {isAnalyzing && (
+              <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-[#0a0a1a] to-[#1a1a3a]">
                 <TribalLoadingAnimation isLoading={isAnalyzing} duration={4500} />
-              )}
+              </div>
+            )}
+            
+            {/* Contenido - scrollable (solo cuando no está cargando) */}
+            {!isAnalyzing && (
+            <div className="p-4 space-y-3 overflow-y-auto flex-1">
               
               {/* Análisis generado */}
               {!isAnalyzing && analysisResult && (
@@ -2731,6 +2735,7 @@ const TribeAssignmentsView = () => {
                 </>
               )}
             </div>
+            )}
           </div>
         </div>,
         document.body

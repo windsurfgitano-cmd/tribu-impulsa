@@ -5620,8 +5620,6 @@ const Dashboard = () => {
   const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
   
-  // Menú hamburguesa state
-  const [showMenu, setShowMenu] = useState(false);
   
   // Onboarding state
   const currentUser = getCurrentUser();
@@ -5702,106 +5700,6 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      
-      {/* Menú Hamburguesa Overlay */}
-      {showMenu && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowMenu(false)}
-          />
-          {/* Menu Panel - Slides from LEFT like Santander */}
-          <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
-            <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">Menú</h2>
-                <button 
-                  onClick={() => setShowMenu(false)}
-                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
-                >
-                  <X size={18} className="text-white" />
-                </button>
-              </div>
-              <div className="flex items-center gap-3">
-                <img 
-                  src={myProfile.avatarUrl} 
-                  alt="Me"
-                  className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
-                />
-                <div>
-                  <p className="text-white font-semibold">{myProfile.name}</p>
-                  <p className="text-white/70 text-sm">{myProfile.companyName}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-4 space-y-2">
-              {/* Alianzas y Beneficios */}
-              <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas y Beneficios</p>
-              
-              <button 
-                onClick={() => { setShowMenu(false); navigate('/beneficios'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-              >
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#6161FF] to-[#00CA72] flex items-center justify-center">
-                  <Gift size={20} className="text-white" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
-                  <p className="text-xs text-[#7C8193]">Descuentos exclusivos para miembros</p>
-                </div>
-                <ChevronRight size={16} className="text-[#7C8193]" />
-              </button>
-              
-              <button 
-                onClick={() => { setShowMenu(false); navigate('/academia'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-              >
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
-                  <span className="text-lg">🎓</span>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Santander Academia</p>
-                  <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
-                </div>
-                <ChevronRight size={16} className="text-[#7C8193]" />
-              </button>
-              
-              <div className="border-t border-[#E4E7EF] my-3" />
-              
-              {/* Navegación */}
-              <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Navegación</p>
-              
-              <button 
-                onClick={() => { setShowMenu(false); navigate('/tribe'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-              >
-                <div className="w-10 h-10 rounded-lg bg-[#6161FF]/10 flex items-center justify-center">
-                  <Users size={20} className="text-[#6161FF]" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Mi Tribu</p>
-                  <p className="text-xs text-[#7C8193]">Checklist y asignaciones</p>
-                </div>
-              </button>
-              
-              <button 
-                onClick={() => { setShowMenu(false); navigate('/my-profile'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-              >
-                <div className="w-10 h-10 rounded-lg bg-[#FFCC00]/10 flex items-center justify-center">
-                  <UserIcon size={20} className="text-[#FFCC00]" />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Mi Perfil</p>
-                  <p className="text-xs text-[#7C8193]">Configuración y cuenta</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Header - Liquid Glass iOS 26 with safe area */}
       <header className="px-5 pb-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
@@ -5810,17 +5708,7 @@ const Dashboard = () => {
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.5)'
         }}
       >
-        {/* Hamburger menu button */}
-        <button 
-          onClick={() => setShowMenu(true)}
-          className="w-10 h-10 rounded-xl bg-[#F5F7FB] flex items-center justify-center hover:bg-[#E4E7EF] transition"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#181B34" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
+        <div className="w-10 h-10" />
         
         <div className="flex-1 text-center">
           <h1 className="text-xl font-bold text-[#181B34]">Hola, {myProfile.name.split(' ')[0]}</h1>
@@ -7993,6 +7881,12 @@ const AppLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
+  const myProfile = getMyProfile();
+  const [showMenu, setShowMenu] = useState(false);
+  
+  useEffect(() => {
+    setShowMenu(false);
+  }, [location.pathname]);
   
   // Verificar membresía para mostrar candados en navegación
   const [isMember, setIsMember] = useState(false);
@@ -8012,6 +7906,7 @@ const AppLayout = () => {
   const isProfile = location.pathname.includes('/my-profile');
   const isTribe = location.pathname.includes('/tribe');
   const isDirectory = location.pathname.includes('/directory');
+  const isBeneficios = location.pathname.includes('/beneficios');
 
   // Función para navegar con verificación de membresía
   const navigateWithCheck = (path: string, requiresMembership: boolean) => {
@@ -8024,6 +7919,87 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen w-full text-[#181B34] font-sans bg-[#F5F7FB]">
+        {/* Menú Hamburguesa Overlay */}
+        {showNav && showMenu && (
+          <div className="fixed inset-0 z-[10000]">
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setShowMenu(false)}
+            />
+            <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
+              <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-bold text-white">Menú</h2>
+                  <button 
+                    onClick={() => setShowMenu(false)}
+                    className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
+                  >
+                    <X size={18} className="text-white" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={myProfile.avatarUrl} 
+                    alt="Me"
+                    className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
+                  />
+                  <div>
+                    <p className="text-white font-semibold">{myProfile.name}</p>
+                    <p className="text-white/70 text-sm">{myProfile.companyName}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-4 space-y-2">
+                <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas</p>
+                
+                <button 
+                  onClick={() => { setShowMenu(false); navigate('/academia'); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
+                    <span className="text-lg">🎓</span>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-[#181B34]">Santander Academia</p>
+                    <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
+                  </div>
+                  <ChevronRight size={16} className="text-[#7C8193]" />
+                </button>
+                
+                <div className="border-t border-[#E4E7EF] my-3" />
+                
+                <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Navegación</p>
+                
+                <button 
+                  onClick={() => { setShowMenu(false); navigateWithCheck('/tribe', true); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-[#6161FF]/10 flex items-center justify-center">
+                    <Users size={20} className="text-[#6161FF]" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-[#181B34]">Mi Tribu</p>
+                    <p className="text-xs text-[#7C8193]">Checklist y asignaciones</p>
+                  </div>
+                </button>
+                
+                <button 
+                  onClick={() => { setShowMenu(false); navigate('/my-profile'); }}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-[#FFCC00]/10 flex items-center justify-center">
+                    <UserIcon size={20} className="text-[#FFCC00]" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-[#181B34]">Mi Perfil</p>
+                    <p className="text-xs text-[#7C8193]">Configuración y cuenta</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div>
             <Routes>
                 <Route path="/" element={<LoginScreen />} />
@@ -8042,7 +8018,7 @@ const AppLayout = () => {
                 <Route path="/my-profile" element={<MyProfileView />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
                 <Route path="/academia" element={<AcademiaViewWrapper />} />
-                <Route path="/beneficios" element={<ClubBienestarView />} />
+                <Route path="/beneficios" element={<MemberRoute><ClubBienestarView /></MemberRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </div>
@@ -8058,6 +8034,21 @@ const AppLayout = () => {
             }}
           >
             <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
+              {/* Menú Hamburguesa */}
+              <button 
+                onClick={() => setShowMenu(true)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
+                  showMenu ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'
+                }`}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={showMenu ? 2.5 : 1.8} strokeLinecap="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+                <span className="text-[10px] mt-1 font-medium">Menú</span>
+              </button>
+
               {/* Inicio - BLOQUEADO para invitados */}
               <button 
                 onClick={() => navigateWithCheck('/dashboard', true)}
@@ -8090,6 +8081,19 @@ const AppLayout = () => {
                 <span className={`text-[10px] mt-1 font-semibold ${
                   !isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
                 }`}>Mi Tribu</span>
+              </button>
+
+              {/* Beneficios - BLOQUEADO para invitados */}
+              <button 
+                onClick={() => navigateWithCheck('/beneficios', true)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
+                  isBeneficios ? 'text-[#6161FF]' : 
+                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+                }`}
+              >
+                <Gift size={22} strokeWidth={isBeneficios ? 2.5 : 1.8} />
+                <span className="text-[10px] mt-1 font-medium">Beneficios</span>
+                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
 
               {/* Configuración/Perfil - LIBRE para todos */}

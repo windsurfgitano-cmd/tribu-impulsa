@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
@@ -3009,6 +3009,25 @@ const MyProfileView = () => {
     const [secretCode, setSecretCode] = useState('');
     const [secretCodeError, setSecretCodeError] = useState('');
     
+    // Estado para tamaño de letra (accesibilidad)
+    const [showFontSizeModal, setShowFontSizeModal] = useState(false);
+    const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(
+      () => (localStorage.getItem('tribu_font_size') as 'small' | 'medium' | 'large') || 'small'
+    );
+    
+    // Aplicar tamaño de letra globalmente
+    useEffect(() => {
+      const root = document.documentElement;
+      const sizes = {
+        small: '14px',
+        medium: '16px', 
+        large: '18px'
+      };
+      root.style.setProperty('--base-font-size', sizes[fontSize]);
+      document.body.style.fontSize = sizes[fontSize];
+      localStorage.setItem('tribu_font_size', fontSize);
+    }, [fontSize]);
+    
     const handleSecretAccess = () => {
       if (secretCode === 'TRIBU2026') {
         navigate('/directory');
@@ -3804,6 +3823,14 @@ const MyProfileView = () => {
                         
                         {/* Opciones de cuenta */}
                         <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
+                            {/* Tamaño de letra (Accesibilidad) */}
+                            <button 
+                                onClick={() => setShowFontSizeModal(true)}
+                                className="w-full py-3 rounded-xl border border-[#00CA72]/30 text-[#00CA72] hover:bg-[#00CA72]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+                            >
+                                <Type size={16} /> Tamaño de Letra: {fontSize === 'small' ? 'Pequeño' : fontSize === 'medium' ? 'Mediano' : 'Grande'}
+                            </button>
+                            
                             {/* Cambiar contraseña */}
                             <button 
                                 onClick={() => setShowPasswordModal(true)}
@@ -3924,6 +3951,60 @@ const MyProfileView = () => {
                                   </button>
                                 </div>
                               </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Modal tamaño de letra */}
+                        {showFontSizeModal && (
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                              <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
+                                <Type size={20} className="text-[#00CA72]" />
+                                Tamaño de Letra
+                              </h3>
+                              <p className="text-sm text-[#7C8193] mb-4">Ajusta el tamaño del texto para mejor legibilidad</p>
+                              <div className="space-y-3">
+                                <button
+                                  onClick={() => setFontSize('small')}
+                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                                    fontSize === 'small' 
+                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
+                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                                  }`}
+                                >
+                                  <span className="text-sm font-medium">Pequeño</span>
+                                  <span className="text-xs text-[#7C8193]">14px (actual)</span>
+                                </button>
+                                <button
+                                  onClick={() => setFontSize('medium')}
+                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                                    fontSize === 'medium' 
+                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
+                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                                  }`}
+                                >
+                                  <span className="text-base font-medium">Mediano</span>
+                                  <span className="text-xs text-[#7C8193]">16px</span>
+                                </button>
+                                <button
+                                  onClick={() => setFontSize('large')}
+                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
+                                    fontSize === 'large' 
+                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
+                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                                  }`}
+                                >
+                                  <span className="text-lg font-medium">Grande</span>
+                                  <span className="text-xs text-[#7C8193]">18px</span>
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => setShowFontSizeModal(false)}
+                                className="w-full mt-4 py-2.5 rounded-xl bg-[#00CA72] text-white hover:bg-[#00B366] font-medium"
+                              >
+                                Listo
+                              </button>
                             </div>
                           </div>
                         )}

@@ -129,7 +129,7 @@ export const AcademiaView: React.FC<AcademiaViewProps> = ({ onNavigateBack }) =>
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-[#FFFFFF] via-[#FEF2F2] to-[#FEE2E2] text-[#181B34]">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 pb-32 space-y-6">
         {renderHeader()}
         {renderContenido()}
       </div>

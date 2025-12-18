@@ -4446,14 +4446,14 @@ const MembershipSection = ({ userId }: { userId: string }) => {
         {isMember && (
           <div className="space-y-2 text-sm border-t border-[#E4E7EF]/50 pt-3">
             {/* Plan especial para Beta Pública */}
-            {membership?.paymentMethod === 'beta_publica' ? (
+            {membership?.paymentMethod === 'beta_publica' || membership?.paymentMethod === 'trial' || membership?.paymentMethod === 'promo_trial_1_peso' ? (
               <>
                 <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-xl p-3 mb-2">
                   <p className="text-[#00CA72] font-bold text-center">
-                    🎉 Mes Gratis - Círculo Emprendedor
+                    🎉 Trial Activo - Círculo Emprendedor
                   </p>
                   <p className="text-xs text-[#7C8193] text-center mt-1">
-                    Beta Pública Tribu Impulsa
+                    Promoción Beta Tribu Impulsa
                   </p>
                 </div>
                 <div className="flex justify-between">
@@ -4502,7 +4502,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
             className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#00CA72] to-[#00B366] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
           >
             <Gift size={18} />
-            ¡Canjear Mi Mes Gratis!
+            ¡Probar por $1!
           </button>
         )}
 

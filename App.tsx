@@ -3672,12 +3672,20 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                             </>
                         )}
                         
-                        {/* Badge de categoría (solo lectura) */}
+                        {/* Badge de categoría (solo lectura) - mostrar giro principal limpio */}
                         {!isEditing && (
                           <div className="flex justify-center gap-2 mt-4 flex-wrap">
-                            <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-4 py-1.5 rounded-full">
-                                {editCategory || profile.category}
+                            {/* Giro principal */}
+                            <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-3 py-1.5 rounded-full">
+                                {(editCategory || profile.category || '').split(' - ')[0].split('  ')[0] || 'Emprendimiento'}
                             </span>
+                            {/* Subcategoría si existe */}
+                            {((editCategory || profile.category || '').includes(' - ') || (editCategory || profile.category || '').includes('  ')) && (
+                              <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 text-[#00CA72] px-3 py-1.5 rounded-full">
+                                {(editCategory || profile.category || '').split(' - ')[1]?.split('  ')[0] || 
+                                 (editCategory || profile.category || '').split('  ')[1] || ''}
+                              </span>
+                            )}
                           </div>
                         )}
                         

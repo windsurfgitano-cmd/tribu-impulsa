@@ -2247,10 +2247,81 @@ export const loadRealUsers = (): void => {
   console.log(`✅ ${REAL_USERS.length} usuarios REALES cargados con avatares de Instagram`);
 };
 
-// Obtener usuario por email
+// Obtener usuario por email (primero localStorage, luego Firebase)
 export const getUserByEmail = (email: string): (UserProfile & { firstLogin?: boolean }) | null => {
   const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   return users.find((u: UserProfile) => u.email.toLowerCase() === email.toLowerCase()) || null;
+};
+
+// NUEVA: Obtener usuario desde Firebase y sincronizar a localStorage
+export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (!db) return null;
+    
+    const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) return null;
+    
+    const userData = querySnapshot.docs[0].data();
+    const userId = querySnapshot.docs[0].id;
+    
+    // Convertir datos de Firebase a formato UserProfile
+    const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
+      id: userId,
+      email: userData.email || email,
+      name: userData.name || '',
+      companyName: userData.companyName || '',
+      instagram: userData.instagram || '',
+      phone: userData.phone || '',
+      whatsapp: userData.whatsapp || userData.phone || '',
+      category: userData.category || 'General',
+      affinity: userData.affinity || userData.subCategory || userData.category || 'Emprendimiento',
+      bio: userData.bio || '',
+      businessDescription: userData.businessDescription || '',
+      city: userData.city || userData.location || 'Chile',
+      avatarUrl: userData.avatarUrl || '',
+      companyLogoUrl: userData.companyLogoUrl || '',
+      coverUrl: userData.coverUrl || '',
+      status: userData.status || 'active',
+      followers: userData.followers || 0,
+      createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      surveyCompleted: userData.surveyCompleted ?? true,
+      tribeAssigned: userData.tribeAssigned ?? false,
+      // Campos de matching
+      scope: userData.scope || 'NACIONAL',
+      comuna: userData.comuna || null,
+      selectedRegions: userData.selectedRegions || [],
+      revenue: userData.revenue || '',
+      // Campos adicionales
+      firstLogin: userData.firstLogin ?? false,
+      password: userData.password || UNIVERSAL_PASSWORD
+    };
+    
+    // Sincronizar a localStorage para futuras sesiones
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    const existingIndex = users.findIndex((u: UserProfile) => u.id === userId || u.email.toLowerCase() === email.toLowerCase());
+    
+    if (existingIndex >= 0) {
+      // Actualizar usuario existente con datos de Firebase (Firebase es la fuente de verdad)
+      users[existingIndex] = { ...users[existingIndex], ...userProfile };
+    } else {
+      // Agregar usuario nuevo
+      users.push(userProfile);
+    }
+    
+    localStorage.setItem('tribu_users', JSON.stringify(users));
+    console.log('☁️ Usuario cargado desde Firebase y sincronizado:', email);
+    
+    return userProfile;
+  } catch (error) {
+    console.error('❌ Error cargando usuario desde Firebase:', error);
+    return null;
+  }
 };
 
 // Validar credenciales (contraseña universal TRIBU2026)

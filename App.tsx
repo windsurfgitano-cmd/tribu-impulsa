@@ -43,7 +43,7 @@ import {
   Report,
   syncNotificationsFromFirebase
 } from './services/databaseService';
-import { loadRealUsers, validateCredentials, getUserByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
+import { loadRealUsers, validateCredentials, getUserByEmail, getUserFromFirebaseByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
 import { 
@@ -664,7 +664,7 @@ const LoginScreen = () => {
   }, [navigate]);
 
   // Paso 1: Verificar email
-  const handleEmailCheck = (e: FormEvent) => {
+  const handleEmailCheck = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
     
@@ -673,8 +673,18 @@ const LoginScreen = () => {
       return;
     }
 
-    // Verificar si el email existe
-    const existingUser = getUserByEmail(email);
+    setIsLoading(true);
+    
+    // Verificar si el email existe localmente
+    let existingUser = getUserByEmail(email);
+    
+    // Si no está local, buscar en Firebase y sincronizar
+    if (!existingUser) {
+      console.log('🔍 Usuario no encontrado localmente, buscando en Firebase...');
+      existingUser = await getUserFromFirebaseByEmail(email);
+    }
+    
+    setIsLoading(false);
     
     if (existingUser) {
       // Usuario existe → pedir contraseña
@@ -697,20 +707,30 @@ const LoginScreen = () => {
 
     setIsLoading(true);
     
-    setTimeout(() => {
-      const user = validateCredentials(email, password);
-      const existingUser = getUserByEmail(email);
-      const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
-      
-      if (user || (existingUser && isProfilePasswordValid)) {
-        const loggedUser = user || existingUser;
-        completeLogin(loggedUser);
-      } else {
-        setError('Contraseña incorrecta. Recuerda: TRIBU2026');
+    // Primero buscar localmente
+    let user = validateCredentials(email, password);
+    let existingUser = getUserByEmail(email);
+    
+    // Si no está local, buscar en Firebase
+    if (!existingUser) {
+      console.log('🔍 Cargando usuario desde Firebase para login...');
+      existingUser = await getUserFromFirebaseByEmail(email);
+      // Re-validar credenciales después de cargar desde Firebase
+      if (existingUser) {
+        user = validateCredentials(email, password);
       }
-      
-      setIsLoading(false);
-    }, 500);
+    }
+    
+    const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
+    
+    if (user || (existingUser && isProfilePasswordValid)) {
+      const loggedUser = user || existingUser;
+      completeLogin(loggedUser);
+    } else {
+      setError('Contraseña incorrecta. Recuerda: TRIBU2026');
+    }
+    
+    setIsLoading(false);
   };
 
   // Paso 2b: Registro de nuevo usuario - CON TODOS LOS CAMPOS

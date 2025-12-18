@@ -4518,7 +4518,15 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   const [showPlans, setShowPlans] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [selectedTrialPlan, setSelectedTrialPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const config = getAppConfig();
+  
+  // Verificar si el usuario ya usó el trial de $1 (oportunidad única)
+  const hasUsedTrial = localStorage.getItem(`trial_used_${userId}`) === 'true' || currentPlan === 'trial' || currentPlan === 'promo_trial';
+  
+  // Fecha límite para trial: 31 dic 2025
+  const TRIAL_END_DATE = new Date('2025-12-31T23:59:59');
+  const isTrialAvailable = new Date() <= TRIAL_END_DATE && !hasUsedTrial;
 
   // Planes disponibles - PRECIOS FINALES
   const PLANS = [
@@ -4613,6 +4621,46 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
     setIsProcessing(false);
   };
 
+  // Procesar trial de $1
+  const handleTrialSubscription = async () => {
+    setIsProcessing(true);
+    
+    try {
+      const currentUser = getCurrentUser();
+      if (!currentUser?.email) {
+        alert('Error: No se pudo obtener tu email.');
+        setIsProcessing(false);
+        return;
+      }
+
+      const response = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          userEmail: currentUser.email,
+          userName: currentUser.name,
+          planId: selectedTrialPlan
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.initPoint) {
+        // Marcar que intentó usar el trial (se confirmará en webhook)
+        localStorage.setItem(`trial_used_${userId}`, 'true');
+        window.location.href = data.initPoint;
+      } else if (data.error) {
+        alert(`Error: ${data.error}`);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión. Intenta de nuevo.');
+      setIsProcessing(false);
+    }
+  };
+
   // Cancelar suscripción
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
@@ -4654,7 +4702,52 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
 
       {showPlans && (
         <div className="mt-4 space-y-3 animate-fadeIn">
-          <h4 className="text-xs font-bold uppercase text-[#7C8193] tracking-wide">Renovar o Cambiar Plan</h4>
+          
+          {/* Oferta Trial $1 - Solo si está disponible */}
+          {isTrialAvailable && (
+            <div className="relative rounded-xl border-2 border-[#00CA72] bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 p-4 mb-4">
+              <span className="absolute -top-2.5 left-3 bg-[#00CA72] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                🎁 OFERTA ÚNICA
+              </span>
+              <div className="text-center mb-3">
+                <p className="text-2xl font-black text-[#00CA72]">$1</p>
+                <p className="text-sm text-[#434343] font-medium">1 mes completo de Tribu Impulsa</p>
+                <p className="text-xs text-[#7C8193]">Después continúa con el plan que elijas</p>
+              </div>
+              
+              {/* Selector de plan futuro */}
+              <div className="flex gap-1 mb-3">
+                {(['mensual', 'semestral', 'anual'] as const).map(planId => (
+                  <button
+                    key={planId}
+                    onClick={() => setSelectedTrialPlan(planId)}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      selectedTrialPlan === planId 
+                        ? 'bg-[#6161FF] text-white' 
+                        : 'bg-white border border-[#E4E7EF] text-[#7C8193]'
+                    }`}
+                  >
+                    {planId === 'mensual' ? 'Mensual' : planId === 'semestral' ? '6 meses' : 'Anual'}
+                  </button>
+                ))}
+              </div>
+              
+              <button
+                onClick={handleTrialSubscription}
+                disabled={isProcessing}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#00CA72] to-[#00B366] text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {isProcessing ? 'Procesando...' : '¡Pagar $1 y Comenzar!'}
+              </button>
+              <p className="text-[9px] text-[#7C8193] text-center mt-2">
+                Después de 30 días se cobra el plan {selectedTrialPlan}. Cancela cuando quieras.
+              </p>
+            </div>
+          )}
+
+          <h4 className="text-xs font-bold uppercase text-[#7C8193] tracking-wide">
+            {isTrialAvailable ? 'O paga el plan completo' : 'Renovar o Cambiar Plan'}
+          </h4>
           
           {/* Planes */}
           <div className="space-y-2">

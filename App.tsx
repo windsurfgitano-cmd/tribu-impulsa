@@ -1805,51 +1805,6 @@ const MembershipScreen = () => {
     }
   };
 
-  // Canjear mes gratis
-  const handleRedeemFreeMonth = async () => {
-    setIsProcessing(true);
-    
-    // Simular procesamiento
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Marcar como miembro con mes gratis
-    if (currentUser) {
-      localStorage.setItem(`membership_status_${currentUser.id}`, 'miembro');
-      localStorage.setItem(`membership_payment_${currentUser.id}`, JSON.stringify({
-        method: 'beta_publica',
-        amount: 0,
-        date: new Date().toISOString(),
-        status: 'free_month',
-        plan: 'Círculo Emprendedor Tribu Impulsa'
-      }));
-      
-      // Sincronizar con Firebase
-      try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
-        const { doc, setDoc } = await import('firebase/firestore');
-        const db = getFirestoreInstance();
-        if (db) {
-          await setDoc(doc(db, 'memberships', currentUser.id), {
-            id: currentUser.id,
-            email: currentUser.email,
-            status: 'miembro',
-            paymentMethod: 'beta_publica',
-            paymentDate: new Date().toISOString(),
-            amount: 0,
-            plan: 'Círculo Emprendedor Tribu Impulsa',
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          });
-          console.log('✅ Mes gratis activado en Firebase');
-        }
-      } catch (err) {
-        console.log('⚠️ Error sincronizando membresía:', err);
-      }
-    }
-    
-    // Ir directo al loading/searching
-    navigate('/searching');
-  };
-
   return isBetaActive ? (
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">

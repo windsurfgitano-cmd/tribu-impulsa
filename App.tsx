@@ -1744,16 +1744,24 @@ const RegisterScreen = () => {
   );
 };
 
-// 2c. Pantalla de Membresía - BETA PÚBLICA (Mes Gratis)
+// 2c. Pantalla de Membresía - BETA PÚBLICA ($1 + Suscripción)
 const MembershipScreen = () => {
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const currentUser = getCurrentUser();
   const session = getStoredSession();
   
-  // Fecha límite para mes gratis: 31 de diciembre 2025 a las 23:59:59
+  // Fecha límite para promoción $1: 31 de diciembre 2025 a las 23:59:59
   const BETA_END_DATE = new Date('2025-12-31T23:59:59');
   const isBetaActive = new Date() <= BETA_END_DATE;
+
+  // Planes disponibles
+  const PLANS: Record<string, { name: string; price: number; period: string; desc: string; badge?: string }> = {
+    mensual: { name: 'Mensual', price: 19990, period: 'mes', desc: 'Renovación automática' },
+    semestral: { name: 'Semestral', price: 99990, period: '6 meses', desc: '¡Ahorra 1 mes!', badge: '🔥 Popular' },
+    anual: { name: 'Anual', price: 179990, period: '12 meses', desc: '¡Ahorra 3 meses!', badge: '💎 Mejor valor' }
+  };
 
   // Verificar si ya es miembro (desde localStorage)
   useEffect(() => {
@@ -1762,6 +1770,40 @@ const MembershipScreen = () => {
       navigate('/searching');
     }
   }, [currentUser, navigate]);
+  
+  // Procesar suscripción con $1
+  const handleSubscribe = async () => {
+    if (!currentUser) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      const response = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          userEmail: currentUser.email,
+          userName: currentUser.name,
+          planId: selectedPlan
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
+      } else if (data.error) {
+        console.error('Error:', data);
+        alert(`Error: ${data.error}`);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión. Intenta de nuevo.');
+      setIsProcessing(false);
+    }
+  };
 
   // Canjear mes gratis
   const handleRedeemFreeMonth = async () => {
@@ -1809,87 +1851,111 @@ const MembershipScreen = () => {
   };
 
   return isBetaActive ? (
-    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#00CA72] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
-        {/* Icono de regalo/celebración */}
-        <div className="w-20 h-20 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-          <Gift size={40} className="text-white" />
-        </div>
-        
-        {/* Título principal */}
-        <h1 className="text-2xl font-bold text-[#181B34] mb-2">
-          ¡Bienvenido/a a la Beta Pública!
-        </h1>
-        <h2 className="text-xl font-bold text-[#6161FF] mb-4">
-          TRIBU IMPULSA
-        </h2>
-        
-        {/* Mensaje de selección */}
-        <div className="bg-gradient-to-r from-[#6161FF]/10 to-[#00CA72]/10 rounded-2xl p-4 mb-6 border border-[#6161FF]/20">
-          <p className="text-[#181B34] font-medium mb-2">
-            🎉 ¡Hola {session?.name?.split(' ')[0] || 'Emprendedor/a'}!
-          </p>
-          <p className="text-[#434343] text-sm leading-relaxed">
-            Has sido <span className="font-bold text-[#6161FF]">seleccionado/a entre cientos de personas</span> para disfrutar <span className="font-bold text-[#00CA72]">1 MES GRATIS</span> del Círculo Emprendedor.
+    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Gift size={32} className="text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-[#181B34] mb-1">
+            🎉 ¡Oferta Exclusiva Beta!
+          </h1>
+          <p className="text-[#7C8193] text-sm">
+            Hola <span className="font-semibold text-[#6161FF]">{session?.name?.split(' ')[0] || 'Emprendedor/a'}</span>
           </p>
         </div>
         
+        {/* Promoción $1 */}
+        <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-2xl p-4 mb-5 border border-[#00CA72]/30 text-center">
+          <p className="text-3xl font-black text-[#00CA72] mb-1">$1</p>
+          <p className="text-sm text-[#434343]">
+            <strong>1 mes completo</strong> de Tribu Impulsa
+          </p>
+          <p className="text-xs text-[#7C8193] mt-1">
+            Después continúa con el plan que elijas
+          </p>
+        </div>
+
+        {/* Selección de plan futuro */}
+        <div className="mb-5">
+          <p className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-wide">
+            Elige tu plan después del mes de prueba:
+          </p>
+          <div className="space-y-2">
+            {(Object.entries(PLANS) as [keyof typeof PLANS, typeof PLANS[keyof typeof PLANS]][]).map(([id, plan]) => (
+              <button
+                key={id}
+                onClick={() => setSelectedPlan(id)}
+                className={`w-full p-3 rounded-xl border text-left transition-all relative ${
+                  selectedPlan === id 
+                    ? 'border-[#6161FF] bg-[#6161FF]/5 ring-2 ring-[#6161FF]/20' 
+                    : 'border-[#E4E7EF] hover:border-[#6161FF]/50'
+                }`}
+              >
+                {plan.badge && (
+                  <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                    {plan.badge}
+                  </span>
+                )}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedPlan === id ? 'border-[#6161FF] bg-[#6161FF]' : 'border-[#B3B8C6]'
+                    }`}>
+                      {selectedPlan === id && <CheckCircle size={12} className="text-white" />}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#181B34] text-sm">{plan.name}</p>
+                      <p className="text-xs text-[#7C8193]">{plan.desc}</p>
+                    </div>
+                  </div>
+                  <p className="font-bold text-[#181B34]">${plan.price.toLocaleString('es-CL')}<span className="text-xs text-[#7C8193] font-normal">/{plan.period}</span></p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Beneficios */}
-        <div className="space-y-3 mb-6 text-left">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={16} className="text-[#00CA72]" />
-            </div>
-            <p className="text-sm text-[#434343]">Acceso completo al <strong>Algoritmo Tribal 10+10</strong></p>
+        <div className="space-y-2 mb-5 text-left">
+          <div className="flex items-center gap-2 text-xs text-[#434343]">
+            <CheckCircle size={14} className="text-[#00CA72]" />
+            <span>Acceso completo al <strong>Algoritmo Tribal 10+10</strong></span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={16} className="text-[#00CA72]" />
-            </div>
-            <p className="text-sm text-[#434343]">Conexiones con <strong>emprendedores verificados</strong></p>
+          <div className="flex items-center gap-2 text-xs text-[#434343]">
+            <CheckCircle size={14} className="text-[#00CA72]" />
+            <span>Conexiones con <strong>emprendedores verificados</strong></span>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
-              <CheckCircle size={16} className="text-[#00CA72]" />
-            </div>
-            <p className="text-sm text-[#434343]">Cross-promotion <strong>sin costo por 30 días</strong></p>
+          <div className="flex items-center gap-2 text-xs text-[#434343]">
+            <CheckCircle size={14} className="text-[#00CA72]" />
+            <span>Cancela cuando quieras, <strong>sin penalización</strong></span>
           </div>
         </div>
         
-        {/* Botón de canjear */}
+        {/* Botón de suscribirse */}
         <button
-          onClick={handleRedeemFreeMonth}
+          onClick={handleSubscribe}
           disabled={isProcessing}
-          className="w-full bg-gradient-to-r from-[#00CA72] to-[#00B366] hover:from-[#00B366] hover:to-[#009A56] text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+          className="w-full bg-gradient-to-r from-[#00CA72] to-[#00B366] hover:from-[#00B366] hover:to-[#009A56] text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl"
         >
           {isProcessing ? (
             <>
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Activando tu mes gratis...
+              Procesando...
             </>
           ) : (
             <>
-              <Sparkles size={20} />
-              ¡Canjear Mi Mes Gratis!
+              <CreditCard size={20} />
+              Pagar $1 y Comenzar
             </>
           )}
         </button>
         
         {/* Nota */}
-        <p className="text-xs text-[#7C8193] mt-4">
-          Sin tarjeta de crédito • Sin compromisos • Cancela cuando quieras
+        <p className="text-[10px] text-[#7C8193] mt-3 text-center leading-relaxed">
+          Al continuar, aceptas que después de 30 días se cobrará automáticamente el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}). Puedes cancelar en cualquier momento.
         </p>
-        
-        {/* Opción de upgrade */}
-        <div className="mt-6 pt-6 border-t border-[#E4E7EF]">
-          <p className="text-xs text-[#7C8193] mb-3">¿Prefieres asegurar tu membresía?</p>
-          <button
-            onClick={() => navigate('/profile')}
-            className="text-[#6161FF] text-sm font-semibold hover:underline"
-          >
-            Ver planes de pago →
-          </button>
-        </div>
       </div>
     </div>
   ) : (

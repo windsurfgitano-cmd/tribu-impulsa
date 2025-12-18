@@ -9,6 +9,7 @@ import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { PaymentResult } from './components/PaymentResult';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
+import { TermsCheckbox, TermsModal } from './components/TermsAndConditions';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
 import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
@@ -1298,6 +1299,7 @@ const RegisterScreen = () => {
     email: '',
     phone: '',
     password: '',
+    termsAccepted: false, // Aceptación de T&C
     // Paso 2: Emprendimiento
     companyName: '',
     city: '',
@@ -1335,6 +1337,7 @@ const RegisterScreen = () => {
       if (!formData.phone.trim()) newErrors.phone = 'Requerido';
       if (!formData.password.trim()) newErrors.password = 'Requerido';
       else if (formData.password.length < 4) newErrors.password = 'Mínimo 4 caracteres';
+      if (!formData.termsAccepted) newErrors.termsAccepted = 'Debes aceptar los términos';
     } else if (step === 2) {
       if (!formData.companyName.trim()) newErrors.companyName = 'Requerido';
       if (!formData.city.trim()) newErrors.city = 'Requerido';
@@ -1492,6 +1495,13 @@ const RegisterScreen = () => {
               {errors.password && <p className="text-xs text-[#FB275D] mt-1">{errors.password}</p>}
               <p className="text-[0.625rem] text-[#7C8193] mt-1">Usa esta contraseña para ingresar después</p>
             </div>
+            
+            {/* Checkbox de Términos y Condiciones */}
+            <TermsCheckbox 
+              checked={formData.termsAccepted}
+              onChange={(checked) => setFormData({...formData, termsAccepted: checked})}
+              error={!!errors.termsAccepted}
+            />
           </div>
         )}
 
@@ -1740,6 +1750,10 @@ const MembershipScreen = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const currentUser = getCurrentUser();
   const session = getStoredSession();
+  
+  // Fecha límite para mes gratis: 31 de diciembre 2025 a las 23:59:59
+  const BETA_END_DATE = new Date('2025-12-31T23:59:59');
+  const isBetaActive = new Date() <= BETA_END_DATE;
 
   // Verificar si ya es miembro (desde localStorage)
   useEffect(() => {
@@ -1794,7 +1808,7 @@ const MembershipScreen = () => {
     navigate('/searching');
   };
 
-  return (
+  return isBetaActive ? (
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#00CA72] flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
         {/* Icono de regalo/celebración */}
@@ -1864,6 +1878,98 @@ const MembershipScreen = () => {
         {/* Nota */}
         <p className="text-xs text-[#7C8193] mt-4">
           Sin tarjeta de crédito • Sin compromisos • Cancela cuando quieras
+        </p>
+        
+        {/* Opción de upgrade */}
+        <div className="mt-6 pt-6 border-t border-[#E4E7EF]">
+          <p className="text-xs text-[#7C8193] mb-3">¿Prefieres asegurar tu membresía?</p>
+          <button
+            onClick={() => navigate('/profile')}
+            className="text-[#6161FF] text-sm font-semibold hover:underline"
+          >
+            Ver planes de pago →
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    // Vista cuando la Beta ya terminó (después del 31 dic 2025)
+    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+        <div className="w-20 h-20 bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+          <Crown size={40} className="text-white" />
+        </div>
+        
+        <h1 className="text-2xl font-bold text-[#181B34] mb-2">
+          ¡Únete a Tribu Impulsa!
+        </h1>
+        <p className="text-[#7C8193] text-sm mb-6">
+          Selecciona el plan que mejor se adapte a tu negocio
+        </p>
+        
+        {/* Planes de pago */}
+        <div className="space-y-3 mb-6">
+          {[
+            { id: 'mensual', name: 'Mensual', price: 19990, desc: 'Renovación mes a mes', badge: null },
+            { id: 'semestral', name: 'Semestral', price: 99990, desc: '¡1 mes gratis!', badge: '🔥 Popular', original: 119940 },
+            { id: 'anual', name: 'Anual', price: 179990, desc: '¡3 meses gratis!', badge: '💎 Mejor valor', original: 239880 }
+          ].map(plan => (
+            <div 
+              key={plan.id}
+              className={`relative rounded-xl border p-4 text-left ${plan.badge ? 'border-[#6161FF] bg-[#6161FF]/5' : 'border-[#E4E7EF]'}`}
+            >
+              {plan.badge && (
+                <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                  {plan.badge}
+                </span>
+              )}
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="font-semibold text-[#181B34]">{plan.name}</p>
+                  <p className="text-xs text-[#7C8193]">{plan.desc}</p>
+                </div>
+                <div className="text-right">
+                  {plan.original && (
+                    <p className="text-xs text-[#7C8193] line-through">${plan.original.toLocaleString('es-CL')}</p>
+                  )}
+                  <p className="font-bold text-[#181B34]">${plan.price.toLocaleString('es-CL')}</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  setIsProcessing(true);
+                  try {
+                    const response = await fetch('/api/create-preference', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: currentUser?.id,
+                        userEmail: currentUser?.email,
+                        planId: plan.id
+                      })
+                    });
+                    const data = await response.json();
+                    if (data.initPoint) {
+                      window.location.href = data.initPoint;
+                    } else {
+                      alert('Error al crear el pago. Intenta de nuevo.');
+                    }
+                  } catch (error) {
+                    alert('Error de conexión. Intenta de nuevo.');
+                  }
+                  setIsProcessing(false);
+                }}
+                disabled={isProcessing}
+                className="w-full mt-3 py-2.5 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] text-white text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {isProcessing ? 'Procesando...' : 'Pagar con MercadoPago'}
+              </button>
+            </div>
+          ))}
+        </div>
+        
+        <p className="text-xs text-[#7C8193]">
+          Pagos seguros con MercadoPago • Cancela cuando quieras
         </p>
       </div>
     </div>

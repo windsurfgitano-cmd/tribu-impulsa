@@ -4312,7 +4312,219 @@ const MembershipSection = ({ userId }: { userId: string }) => {
             ¡Canjear Mi Mes Gratis!
           </button>
         )}
+
+        {/* Administrar suscripción - Solo para miembros */}
+        {isMember && <SubscriptionManager userId={userId} currentPlan={membership?.paymentMethod || 'mensual'} expiresAt={membership?.expiresAt} />}
       </div>
+    </div>
+  );
+};
+
+// Componente para administrar suscripción
+const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: string; currentPlan: string; expiresAt?: string }) => {
+  const [showPlans, setShowPlans] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const config = getAppConfig();
+
+  // Planes disponibles
+  const PLANS = [
+    {
+      id: 'mensual',
+      name: 'Mensual',
+      price: config.membershipPrice,
+      originalPrice: null,
+      duration: '1 mes',
+      description: 'Renovación mes a mes',
+      badge: null,
+      savings: null
+    },
+    {
+      id: 'semestral',
+      name: 'Semestral',
+      price: config.membershipPrice * 5, // 6 meses, paga 5
+      originalPrice: config.membershipPrice * 6,
+      duration: '6 meses',
+      description: '¡1 mes gratis!',
+      badge: '🔥 Popular',
+      savings: config.membershipPrice
+    },
+    {
+      id: 'anual',
+      name: 'Anual',
+      price: config.membershipPrice * 10, // 12 meses, paga 10
+      originalPrice: config.membershipPrice * 12,
+      duration: '12 meses',
+      description: '¡2 meses gratis!',
+      badge: '💎 Mejor valor',
+      savings: config.membershipPrice * 2
+    }
+  ];
+
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('es-CL', {
+      style: 'currency',
+      currency: 'CLP',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Crear preferencia de pago en MercadoPago
+  const handleSelectPlan = async (planId: string) => {
+    const plan = PLANS.find(p => p.id === planId);
+    if (!plan) return;
+
+    setIsProcessing(true);
+
+    try {
+      // Llamar al endpoint de crear preferencia
+      const response = await fetch('/api/create-preference', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: plan.id,
+          planName: `Tribu Impulsa - Plan ${plan.name}`,
+          price: plan.price,
+          duration: plan.duration,
+          userId: userId,
+          isRenewal: true
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.init_point) {
+        // Redirigir a MercadoPago
+        window.location.href = data.init_point;
+      } else {
+        alert('Error al crear el pago. Intenta de nuevo.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión. Intenta de nuevo.');
+    }
+
+    setIsProcessing(false);
+  };
+
+  // Cancelar suscripción
+  const handleCancelSubscription = async () => {
+    setIsProcessing(true);
+    
+    try {
+      const { getFirestoreInstance } = await import('./services/firebaseService');
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const db = getFirestoreInstance();
+      
+      if (db) {
+        await updateDoc(doc(db, 'memberships', userId), {
+          autoRenew: false,
+          cancelledAt: new Date().toISOString(),
+          status: 'cancelled_pending' // Mantiene acceso hasta que expire
+        });
+        
+        localStorage.setItem(`membership_autorenew_${userId}`, 'false');
+        alert('Tu suscripción no se renovará automáticamente. Tendrás acceso hasta ' + 
+          (expiresAt ? new Date(expiresAt).toLocaleDateString('es-CL') : 'el fin del período'));
+      }
+    } catch (error) {
+      console.error('Error cancelando:', error);
+      alert('Error al cancelar. Contacta soporte.');
+    }
+    
+    setIsProcessing(false);
+    setShowCancelConfirm(false);
+  };
+
+  return (
+    <div className="mt-4 pt-4 border-t border-[#E4E7EF]/50">
+      <button
+        onClick={() => setShowPlans(!showPlans)}
+        className="w-full py-2.5 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+      >
+        <CreditCard size={16} />
+        {showPlans ? 'Cerrar opciones' : 'Administrar Suscripción'}
+      </button>
+
+      {showPlans && (
+        <div className="mt-4 space-y-3 animate-fadeIn">
+          <h4 className="text-xs font-bold uppercase text-[#7C8193] tracking-wide">Renovar o Cambiar Plan</h4>
+          
+          {/* Planes */}
+          <div className="space-y-2">
+            {PLANS.map(plan => (
+              <div
+                key={plan.id}
+                className={`relative rounded-xl border p-3 transition-all ${
+                  plan.badge ? 'border-[#6161FF] bg-[#6161FF]/5' : 'border-[#E4E7EF] bg-white'
+                }`}
+              >
+                {plan.badge && (
+                  <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
+                    {plan.badge}
+                  </span>
+                )}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-[#181B34]">{plan.name}</p>
+                    <p className="text-xs text-[#7C8193]">{plan.description}</p>
+                  </div>
+                  <div className="text-right">
+                    {plan.originalPrice && (
+                      <p className="text-xs text-[#7C8193] line-through">{formatPrice(plan.originalPrice)}</p>
+                    )}
+                    <p className="font-bold text-[#181B34]">{formatPrice(plan.price)}</p>
+                    {plan.savings && (
+                      <p className="text-[10px] text-[#00CA72] font-medium">Ahorras {formatPrice(plan.savings)}</p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleSelectPlan(plan.id)}
+                  disabled={isProcessing}
+                  className="w-full mt-2 py-2 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] text-white text-sm font-medium hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  {isProcessing ? 'Procesando...' : `Pagar con MercadoPago`}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Cancelar suscripción */}
+          <div className="pt-3 border-t border-dashed border-[#E4E7EF]">
+            {!showCancelConfirm ? (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-full py-2 text-xs text-[#7C8193] hover:text-[#FB275D] transition-colors"
+              >
+                Cancelar renovación automática
+              </button>
+            ) : (
+              <div className="bg-[#FB275D]/5 rounded-xl p-3 space-y-2">
+                <p className="text-sm text-[#FB275D] font-medium">¿Seguro que deseas cancelar?</p>
+                <p className="text-xs text-[#7C8193]">
+                  Mantendrás acceso hasta que expire tu período actual.
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowCancelConfirm(false)}
+                    className="flex-1 py-2 rounded-lg border border-[#E4E7EF] text-[#434343] text-sm"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={handleCancelSubscription}
+                    disabled={isProcessing}
+                    className="flex-1 py-2 rounded-lg bg-[#FB275D] text-white text-sm font-medium disabled:opacity-50"
+                  >
+                    {isProcessing ? 'Cancelando...' : 'Confirmar'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

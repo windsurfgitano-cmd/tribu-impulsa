@@ -2879,11 +2879,11 @@ const TribeAssignmentsView = () => {
       {/* Modal de registro de cumplimiento */}
       {showShareModal && ReactDOM.createPortal(
         <div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm"
           onClick={() => { setShowShareModal(null); setShareUrl(''); }}
         >
           <div 
-            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl animate-slideUp"
+            className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl animate-slideUp"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-[#181B34] mb-2">
@@ -4206,8 +4206,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                         
                         {/* Modal cambio de contraseña */}
                         {showPasswordModal && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
                               <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
                                 <Lock size={20} className="text-[#6161FF]" />
                                 Cambiar Contraseña
@@ -4277,8 +4277,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                         
                         {/* Modal tamaño de letra */}
                         {showFontSizeModal && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
                               <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
                                 <Type size={20} className="text-[#00CA72]" />
                                 Tamaño de Letra
@@ -5690,7 +5690,7 @@ const ActivityView = () => {
       {/* Modal para ver actividad completa */}
       {expandedItem && ReactDOM.createPortal(
         <div 
-          className="fixed inset-0 bg-black/50 z-[10000] flex items-end justify-center animate-fadeIn"
+          className="fixed inset-0 bg-black/50 z-[99999] flex items-end justify-center animate-fadeIn backdrop-blur-sm"
           onClick={() => {
             markAsRead(expandedItem.id);
             setExpandedItem(null);

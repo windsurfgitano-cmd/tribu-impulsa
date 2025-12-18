@@ -1907,9 +1907,10 @@ const MembershipScreen = () => {
           )}
         </button>
         
-        {/* Nota */}
+        {/* Nota sobre tarjeta de crédito */}
         <p className="text-[10px] text-[#7C8193] mt-3 text-center leading-relaxed">
-          Al continuar, aceptas que después de 30 días se cobrará automáticamente el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}). Puedes cancelar en cualquier momento.
+          💳 <strong>Requiere tarjeta de crédito</strong> (prepago y débito no soportan suscripciones).<br/>
+          Al continuar, aceptas que después de 30 días se cobrará el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}). Cancela cuando quieras.
         </p>
       </div>
     </div>
@@ -4740,7 +4741,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
                 {isProcessing ? 'Procesando...' : '¡Pagar $1 y Comenzar!'}
               </button>
               <p className="text-[9px] text-[#7C8193] text-center mt-2">
-                Después de 30 días se cobra el plan {selectedTrialPlan}. Cancela cuando quieras.
+                💳 Requiere tarjeta de crédito. Después de 30 días se cobra el plan {selectedTrialPlan}.
               </p>
             </div>
           )}

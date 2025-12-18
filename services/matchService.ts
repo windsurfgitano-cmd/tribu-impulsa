@@ -284,8 +284,23 @@ const calculateCompatibilityScore = (
     }
   }
   
+  // 0.5 Si alguno no tiene categoría, ser permisivo pero no penalizar
+  const hasCategory1 = user1Category && user1Category !== 'General' && user1Category.trim() !== '';
+  const hasCategory2 = user2Category && user2Category !== 'General' && user2Category.trim() !== '';
+  
+  if (!hasCategory1 || !hasCategory2) {
+    // Usuario sin categoría definida: matchear por afinidad si existe
+    if (affGroup1 && affGroup2 && affGroup1 === affGroup2) {
+      score += 15;
+      reasons.push('Intereses compartidos');
+    } else if (affGroup1 && affGroup2) {
+      score += 5;
+      reasons.push('Potencial de colaboración');
+    }
+    // No penalizar, dejar score base
+  }
   // 1. Misma categoría exacta = EXCLUIR (competencia directa - NO MATCHEAN)
-  if (user1Category === user2Category) {
+  else if (user1Category === user2Category) {
     // Competencia directa = EXCLUIR COMPLETAMENTE
     return { score: 15, reason: 'Competencia directa - No compatible' };
   }
@@ -311,7 +326,7 @@ const calculateCompatibilityScore = (
       score += 5;
       reasons.push('Nuevas oportunidades de negocio');
     } else {
-      score -= 15;
+      score -= 10; // Reducir penalización para dar más variedad
       reasons.push('Amplía tu red de contactos');
     }
   }

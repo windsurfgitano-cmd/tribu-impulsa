@@ -8,24 +8,24 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 // Planes de membresía disponibles
 const MEMBERSHIP_PLANS = {
-  monthly: {
-    id: 'monthly',
+  mensual: {
+    id: 'mensual',
     title: 'Membresía Tribu Impulsa - Mensual',
     price: 19990,
     duration_months: 1,
     description: 'Acceso completo al Algoritmo Tribal 10+10 por 1 mes'
   },
-  semester: {
-    id: 'semester',
+  semestral: {
+    id: 'semestral',
     title: 'Membresía Tribu Impulsa - 6 Meses (Paga 5)',
-    price: 99990, // 5 meses al precio de 6
+    price: 99990,
     duration_months: 6,
     description: 'Acceso completo por 6 meses - ¡Ahorra 1 mes!'
   },
-  annual: {
-    id: 'annual',
+  anual: {
+    id: 'anual',
     title: 'Membresía Tribu Impulsa - 12 Meses (Paga 9)',
-    price: 179910, // 9 meses al precio de 12
+    price: 179990,
     duration_months: 12,
     description: 'Acceso completo por 1 año - ¡Ahorra 3 meses!'
   }

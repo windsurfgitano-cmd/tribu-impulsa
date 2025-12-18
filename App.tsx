@@ -4385,14 +4385,15 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const config = getAppConfig();
 
-  // Planes disponibles
+  // Planes disponibles - PRECIOS FINALES
   const PLANS = [
     {
       id: 'mensual',
       name: 'Mensual',
-      price: config.membershipPrice,
+      price: 19990,
       originalPrice: null,
       duration: '1 mes',
+      months: 1,
       description: 'Renovación mes a mes',
       badge: null,
       savings: null
@@ -4400,22 +4401,24 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
     {
       id: 'semestral',
       name: 'Semestral',
-      price: config.membershipPrice * 5, // 6 meses, paga 5
-      originalPrice: config.membershipPrice * 6,
+      price: 99990, // 6 meses, paga 5
+      originalPrice: 119940, // 6 x 19990
       duration: '6 meses',
+      months: 6,
       description: '¡1 mes gratis!',
       badge: '🔥 Popular',
-      savings: config.membershipPrice
+      savings: 19950
     },
     {
       id: 'anual',
       name: 'Anual',
-      price: config.membershipPrice * 10, // 12 meses, paga 10
-      originalPrice: config.membershipPrice * 12,
+      price: 179990, // 12 meses, paga 9
+      originalPrice: 239880, // 12 x 19990
       duration: '12 meses',
-      description: '¡2 meses gratis!',
+      months: 12,
+      description: '¡3 meses gratis!',
       badge: '💎 Mejor valor',
-      savings: config.membershipPrice * 2
+      savings: 59890
     }
   ];
 
@@ -4435,25 +4438,35 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
     setIsProcessing(true);
 
     try {
+      // Obtener email del usuario actual
+      const currentUser = getCurrentUser();
+      const userEmail = currentUser?.email || '';
+      
+      if (!userEmail) {
+        alert('Error: No se pudo obtener tu email. Por favor recarga la página.');
+        setIsProcessing(false);
+        return;
+      }
+
       // Llamar al endpoint de crear preferencia
       const response = await fetch('/api/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId: plan.id,
-          planName: `Tribu Impulsa - Plan ${plan.name}`,
-          price: plan.price,
-          duration: plan.duration,
           userId: userId,
-          isRenewal: true
+          userEmail: userEmail,
+          planId: plan.id
         })
       });
 
       const data = await response.json();
 
-      if (data.init_point) {
+      if (data.initPoint) {
         // Redirigir a MercadoPago
-        window.location.href = data.init_point;
+        window.location.href = data.initPoint;
+      } else if (data.error) {
+        console.error('Error MP:', data);
+        alert(`Error: ${data.error}${data.details ? ' - ' + JSON.stringify(data.details) : ''}`);
       } else {
         alert('Error al crear el pago. Intenta de nuevo.');
       }

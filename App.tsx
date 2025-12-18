@@ -598,7 +598,8 @@ initAppConfigFromFirebase();
 const LoginScreen = () => {
   const navigate = useNavigate();
   // Estados del flujo - ahora incluye 'landing' como primera pantalla
-  const [step, setStep] = useState<'landing' | 'email' | 'password' | 'register'>('landing');
+  const [step, setStep] = useState<'landing' | 'email' | 'password' | 'register' | 'forgot'>('landing');
+  const [resetSent, setResetSent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -982,14 +983,98 @@ const LoginScreen = () => {
               {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
             </button>
             
+            <div className="flex justify-between items-center">
+              <button 
+                type="button"
+                onClick={() => { setStep('email'); setError(''); setPassword(''); }}
+                className="text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
+              >
+                ← Cambiar email
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setStep('forgot'); setError(''); setResetSent(false); }}
+                className="text-[#6161FF] hover:text-[#5050DD] text-sm font-medium transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* PASO: Recuperar contraseña */}
+        {step === 'forgot' && (
+          <div className="space-y-4 text-left">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-[#6161FF]/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Lock size={28} className="text-[#6161FF]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#181B34]">Recuperar contraseña</h3>
+              <p className="text-[#7C8193] text-sm mt-1">Te enviaremos un email para restablecer tu contraseña</p>
+            </div>
+            
+            {!resetSent ? (
+              <>
+                <div className="bg-[#F5F7FB] rounded-xl p-3 text-sm text-[#434343]">
+                  📧 {email}
+                </div>
+                
+                {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+                
+                <button 
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setError('');
+                    try {
+                      const { getAuth, sendPasswordResetEmail } = await import('firebase/auth');
+                      const auth = getAuth();
+                      await sendPasswordResetEmail(auth, email);
+                      setResetSent(true);
+                    } catch (err: any) {
+                      console.error('Error enviando email:', err);
+                      if (err.code === 'auth/user-not-found') {
+                        setError('No hay cuenta con este email. ¿Quieres registrarte?');
+                      } else {
+                        setError('Error enviando el email. Intenta de nuevo.');
+                      }
+                    }
+                    setIsLoading(false);
+                  }}
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isLoading ? 'Enviando...' : 'Enviar email de recuperación'}
+                </button>
+              </>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="bg-[#E6FFF3] border border-[#00CA72]/30 rounded-xl p-4">
+                  <CheckCircle size={32} className="text-[#00CA72] mx-auto mb-2" />
+                  <p className="text-[#008A4E] font-medium">¡Email enviado!</p>
+                  <p className="text-[#008A4E]/80 text-sm mt-1">
+                    Revisa tu bandeja de entrada y sigue las instrucciones
+                  </p>
+                </div>
+                <p className="text-[#7C8193] text-xs">
+                  ¿No llegó? Revisa tu carpeta de spam o solicita otro email
+                </p>
+                <button 
+                  onClick={() => setResetSent(false)}
+                  className="text-[#6161FF] hover:text-[#5050DD] text-sm font-medium transition-colors"
+                >
+                  Reenviar email
+                </button>
+              </div>
+            )}
+            
             <button 
               type="button"
-              onClick={() => { setStep('email'); setError(''); setPassword(''); }}
+              onClick={() => { setStep('password'); setError(''); }}
               className="w-full text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
             >
-              ← Cambiar email
+              ← Volver a ingresar contraseña
             </button>
-          </form>
+          </div>
         )}
 
         {/* PASO 2b: Registro (usuario nuevo) - FORMULARIO COMPLETO */}

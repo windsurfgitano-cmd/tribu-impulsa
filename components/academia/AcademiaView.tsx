@@ -26,53 +26,45 @@ export const AcademiaView: React.FC<AcademiaViewProps> = ({ onNavigateBack }) =>
 
   const renderHeader = () => (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onNavigateBack}
-            className="p-2 hover:bg-[#ec0000]/10 rounded-lg transition-colors text-[#666]"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-[#ec0000]">Santander Academia</h1>
-            <p className="text-sm text-[#666]">
-              Tu espacio para aprender, practicar y hacer crecer tu carrera con Santander
-            </p>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setVistaModo(vistaModo === 'grid' ? 'list' : 'grid')}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            {vistaModo === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
-          </button>
+      {/* Header - responsive */}
+      <div className="flex items-start gap-3">
+        <button
+          onClick={onNavigateBack}
+          className="p-2 hover:bg-[#ec0000]/10 rounded-lg transition-colors text-[#666] flex-shrink-0 mt-1"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#ec0000]">Santander Academia</h1>
+          <p className="text-xs sm:text-sm text-[#666] line-clamp-2">
+            Tu espacio para aprender y crecer con Santander
+          </p>
         </div>
       </div>
 
-      {/* Navegación de pestañas */}
-      <div className="flex space-x-1 bg-[#ec0000]/10 p-1 rounded-lg">
-        {[
-          { id: 'dashboard', label: 'Inicio', icon: Target },
-          { id: 'capsulas', label: 'Cápsulas', icon: BookOpen },
-          { id: 'progreso', label: 'Mi progreso', icon: TrendingUp },
-          { id: 'rutas', label: 'Rutas sugeridas', icon: Award }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setVistaActual(tab.id as any)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              vistaActual === tab.id
-                ? 'bg-[#ec0000]/20 text-[#ff4b4b]'
-                : 'hover:bg-[#ec0000]/5 text-[#666]'
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            <span className="text-sm font-medium">{tab.label}</span>
-          </button>
-        ))}
+      {/* Navegación de pestañas - scrollable en móvil */}
+      <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-1 bg-[#ec0000]/10 p-1 rounded-xl min-w-max">
+          {[
+            { id: 'dashboard', label: 'Inicio', icon: Target },
+            { id: 'capsulas', label: 'Cápsulas', icon: BookOpen },
+            { id: 'progreso', label: 'Progreso', icon: TrendingUp },
+            { id: 'rutas', label: 'Rutas', icon: Award }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setVistaActual(tab.id as any)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+                vistaActual === tab.id
+                  ? 'bg-white text-[#ec0000] shadow-sm'
+                  : 'hover:bg-white/50 text-[#666]'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Barra de búsqueda y filtros */}
@@ -128,8 +120,8 @@ export const AcademiaView: React.FC<AcademiaViewProps> = ({ onNavigateBack }) =>
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-[#FFFFFF] via-[#FEF2F2] to-[#FEE2E2] text-[#181B34]">
-      <div className="max-w-5xl mx-auto px-4 py-6 pb-32 space-y-6">
+    <div className="min-h-screen w-full bg-gradient-to-br from-[#FFFFFF] via-[#FEF2F2] to-[#FEE2E2] text-[#181B34] overflow-x-hidden">
+      <div className="max-w-5xl mx-auto px-4 py-4 sm:py-6 pb-32 space-y-4 sm:space-y-6">
         {renderHeader()}
         {renderContenido()}
       </div>

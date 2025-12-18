@@ -8,17 +8,17 @@ const SantanderCard: React.FC<{children: React.ReactNode; className?: string; gl
   </div>
 );
 
-// Componente de stat animado
+// Componente de stat animado - Mobile first
 const AnimatedStat: React.FC<{value: number | string; label: string; icon: React.ReactNode; color: string; suffix?: string}> = ({value, label, icon, color, suffix = ''}) => (
-  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white to-gray-50 p-5 shadow-lg border border-white/50 group hover:scale-[1.02] transition-all duration-300">
-    <div className={`absolute top-0 right-0 w-24 h-24 ${color} opacity-10 rounded-full blur-2xl -mr-8 -mt-8 group-hover:opacity-20 transition-opacity`} />
-    <div className="relative flex items-center gap-4">
-      <div className={`p-3 ${color} bg-opacity-15 rounded-xl`}>
-        {icon}
+  <div className="relative overflow-hidden rounded-xl sm:rounded-2xl bg-gradient-to-br from-white to-gray-50 p-3 sm:p-5 shadow-lg border border-white/50">
+    <div className={`absolute top-0 right-0 w-16 sm:w-24 h-16 sm:h-24 ${color} opacity-10 rounded-full blur-2xl -mr-4 sm:-mr-8 -mt-4 sm:-mt-8`} />
+    <div className="relative flex items-center gap-2 sm:gap-4">
+      <div className={`p-2 sm:p-3 ${color} bg-opacity-15 rounded-lg sm:rounded-xl flex-shrink-0`}>
+        <div className="w-5 h-5 sm:w-6 sm:h-6 [&>svg]:w-full [&>svg]:h-full">{icon}</div>
       </div>
-      <div>
-        <p className="text-3xl font-black text-[#181B34]">{value}{suffix}</p>
-        <p className="text-sm text-[#666] font-medium">{label}</p>
+      <div className="min-w-0">
+        <p className="text-xl sm:text-3xl font-black text-[#181B34] truncate">{value}{suffix}</p>
+        <p className="text-xs sm:text-sm text-[#666] font-medium truncate">{label}</p>
       </div>
     </div>
   </div>
@@ -77,37 +77,28 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ userId }) 
   }
 
   return (
-    <div className="space-y-6">
-      {/* Hero Banner Santander */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#ec0000] via-[#cc0000] to-[#990000] p-6 shadow-2xl">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
+      {/* Hero Banner Santander - Mobile first */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#ec0000] via-[#cc0000] to-[#990000] p-4 sm:p-6 shadow-xl">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtNi42MjcgMC0xMiA1LjM3My0xMiAxMnM1LjM3MyAxMiAxMiAxMiAxMi01LjM3MyAxMi0xMi01LjM3My0xMi0xMi0xMnoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii4xIi8+PC9nPjwvc3ZnPg==')] opacity-30" />
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-24 -mb-24" />
+        <div className="absolute top-0 right-0 w-32 sm:w-64 h-32 sm:h-64 bg-white/10 rounded-full blur-3xl -mr-16 sm:-mr-32 -mt-16 sm:-mt-32" />
         
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-9 h-9 text-[#ec0000]" />
+        <div className="relative">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <GraduationCap className="w-6 h-6 sm:w-9 sm:h-9 text-[#ec0000]" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-white">Santander Open Academy</h2>
-              <p className="text-white/80 text-sm">Desarrolla tu potencial con cursos gratuitos</p>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-2xl font-black text-white truncate">Santander Open Academy</h2>
+              <p className="text-white/80 text-xs sm:text-sm truncate">Cursos gratuitos para tu desarrollo</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-3">
-            <div className="text-right">
-              <p className="text-white/60 text-xs">Tu progreso</p>
-              <p className="text-white font-bold text-xl">{Math.round(estadisticas.porcentajeCompletado)}%</p>
+          {/* Progreso en móvil */}
+          <div className="mt-3 flex items-center gap-3 sm:hidden">
+            <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
+              <div className="h-full bg-white rounded-full" style={{width: `${estadisticas.porcentajeCompletado}%`}} />
             </div>
-            <div className="w-16 h-16 relative">
-              <svg className="w-16 h-16 transform -rotate-90">
-                <circle cx="32" cy="32" r="28" stroke="white" strokeOpacity="0.2" strokeWidth="4" fill="none" />
-                <circle cx="32" cy="32" r="28" stroke="white" strokeWidth="4" fill="none" 
-                  strokeDasharray={`${estadisticas.porcentajeCompletado * 1.76} 176`}
-                  strokeLinecap="round" />
-              </svg>
-              <Sparkles className="w-6 h-6 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </div>
+            <span className="text-white font-bold text-sm">{Math.round(estadisticas.porcentajeCompletado)}%</span>
           </div>
         </div>
       </div>
@@ -143,18 +134,18 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ userId }) 
       </div>
 
       {/* Logros y Progreso Visual */}
-      <SantanderCard className="p-6" glow>
-        <div className="flex items-center justify-between mb-6">
+      <SantanderCard className="p-4 sm:p-6" glow>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
           <div>
-            <h3 className="text-xl font-bold text-[#181B34] flex items-center gap-2">
-              <Zap className="w-5 h-5 text-[#ec0000]" />
-              Tu progreso de aprendizaje
+            <h3 className="text-base sm:text-xl font-bold text-[#181B34] flex items-center gap-2">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-[#ec0000]" />
+              Tu progreso
             </h3>
-            <p className="text-sm text-[#666] mt-1">Sigue avanzando para desbloquear más contenido</p>
+            <p className="text-xs sm:text-sm text-[#666] mt-1">Sigue avanzando para desbloquear más</p>
           </div>
-          <div className="flex items-center gap-2 bg-[#ec0000]/10 px-4 py-2 rounded-full">
-            <Award className="w-5 h-5 text-[#ec0000]" />
-            <span className="font-bold text-[#ec0000]">{estadisticas.insignias} insignias</span>
+          <div className="flex items-center gap-2 bg-[#ec0000]/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full self-start sm:self-auto">
+            <Award className="w-4 h-4 sm:w-5 sm:h-5 text-[#ec0000]" />
+            <span className="font-bold text-[#ec0000] text-sm">{estadisticas.insignias} insignias</span>
           </div>
         </div>
         
@@ -177,36 +168,36 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ userId }) 
           </div>
         </div>
         
-        {/* Stats adicionales en grid bonito */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
-            <Clock className="w-6 h-6 text-[#ec0000] mx-auto mb-2" />
-            <p className="text-2xl font-black text-[#181B34]">{Math.round(estadisticas.tiempoTotalEstudio / 60)}h</p>
-            <p className="text-xs text-[#666]">Tiempo de estudio</p>
+        {/* Stats adicionales en grid - responsive */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="text-center p-2 sm:p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-100">
+            <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-[#ec0000] mx-auto mb-1 sm:mb-2" />
+            <p className="text-lg sm:text-2xl font-black text-[#181B34]">{Math.round(estadisticas.tiempoTotalEstudio / 60)}h</p>
+            <p className="text-[10px] sm:text-xs text-[#666]">Estudio</p>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
-            <Target className="w-6 h-6 text-[#f59e0b] mx-auto mb-2" />
-            <p className="text-2xl font-black text-[#181B34]">{estadisticas.capsulasCompletadas}</p>
-            <p className="text-xs text-[#666]">Cápsulas terminadas</p>
+          <div className="text-center p-2 sm:p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-100">
+            <Target className="w-5 h-5 sm:w-6 sm:h-6 text-[#f59e0b] mx-auto mb-1 sm:mb-2" />
+            <p className="text-lg sm:text-2xl font-black text-[#181B34]">{estadisticas.capsulasCompletadas}</p>
+            <p className="text-[10px] sm:text-xs text-[#666]">Terminadas</p>
           </div>
-          <div className="text-center p-4 bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-100">
-            <TrendingUp className="w-6 h-6 text-[#22c55e] mx-auto mb-2" />
-            <p className="text-2xl font-black text-[#181B34]">+{Math.round(estadisticas.porcentajeCompletado / 10)}%</p>
-            <p className="text-xs text-[#666]">Esta semana</p>
+          <div className="text-center p-2 sm:p-4 bg-gradient-to-br from-gray-50 to-white rounded-lg sm:rounded-xl border border-gray-100">
+            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-[#22c55e] mx-auto mb-1 sm:mb-2" />
+            <p className="text-lg sm:text-2xl font-black text-[#181B34]">+{Math.round(estadisticas.porcentajeCompletado / 10)}%</p>
+            <p className="text-[10px] sm:text-xs text-[#666]">Semana</p>
           </div>
         </div>
       </SantanderCard>
 
-      {/* Cápsulas recomendadas - Diseño destacado */}
+      {/* Cápsulas recomendadas */}
       {recomendadas.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-[#181B34] flex items-center gap-2">
-              <Star className="w-5 h-5 text-[#f59e0b]" />
-              Recomendado para ti
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h3 className="text-base sm:text-xl font-bold text-[#181B34] flex items-center gap-2">
+              <Star className="w-4 h-4 sm:w-5 sm:h-5 text-[#f59e0b]" />
+              Recomendado
             </h3>
-            <button className="text-[#ec0000] text-sm font-medium flex items-center gap-1 hover:underline">
-              Ver todo <ChevronRight className="w-4 h-4" />
+            <button className="text-[#ec0000] text-xs sm:text-sm font-medium flex items-center gap-1">
+              Ver todo <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,18 +216,18 @@ export const AcademiaDashboard: React.FC<AcademiaDashboardProps> = ({ userId }) 
         </div>
       )}
 
-      {/* Todas las cápsulas - Grid mejorado */}
+      {/* Todas las cápsulas */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-[#181B34] flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-[#ec0000]" />
-            Explora las cápsulas
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-xl font-bold text-[#181B34] flex items-center gap-2">
+            <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#ec0000]" />
+            Cápsulas
           </h3>
-          <span className="text-sm text-[#666] bg-gray-100 px-3 py-1 rounded-full">
-            {capsulas.length} disponibles
+          <span className="text-xs sm:text-sm text-[#666] bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
+            {capsulas.length}
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {capsulas.map((capsula) => (
             <CapsulaCard 
               key={capsula.id}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, FormEvent, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star } from 'lucide-react';
+import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star, Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
@@ -607,6 +607,7 @@ const LoginScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [devMode, setDevMode] = useState(false);
   const [devPassword, setDevPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   
   // Datos de registro (si es usuario nuevo)
   const [registerData, setRegisterData] = useState({
@@ -982,15 +983,24 @@ const LoginScreen = () => {
             
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                placeholder="TRIBU2026"
-                autoFocus
-              />
-              <p className="text-[0.625rem] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026</p>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 pr-12 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  placeholder="Tu contraseña"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7C8193] hover:text-[#6161FF] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <p className="text-[0.625rem] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026 (cámbiala en Ajustes)</p>
             </div>
             
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
@@ -1318,6 +1328,7 @@ const RegisterScreen = () => {
     website: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
 
   const totalSteps = 5;
@@ -1484,16 +1495,25 @@ const RegisterScreen = () => {
               {errors.phone && <p className="text-xs text-[#FB275D] mt-1">{errors.phone}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña *</label>
-              <input 
-                type="password" 
-                className={`w-full bg-[#F5F7FB] border ${errors.password ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
-                placeholder="Mínimo 4 caracteres"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-              />
+              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Crea tu Contraseña *</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  className={`w-full bg-[#F5F7FB] border ${errors.password ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 pr-12 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
+                  placeholder="Mínimo 4 caracteres"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7C8193] hover:text-[#6161FF] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-[#FB275D] mt-1">{errors.password}</p>}
-              <p className="text-[0.625rem] text-[#7C8193] mt-1">Usa esta contraseña para ingresar después</p>
+              <p className="text-[0.625rem] text-[#7C8193] mt-1">Elige una contraseña segura para tu cuenta</p>
             </div>
             
             {/* Checkbox de Términos y Condiciones */}
@@ -1822,13 +1842,21 @@ const MembershipScreen = () => {
         </div>
         
         {/* Promoción $1 */}
-        <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-2xl p-4 mb-5 border border-[#00CA72]/30 text-center">
+        <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-2xl p-4 mb-4 border border-[#00CA72]/30 text-center">
           <p className="text-3xl font-black text-[#00CA72] mb-1">$1</p>
           <p className="text-sm text-[#434343]">
             <strong>1 mes completo</strong> de Tribu Impulsa
           </p>
           <p className="text-xs text-[#7C8193] mt-1">
             Después continúa con el plan que elijas
+          </p>
+        </div>
+        
+        {/* Aviso OBLIGATORIO tarjeta de crédito */}
+        <div className="bg-[#FFF3CD] border border-[#FFD93D] rounded-xl p-3 mb-5 flex items-center gap-2">
+          <CreditCard size={18} className="text-[#B8860B] flex-shrink-0" />
+          <p className="text-xs text-[#856404]">
+            <strong>Requiere tarjeta de crédito.</strong> Débito y prepago no soportan suscripciones.
           </p>
         </div>
 

@@ -3,10 +3,18 @@
 // ===============================================
 // Endpoint: POST /api/mercadopago-webhook
 // Recibe notificaciones de pago y activa membresías en Firestore
+// Maneja tanto pagos únicos como suscripciones con trial de $1
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+
+// Planes de suscripción (mismos que en create-subscription.ts)
+const SUBSCRIPTION_PLANS: Record<string, { price: number; frequency: number; title: string }> = {
+  mensual: { price: 19990, frequency: 1, title: 'Plan Mensual' },
+  semestral: { price: 99990, frequency: 6, title: 'Plan Semestral' },
+  anual: { price: 179990, frequency: 12, title: 'Plan Anual' }
+};
 
 // Inicializar Firebase Admin (solo una vez)
 const initFirebaseAdmin = () => {
@@ -104,68 +112,150 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ received: true, processed: false, error: 'Invalid reference' });
     }
 
-    const { userId, planId, durationMonths } = referenceData;
+    const { userId, planId, type: paymentType, nextChargeAmount, nextChargeDate, subscriptionPlan } = referenceData;
 
     if (!userId) {
       console.error('❌ userId no encontrado en external_reference');
       return res.status(200).json({ received: true, processed: false, error: 'No userId' });
     }
 
-    console.log('👤 Activando membresía para:', { userId, planId, durationMonths });
-
-    // Inicializar Firestore y actualizar membresía
+    // Inicializar Firestore
     const db = initFirebaseAdmin();
-
     const now = new Date();
-    const expiresAt = new Date(now);
-    expiresAt.setMonth(expiresAt.getMonth() + (durationMonths || 1));
 
-    // Actualizar membresía del usuario
+    // Verificar idempotencia
     const membershipRef = db.collection('memberships').doc(userId);
-    
-    // Verificar idempotencia - no procesar el mismo pago dos veces
     const existingMembership = await membershipRef.get();
     if (existingMembership.exists) {
       const data = existingMembership.data();
-      if (data?.paymentId === String(paymentId)) {
-        console.log('ℹ️ Pago ya procesado anteriormente:', paymentId);
+      if (data?.lastPaymentId === String(paymentId)) {
+        console.log('ℹ️ Pago ya procesado:', paymentId);
         return res.status(200).json({ received: true, processed: false, reason: 'Already processed' });
       }
     }
 
-    // Guardar/actualizar membresía
+    // =============================================
+    // CASO 1: Pago de trial $1 (inicio de suscripción)
+    // =============================================
+    if (paymentType === 'promo_trial_1_peso') {
+      console.log('🎁 Procesando pago de trial $1:', { userId, planId });
+
+      const plan = SUBSCRIPTION_PLANS[planId] || SUBSCRIPTION_PLANS.mensual;
+      const trialEndDate = new Date(now);
+      trialEndDate.setDate(trialEndDate.getDate() + 30);
+
+      // Guardar membresía con trial activo
+      await membershipRef.set({
+        id: userId,
+        email: payment.payer?.email || '',
+        status: 'miembro',
+        membershipType: 'trial',
+        lastPaymentId: String(paymentId),
+        trialStartDate: now.toISOString(),
+        trialEndDate: trialEndDate.toISOString(),
+        expiresAt: trialEndDate.toISOString(),
+        // Info de la suscripción futura
+        subscriptionPlan: planId,
+        subscriptionPrice: plan.price,
+        subscriptionFrequency: plan.frequency,
+        nextChargeDate: trialEndDate.toISOString(),
+        nextChargeAmount: plan.price,
+        autoRenew: true,
+        // Tracking
+        trialPaymentAmount: payment.transaction_amount,
+        createdAt: existingMembership.exists ? existingMembership.data()?.createdAt : now.toISOString(),
+        updatedAt: now.toISOString()
+      }, { merge: true });
+
+      // Guardar en colección de suscripciones pendientes (para cron job)
+      const subscriptionRef = db.collection('pending_subscriptions').doc(userId);
+      await subscriptionRef.set({
+        userId,
+        userEmail: payment.payer?.email || '',
+        planId,
+        planTitle: plan.title,
+        chargeAmount: plan.price,
+        chargeDate: trialEndDate.toISOString(),
+        trialPaymentId: String(paymentId),
+        status: 'pending_charge',
+        createdAt: now.toISOString()
+      });
+
+      // Guardar registro del pago trial
+      await db.collection('payments').doc(String(paymentId)).set({
+        id: String(paymentId),
+        userId,
+        userEmail: payment.payer?.email || '',
+        amount: payment.transaction_amount,
+        type: 'trial',
+        planId,
+        status: 'approved',
+        provider: 'mercadopago',
+        createdAt: now.toISOString()
+      });
+
+      console.log('✅ Trial $1 activado:', {
+        userId,
+        planId,
+        nextCharge: trialEndDate.toISOString(),
+        nextAmount: plan.price
+      });
+
+      return res.status(200).json({
+        received: true,
+        processed: true,
+        type: 'trial_activated',
+        userId,
+        trialEnds: trialEndDate.toISOString(),
+        nextCharge: { date: trialEndDate.toISOString(), amount: plan.price }
+      });
+    }
+
+    // =============================================
+    // CASO 2: Pago regular de suscripción/renovación
+    // =============================================
+    console.log('💳 Procesando pago regular:', { userId, planId });
+
+    const plan = SUBSCRIPTION_PLANS[planId] || SUBSCRIPTION_PLANS.mensual;
+    const expiresAt = new Date(now);
+    expiresAt.setMonth(expiresAt.getMonth() + plan.frequency);
+
+    // Actualizar membresía
     await membershipRef.set({
       id: userId,
+      email: payment.payer?.email || '',
       status: 'miembro',
-      paymentId: String(paymentId),
+      membershipType: 'paid',
+      lastPaymentId: String(paymentId),
       paymentDate: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
-      plan: planId || 'monthly',
+      plan: planId,
       amount: payment.transaction_amount,
       currency: payment.currency_id,
+      autoRenew: true,
+      nextChargeDate: expiresAt.toISOString(),
+      nextChargeAmount: plan.price,
+      createdAt: existingMembership.exists ? existingMembership.data()?.createdAt : now.toISOString(),
       updatedAt: now.toISOString()
     }, { merge: true });
 
+    // Eliminar de pending_subscriptions si existe (ya pagó)
+    await db.collection('pending_subscriptions').doc(userId).delete().catch(() => {});
+
     // Guardar registro del pago
-    const paymentRef = db.collection('payments').doc(String(paymentId));
-    await paymentRef.set({
+    await db.collection('payments').doc(String(paymentId)).set({
       id: String(paymentId),
-      mpPaymentId: payment.id,
       userId,
       userEmail: payment.payer?.email || '',
       amount: payment.transaction_amount,
-      currency: payment.currency_id,
+      type: 'subscription',
+      planId,
       status: 'approved',
       provider: 'mercadopago',
-      plan: planId || 'monthly',
-      durationMonths: durationMonths || 1,
-      externalReference: payment.external_reference,
-      createdAt: now.toISOString(),
-      completedAt: now.toISOString(),
-      rawPayment: payment // Guardar datos completos para referencia
+      createdAt: now.toISOString()
     });
 
-    console.log('✅ Membresía activada exitosamente:', {
+    console.log('✅ Membresía activada:', {
       userId,
       plan: planId,
       expiresAt: expiresAt.toISOString()
@@ -174,8 +264,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       received: true,
       processed: true,
+      type: 'membership_activated',
       userId,
-      status: 'membership_activated',
       expiresAt: expiresAt.toISOString()
     });
 

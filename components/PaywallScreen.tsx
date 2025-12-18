@@ -1,10 +1,41 @@
 // ===============================================
 // PANTALLA DE PAGO - MEMBRESÍA TRIBU IMPULSA
 // ===============================================
+// Integración real con MercadoPago Checkout Pro
 
 import React, { useState } from 'react';
-import { Crown, CreditCard, CheckCircle, Shield, Users, Zap, ArrowRight, Loader } from 'lucide-react';
-import { MEMBERSHIP_PRICE, simulateSuccessfulPayment } from '../services/membershipService';
+import { Crown, CreditCard, CheckCircle, Shield, Users, Zap, ArrowRight, Loader, Star, Gift } from 'lucide-react';
+
+// Planes de membresía
+const MEMBERSHIP_PLANS = {
+  monthly: {
+    id: 'monthly',
+    name: 'Mensual',
+    price: 19990,
+    originalPrice: 19990,
+    duration: '1 mes',
+    savings: null,
+    popular: false
+  },
+  semester: {
+    id: 'semester',
+    name: '6 Meses',
+    price: 99990,
+    originalPrice: 119940, // 6 × 19990
+    duration: '6 meses',
+    savings: '¡Paga 5, llévate 6!',
+    popular: true
+  },
+  annual: {
+    id: 'annual',
+    name: '12 Meses',
+    price: 179910,
+    originalPrice: 239880, // 12 × 19990
+    duration: '1 año',
+    savings: '¡Paga 9, llévate 12!',
+    popular: false
+  }
+};
 
 interface PaywallScreenProps {
   userId: string;
@@ -22,8 +53,9 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({
   onClose
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'fintoc' | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'semester' | 'annual'>('semester');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Formatear precio chileno
   const formatPrice = (amount: number) => {
@@ -34,51 +66,51 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({
     }).format(amount);
   };
 
-  // Manejar pago con MercadoPago
+  // Manejar pago con MercadoPago (real)
   const handleMercadoPago = async () => {
-    setPaymentMethod('mercadopago');
     setIsProcessing(true);
+    setError(null);
     
     try {
-      // En producción: redirigir a checkout de MercadoPago
-      // Por ahora simulamos el pago exitoso
-      const success = await simulateSuccessfulPayment(userId, userEmail);
+      console.log('🛒 Iniciando pago MercadoPago:', { userId, plan: selectedPlan });
       
-      if (success) {
-        setShowSuccess(true);
-        setTimeout(() => {
-          onPaymentSuccess();
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Error en pago:', error);
-      alert('Error procesando el pago. Intenta de nuevo.');
-    }
-    
-    setIsProcessing(false);
-  };
+      // Llamar al endpoint del backend para crear la preferencia
+      const response = await fetch('/api/create-preference', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          userEmail,
+          planId: selectedPlan
+        })
+      });
 
-  // Manejar pago con Fintoc
-  const handleFintoc = async () => {
-    setPaymentMethod('fintoc');
-    setIsProcessing(true);
-    
-    try {
-      // En producción: usar Fintoc Widget
-      const success = await simulateSuccessfulPayment(userId, userEmail);
-      
-      if (success) {
-        setShowSuccess(true);
-        setTimeout(() => {
-          onPaymentSuccess();
-        }, 2000);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error creando preferencia de pago');
       }
-    } catch (error) {
-      console.error('Error en pago:', error);
-      alert('Error procesando el pago. Intenta de nuevo.');
+
+      console.log('✅ Preferencia creada:', data.preferenceId);
+      
+      // Guardar info del pago pendiente en localStorage
+      localStorage.setItem('pending_payment', JSON.stringify({
+        preferenceId: data.preferenceId,
+        userId,
+        planId: selectedPlan,
+        timestamp: Date.now()
+      }));
+
+      // Redirigir a MercadoPago Checkout
+      window.location.href = data.initPoint;
+      
+    } catch (err) {
+      console.error('❌ Error en pago:', err);
+      setError(err instanceof Error ? err.message : 'Error procesando el pago');
+      setIsProcessing(false);
     }
-    
-    setIsProcessing(false);
   };
 
   // Pantalla de éxito
@@ -103,114 +135,125 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({
   return (
     <div className="min-h-screen bg-[#F5F7FB] flex flex-col">
       {/* Header */}
-      <div className="bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#A5A5FF] text-white pt-12 pb-16 px-6 text-center">
-        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Crown size={32} className="text-white" />
+      <div className="bg-gradient-to-br from-[#6161FF] via-[#8B8BFF] to-[#A5A5FF] text-white pt-10 pb-12 px-6 text-center">
+        <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+          <Crown size={28} className="text-white" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">¡Hola {userName.split(' ')[0]}!</h1>
+        <h1 className="text-xl font-bold mb-1">¡Hola {userName.split(' ')[0]}!</h1>
         <p className="text-white/80 text-sm">
-          Activa tu membresía para acceder al<br />
+          Elige tu plan y accede al<br />
           <span className="font-semibold text-white">Algoritmo Tribal 10+10</span>
         </p>
       </div>
 
       {/* Contenido */}
-      <div className="flex-1 px-4 -mt-8">
-        {/* Card de precio */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="text-center mb-6">
-            <p className="text-[#7C8193] text-sm mb-1">Membresía anual</p>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-4xl font-bold text-[#181B34]">
-                {formatPrice(MEMBERSHIP_PRICE.amount)}
-              </span>
-              <span className="text-[#7C8193]">/año</span>
-            </div>
-            <p className="text-[#00CA72] text-xs mt-1">
-              Solo {formatPrice(Math.round(MEMBERSHIP_PRICE.amount / 12))}/mes
-            </p>
-          </div>
-
-          {/* Beneficios */}
-          <div className="space-y-3 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#6161FF]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Users size={16} className="text-[#6161FF]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Matching 10+10</p>
-                <p className="text-[#7C8193] text-xs">10 cuentas para impulsar, 10 que te impulsan</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Zap size={16} className="text-[#00CA72]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Algoritmo de Afinidad</p>
-                <p className="text-[#7C8193] text-xs">Matches basados en tu rubro e intereses</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 bg-[#FFCC00]/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <Shield size={16} className="text-[#FFCC00]" />
-              </div>
-              <div>
-                <p className="font-medium text-[#181B34] text-sm">Comunidad Verificada</p>
-                <p className="text-[#7C8193] text-xs">Solo emprendedores comprometidos</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Botones de pago */}
-          <div className="space-y-3">
-            <button
-              onClick={handleMercadoPago}
-              disabled={isProcessing}
-              className="w-full bg-[#009EE3] hover:bg-[#0088C9] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
-            >
-              {isProcessing && paymentMethod === 'mercadopago' ? (
-                <>
-                  <Loader size={20} className="animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <CreditCard size={20} />
-                  Pagar con MercadoPago
-                </>
-              )}
-            </button>
-            
-            <button
-              onClick={handleFintoc}
-              disabled={isProcessing}
-              className="w-full bg-[#181B34] hover:bg-[#2A2E4A] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-md"
-            >
-              {isProcessing && paymentMethod === 'fintoc' ? (
-                <>
-                  <Loader size={20} className="animate-spin" />
-                  Procesando...
-                </>
-              ) : (
-                <>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                  </svg>
-                  Pagar con Transferencia (Fintoc)
-                </>
-              )}
-            </button>
+      <div className="flex-1 px-4 -mt-6 pb-6">
+        {/* Selector de planes */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
+          <p className="text-center text-sm font-medium text-[#181B34] mb-3">Elige tu plan</p>
+          <div className="space-y-2">
+            {Object.values(MEMBERSHIP_PLANS).map((plan) => (
+              <button
+                key={plan.id}
+                onClick={() => setSelectedPlan(plan.id as 'monthly' | 'semester' | 'annual')}
+                className={`w-full p-3 rounded-xl border-2 transition-all relative ${
+                  selectedPlan === plan.id
+                    ? 'border-[#6161FF] bg-[#6161FF]/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {plan.popular && (
+                  <span className="absolute -top-2 right-3 bg-[#00CA72] text-white text-[0.6rem] px-2 py-0.5 rounded-full font-semibold">
+                    MÁS POPULAR
+                  </span>
+                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedPlan === plan.id ? 'border-[#6161FF] bg-[#6161FF]' : 'border-gray-300'
+                    }`}>
+                      {selectedPlan === plan.id && (
+                        <CheckCircle size={12} className="text-white" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-[#181B34] text-sm">{plan.name}</p>
+                      {plan.savings && (
+                        <p className="text-[#00CA72] text-xs flex items-center gap-1">
+                          <Gift size={10} /> {plan.savings}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-[#181B34]">{formatPrice(plan.price)}</p>
+                    {plan.originalPrice > plan.price && (
+                      <p className="text-[#7C8193] text-xs line-through">
+                        {formatPrice(plan.originalPrice)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Beneficios compactos */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="p-2">
+              <div className="w-8 h-8 bg-[#6161FF]/10 rounded-full flex items-center justify-center mx-auto mb-1">
+                <Users size={14} className="text-[#6161FF]" />
+              </div>
+              <p className="text-xs font-medium text-[#181B34]">Matching 10+10</p>
+            </div>
+            <div className="p-2">
+              <div className="w-8 h-8 bg-[#00CA72]/10 rounded-full flex items-center justify-center mx-auto mb-1">
+                <Zap size={14} className="text-[#00CA72]" />
+              </div>
+              <p className="text-xs font-medium text-[#181B34]">Algoritmo IA</p>
+            </div>
+            <div className="p-2">
+              <div className="w-8 h-8 bg-[#FFCC00]/10 rounded-full flex items-center justify-center mx-auto mb-1">
+                <Shield size={14} className="text-[#FFCC00]" />
+              </div>
+              <p className="text-xs font-medium text-[#181B34]">Comunidad</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+            <p className="text-red-600 text-sm text-center">{error}</p>
+          </div>
+        )}
+
+        {/* Botón de pago */}
+        <button
+          onClick={handleMercadoPago}
+          disabled={isProcessing}
+          className="w-full bg-[#009EE3] hover:bg-[#0088C9] text-white py-4 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg mb-3"
+        >
+          {isProcessing ? (
+            <>
+              <Loader size={20} className="animate-spin" />
+              Redirigiendo a MercadoPago...
+            </>
+          ) : (
+            <>
+              <CreditCard size={20} />
+              Pagar {formatPrice(MEMBERSHIP_PLANS[selectedPlan].price)}
+            </>
+          )}
+        </button>
 
         {/* Info adicional */}
         <div className="text-center text-xs text-[#7C8193] space-y-2 pb-8">
           <p>✅ Pago 100% seguro</p>
           <p>📧 Recibirás confirmación a {userEmail}</p>
-          <p className="text-[10px]">Al pagar aceptas los términos y condiciones de Tribu Impulsa</p>
+          <p className="text-[0.625rem]">Al pagar aceptas los términos y condiciones de Tribu Impulsa</p>
         </div>
       </div>
     </div>

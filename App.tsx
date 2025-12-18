@@ -6,6 +6,7 @@ import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, Arrow
 import { GlassCard } from './components/GlassCard';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
+import { PaymentResult } from './components/PaymentResult';
 import { TribalLoadingAnimation } from './components/TribalAnimation';
 import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
@@ -911,7 +912,7 @@ const LoginScreen = () => {
               <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
             </button>
             
-            <p className="text-[10px] text-[#B3B8C6] text-center mt-2">
+            <p className="text-[0.625rem] text-[#B3B8C6] text-center mt-2">
               ¿Ya tienes cuenta? Ingresa tu email para continuar
             </p>
           </div>
@@ -967,7 +968,7 @@ const LoginScreen = () => {
                 placeholder="TRIBU2026"
                 autoFocus
               />
-              <p className="text-[10px] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026</p>
+              <p className="text-[0.625rem] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026</p>
             </div>
             
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
@@ -1074,7 +1075,7 @@ const LoginScreen = () => {
                   <option key={aff} value={aff}>{aff}</option>
                 ))}
               </select>
-              <p className="text-[9px] text-[#7C8193] mt-0.5">Ayuda al algoritmo a conectarte mejor</p>
+              <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">Ayuda al algoritmo a conectarte mejor</p>
             </div>
             
             <div className="grid grid-cols-2 gap-3">
@@ -1088,7 +1089,7 @@ const LoginScreen = () => {
                   placeholder="@usuario"
                   required
                 />
-                <p className="text-[9px] text-[#7C8193] mt-0.5">⚠️ Debe ser público</p>
+                <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">⚠️ Debe ser público</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono *</label>
@@ -1122,7 +1123,7 @@ const LoginScreen = () => {
               ← Cambiar email
             </button>
             
-            <p className="text-[10px] text-[#7C8193] text-center">
+            <p className="text-[0.625rem] text-[#7C8193] text-center">
               Tu contraseña inicial será: <strong>TRIBU2026</strong><br/>
               Podrás cambiarla después en tu perfil
             </p>
@@ -1141,7 +1142,7 @@ const LoginScreen = () => {
             />
             <button
               onClick={() => devPassword === '1234' && setDevMode(true)}
-              className="text-[10px] text-[#B3B8C6] hover:text-[#7C8193] transition"
+              className="text-[0.625rem] text-[#B3B8C6] hover:text-[#7C8193] transition"
             >
               ⚙️
             </button>
@@ -1149,10 +1150,10 @@ const LoginScreen = () => {
         ) : (
           <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
             <div className="flex justify-between items-center mb-2">
-              <p className="text-[10px] text-[#6161FF] uppercase tracking-wide font-bold">🔐 Modo Desarrollo</p>
-              <button onClick={() => setDevMode(false)} className="text-[10px] text-[#7C8193] hover:text-[#FB275D]">✕</button>
+              <p className="text-[0.625rem] text-[#6161FF] uppercase tracking-wide font-bold">🔐 Modo Desarrollo</p>
+              <button onClick={() => setDevMode(false)} className="text-[0.625rem] text-[#7C8193] hover:text-[#FB275D]">✕</button>
             </div>
-            <p className="text-[10px] text-[#7C8193] mb-2">Contraseña universal: TRIBU2026</p>
+            <p className="text-[0.625rem] text-[#7C8193] mb-2">Contraseña universal: TRIBU2026</p>
             <div className="space-y-1 text-xs text-left">
               <button 
                 onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
@@ -1173,7 +1174,7 @@ const LoginScreen = () => {
                 👉 Guillermo - Elevate
               </button>
             </div>
-            <p className="mt-2 text-[10px] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 107+ Usuarios</p>
+            <p className="mt-2 text-[0.625rem] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 107+ Usuarios</p>
           </div>
         )}
       </div>
@@ -1384,7 +1385,7 @@ const RegisterScreen = () => {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
               />
               {errors.password && <p className="text-xs text-[#FB275D] mt-1">{errors.password}</p>}
-              <p className="text-[10px] text-[#7C8193] mt-1">Usa esta contraseña para ingresar después</p>
+              <p className="text-[0.625rem] text-[#7C8193] mt-1">Usa esta contraseña para ingresar después</p>
             </div>
           </div>
         )}
@@ -1965,7 +1966,7 @@ const SurveyScreen = () => {
             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {['instagram', 'facebook', 'tiktok', 'website'].map((field) => (
                 <div key={field}>
-                  <label className="text-sm font-semibold text-[#434343] uppercase text-[11px] tracking-[0.15em]">
+                  <label className="text-sm font-semibold text-[#434343] uppercase text-[0.6875rem] tracking-[0.15em]">
                     {field === 'instagram' && 'Instagram'}
                     {field === 'facebook' && 'Facebook'}
                     {field === 'tiktok' && 'TikTok'}
@@ -2480,10 +2481,10 @@ const TribeAssignmentsView = () => {
                     onChange={() => handleToggle(key, profile.id)}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[15px] text-[#181B34] break-words leading-tight">{profile.companyName || 'Sin nombre de empresa'}</p>
-                    <p className="text-[13px] text-[#7C8193] mt-0.5">{profile.name}</p>
+                    <p className="font-semibold text-[0.9375rem] text-[#181B34] break-words leading-tight">{profile.companyName || 'Sin nombre de empresa'}</p>
+                    <p className="text-[0.8125rem] text-[#7C8193] mt-0.5">{profile.name}</p>
                     {/* Tag de categoría para reconocimiento rápido */}
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-[10px] font-medium rounded-full bg-[#6161FF]/10 text-[#6161FF]">
+                    <span className="inline-block mt-1.5 px-2 py-0.5 text-[0.625rem] font-medium rounded-full bg-[#6161FF]/10 text-[#6161FF]">
                       {profile.category || profile.subCategory || 'Emprendimiento'}
                     </span>
                   </div>
@@ -2498,7 +2499,7 @@ const TribeAssignmentsView = () => {
                         <button
                           type="button"
                           onClick={() => setShowShareModal({ profile, type: 'shared_to' })}
-                          className="text-[12px] px-3 py-2 rounded-lg bg-[#00CA72] text-white font-medium"
+                          className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#00CA72] text-white font-medium"
                         >
                           Ya compartí
                         </button>
@@ -2507,7 +2508,7 @@ const TribeAssignmentsView = () => {
                         href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`¡Hola ${profile.name.split(' ')[0]}! 👋 Soy parte de tu Tribu Impulsa este mes. Te acabo de compartir en mis redes 🚀 ¿Me cuentas cómo te va con tu emprendimiento ${profile.companyName}?`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
+                        className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                       >
                         💬 WhatsApp
                       </a>
@@ -2520,7 +2521,7 @@ const TribeAssignmentsView = () => {
                       href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`¡Hola ${profile.name.split(' ')[0]}! 👋 Vi que somos parte de la misma Tribu Impulsa este mes. ¿Ya pudiste compartirme en tus redes? 🙏 ¡Muchas gracias de antemano!`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[12px] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
+                      className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                     >
                       💬 Enviar WhatsApp
                     </a>
@@ -2530,7 +2531,7 @@ const TribeAssignmentsView = () => {
                   <button
                     type="button"
                     onClick={() => setAnalysisProfile(profile)}
-                    className="text-[12px] px-3 py-2 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#A78BFA] text-white font-medium"
+                    className="text-[0.75rem] px-3 py-2 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#A78BFA] text-white font-medium"
                   >
                     🔮 Análisis TRIBU X
                   </button>
@@ -2539,7 +2540,7 @@ const TribeAssignmentsView = () => {
                   <button
                     type="button"
                     onClick={() => navigate(`/profile/${profile.id}`)}
-                    className="text-[12px] px-3 py-2 rounded-lg bg-[#E91E63]/10 text-[#E91E63] font-medium"
+                    className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#E91E63]/10 text-[#E91E63] font-medium"
                   >
                     Ver perfil
                   </button>
@@ -2551,7 +2552,7 @@ const TribeAssignmentsView = () => {
                       setReportingProfile(profile);
                       setReportNote('');
                     }}
-                    className="text-[12px] px-3 py-2 rounded-lg border border-[#FB275D]/40 text-[#FB275D]"
+                    className="text-[0.75rem] px-3 py-2 rounded-lg border border-[#FB275D]/40 text-[#FB275D]"
                   >
                     Reportar
                   </button>
@@ -2643,7 +2644,7 @@ const TribeAssignmentsView = () => {
               </button>
             </div>
             
-            <p className="text-[10px] text-[#7C8193] mt-3 text-center">
+            <p className="text-[0.625rem] text-[#7C8193] mt-3 text-center">
               Este registro queda guardado para que el admin pueda verificarlo
             </p>
           </div>
@@ -2699,13 +2700,13 @@ const TribeAssignmentsView = () => {
                 <>
                   {/* Insight principal */}
                   <div className="bg-white rounded-xl p-3 border border-[#E4E7EF] shadow-sm">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wide text-[#6161FF] mb-1">💡 Insight de IA</h4>
+                    <h4 className="text-[0.625rem] font-bold uppercase tracking-wide text-[#6161FF] mb-1">💡 Insight de IA</h4>
                     <p className="text-xs text-[#434343] leading-relaxed">{analysisResult.insight}</p>
                   </div>
                   
                   {/* Oportunidades */}
                   <div className="bg-gradient-to-r from-[#6161FF]/10 to-[#00CA72]/10 rounded-xl p-3 border border-[#6161FF]/20">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wide text-[#00CA72] mb-1">🎯 Oportunidades</h4>
+                    <h4 className="text-[0.625rem] font-bold uppercase tracking-wide text-[#00CA72] mb-1">🎯 Oportunidades</h4>
                     <ul className="space-y-1">
                       {analysisResult.opportunities.slice(0, 3).map((opp, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs text-[#434343]">
@@ -2718,7 +2719,7 @@ const TribeAssignmentsView = () => {
                   
                   {/* Botón WhatsApp Rompehielo */}
                   <div className="bg-[#25D366]/10 rounded-xl p-3 border border-[#25D366]/30">
-                    <h4 className="text-[10px] font-bold uppercase tracking-wide text-[#25D366] mb-1">💬 Rompe el hielo</h4>
+                    <h4 className="text-[0.625rem] font-bold uppercase tracking-wide text-[#25D366] mb-1">💬 Rompe el hielo</h4>
                     <p className="text-xs text-[#434343] leading-relaxed mb-2 italic line-clamp-3">
                       "{analysisResult.icebreaker}"
                     </p>
@@ -2969,7 +2970,7 @@ const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
 };
 
 // 5. My Profile View (Editable)
-const MyProfileView = () => {
+const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {
     const navigate = useNavigate();
     useSurveyGuard();
     const [isEditing, setIsEditing] = useState(false);
@@ -3011,22 +3012,6 @@ const MyProfileView = () => {
     
     // Estado para tamaño de letra (accesibilidad)
     const [showFontSizeModal, setShowFontSizeModal] = useState(false);
-    const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(
-      () => (localStorage.getItem('tribu_font_size') as 'small' | 'medium' | 'large') || 'small'
-    );
-    
-    // Aplicar tamaño de letra globalmente
-    useEffect(() => {
-      const root = document.documentElement;
-      const sizes = {
-        small: '14px',
-        medium: '16px', 
-        large: '18px'
-      };
-      root.style.setProperty('--base-font-size', sizes[fontSize]);
-      document.body.style.fontSize = sizes[fontSize];
-      localStorage.setItem('tribu_font_size', fontSize);
-    }, [fontSize]);
     
     const handleSecretAccess = () => {
       if (secretCode === 'TRIBU2026') {
@@ -3740,7 +3725,7 @@ const MyProfileView = () => {
                             <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
                               <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF] shrink-0"><MapPin size={20} /></div>
                               <div className="text-sm min-w-0">
-                                <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Ubicación</span>
+                                <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
                                 <span className="font-medium text-[#181B34]">{profile.location}</span>
                               </div>
                             </div>
@@ -3752,7 +3737,7 @@ const MyProfileView = () => {
                             >
                               <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72] shrink-0"><Globe size={20} /></div>
                               <div className="text-sm min-w-0 flex-1">
-                                <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Sitio Web</span>
+                                <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Sitio Web</span>
                                 <span className="font-medium text-[#181B34] block truncate">{profile.website}</span>
                               </div>
                               <ArrowRight size={16} className="text-[#7C8193] shrink-0" />
@@ -3974,7 +3959,7 @@ const MyProfileView = () => {
                                   }`}
                                 >
                                   <span className="text-sm font-medium">Pequeño</span>
-                                  <span className="text-xs text-[#7C8193]">14px (actual)</span>
+                                  <span className="text-xs text-[#7C8193]">16px</span>
                                 </button>
                                 <button
                                   onClick={() => setFontSize('medium')}
@@ -3985,7 +3970,7 @@ const MyProfileView = () => {
                                   }`}
                                 >
                                   <span className="text-base font-medium">Mediano</span>
-                                  <span className="text-xs text-[#7C8193]">16px</span>
+                                  <span className="text-xs text-[#7C8193]">20px</span>
                                 </button>
                                 <button
                                   onClick={() => setFontSize('large')}
@@ -3996,7 +3981,7 @@ const MyProfileView = () => {
                                   }`}
                                 >
                                   <span className="text-lg font-medium">Grande</span>
-                                  <span className="text-xs text-[#7C8193]">18px</span>
+                                  <span className="text-xs text-[#7C8193]">24px</span>
                                 </button>
                               </div>
                               <button
@@ -4697,14 +4682,14 @@ const ProfileDetail = () => {
                 <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
                    <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF]"><MapPin size={20} /></div>
                    <div className="text-sm">
-                      <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Ubicación</span>
+                      <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
                       <span className="font-medium text-[#181B34]">{profile.location}</span>
                    </div>
                 </div>
                 <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
                    <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72]"><Calendar size={20} /></div>
                    <div className="text-sm">
-                      <span className="block text-[#7C8193] text-[10px] mb-0.5 uppercase tracking-wide">Fundada</span>
+                      <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Fundada</span>
                       <span className="font-medium text-[#181B34]">{profile.foundingYear}</span>
                    </div>
                 </div>
@@ -5117,10 +5102,10 @@ const ActivityView = () => {
                   <h3 className={`font-semibold text-sm ${item.isRead ? 'text-[#434343]' : 'text-[#181B34]'}`}>
                     {item.title}
                   </h3>
-                  <span className="text-[10px] text-[#7C8193] whitespace-nowrap">{item.timestamp}</span>
+                  <span className="text-[0.625rem] text-[#7C8193] whitespace-nowrap">{item.timestamp}</span>
                 </div>
                 <p className="text-xs text-[#7C8193] leading-relaxed line-clamp-2">{item.description}</p>
-                <span className="text-[10px] text-[#6161FF] mt-1 inline-block">Tocar para ver más →</span>
+                <span className="text-[0.625rem] text-[#6161FF] mt-1 inline-block">Tocar para ver más →</span>
               </div>
               {filter === 'archived' ? (
                 <button 
@@ -5288,11 +5273,11 @@ const DirectoryView = () => {
                         {match.affinityScore}%
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#7C8193] mt-1 truncate">{match.reason}</p>
+                    <p className="text-[0.6875rem] text-[#7C8193] mt-1 truncate">{match.reason}</p>
                     
                     <button
                       onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
-                      className="mt-2 text-[10px] font-semibold text-[#E91E63] bg-[#E91E63]/10 px-3 py-1 rounded-full hover:bg-[#E91E63]/20 transition-colors"
+                      className="mt-2 text-[0.625rem] font-semibold text-[#E91E63] bg-[#E91E63]/10 px-3 py-1 rounded-full hover:bg-[#E91E63]/20 transition-colors"
                     >
                       Ver perfil →
                     </button>
@@ -5322,7 +5307,7 @@ const DirectoryView = () => {
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold text-sm text-[#181B34] truncate">{user.companyName || user.name}</h3>
               <p className="text-xs text-[#7C8193] truncate">{user.name}</p>
-              <span className="text-[10px] text-[#6161FF]">{user.category}</span>
+              <span className="text-[0.625rem] text-[#6161FF]">{user.category}</span>
             </div>
             <ChevronRight size={18} className="text-[#7C8193] flex-shrink-0" />
           </div>
@@ -5841,7 +5826,7 @@ const Dashboard = () => {
               style={{ width: `${(tribeStats.completed / Math.max(tribeStats.total, 1)) * 100}%` }}
             />
           </div>
-          <p className="text-[10px] text-[#7C8193] mt-2">
+          <p className="text-[0.625rem] text-[#7C8193] mt-2">
             {tribeStats.total - tribeStats.completed > 0 
               ? `${tribeStats.total - tribeStats.completed} acciones más para completar este mes`
               : '¡Felicidades! Completaste todas las acciones'}
@@ -5855,7 +5840,7 @@ const Dashboard = () => {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 1 ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'}`}>
               <span className="text-lg">{tribeStats.completed >= 1 ? '🚀' : '🔒'}</span>
             </div>
-            <span className={`text-[9px] text-center ${tribeStats.completed >= 1 ? 'text-[#00CA72] font-semibold' : 'text-[#B3B8C6]'}`}>
+            <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 1 ? 'text-[#00CA72] font-semibold' : 'text-[#B3B8C6]'}`}>
               Primera acción
             </span>
           </div>
@@ -5865,7 +5850,7 @@ const Dashboard = () => {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 5 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`}>
               <span className="text-lg">{tribeStats.completed >= 5 ? '⭐' : '🔒'}</span>
             </div>
-            <span className={`text-[9px] text-center ${tribeStats.completed >= 5 ? 'text-[#6161FF] font-semibold' : 'text-[#B3B8C6]'}`}>
+            <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 5 ? 'text-[#6161FF] font-semibold' : 'text-[#B3B8C6]'}`}>
               5 shares
             </span>
           </div>
@@ -5875,7 +5860,7 @@ const Dashboard = () => {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 10 ? 'bg-[#E91E63]' : 'bg-[#E4E7EF]'}`}>
               <span className="text-lg">{tribeStats.completed >= 10 ? '🔥' : '🔒'}</span>
             </div>
-            <span className={`text-[9px] text-center ${tribeStats.completed >= 10 ? 'text-[#E91E63] font-semibold' : 'text-[#B3B8C6]'}`}>
+            <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 10 ? 'text-[#E91E63] font-semibold' : 'text-[#B3B8C6]'}`}>
               En llamas
             </span>
           </div>
@@ -5885,7 +5870,7 @@ const Dashboard = () => {
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]' : 'bg-[#E4E7EF]'}`}>
               <span className="text-lg">{tribeStats.pending === 0 && tribeStats.completed >= 20 ? '👑' : '🔒'}</span>
             </div>
-            <span className={`text-[9px] text-center ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'text-[#FFCC00] font-semibold' : 'text-[#B3B8C6]'}`}>
+            <span className={`text-[0.5625rem] text-center ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'text-[#FFCC00] font-semibold' : 'text-[#B3B8C6]'}`}>
               Tribu perfecta
             </span>
           </div>
@@ -6543,7 +6528,7 @@ const ClubBienestarView = () => {
                   <div className="flex items-center gap-2">
                     <h3 className="text-white font-bold text-lg">{alianza.nombre}</h3>
                     {alianza.destacado && (
-                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-[10px] text-white font-bold">⭐ DESTACADO</span>
+                      <span className="px-2 py-0.5 bg-white/20 rounded-full text-[0.625rem] text-white font-bold">⭐ DESTACADO</span>
                     )}
                   </div>
                   <p className="text-white/80 text-xs">{alianza.tipo}</p>
@@ -7884,6 +7869,22 @@ const AppLayout = () => {
   const myProfile = getMyProfile();
   const [showMenu, setShowMenu] = useState(false);
   
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(() => {
+    const saved = localStorage.getItem('tribu_font_size');
+    return saved === 'small' || saved === 'medium' || saved === 'large' ? saved : 'small';
+  });
+
+  useEffect(() => {
+    const sizes = {
+      small: '16px',
+      medium: '20px',
+      large: '24px'
+    };
+    document.documentElement.style.fontSize = sizes[fontSize];
+    document.documentElement.style.setProperty('--base-font-size', sizes[fontSize]);
+    localStorage.setItem('tribu_font_size', fontSize);
+  }, [fontSize]);
+
   useEffect(() => {
     setShowMenu(false);
   }, [location.pathname]);
@@ -7993,6 +7994,7 @@ const AppLayout = () => {
                 <Route path="/searching" element={<SearchingScreen />} />
                 <Route path="/survey" element={<SurveyScreen />} />
                 <Route path="/membership" element={<MembershipScreen />} />
+                <Route path="/payment-result" element={<PaymentResult />} />
                 <Route path="/complete-profile" element={<CompleteProfileScreen />} />
                 {/* Rutas PROTEGIDAS - solo para MIEMBROS (requiere perfil completo) */}
                 <Route path="/dashboard" element={<MemberRoute><Dashboard /></MemberRoute>} />
@@ -8001,7 +8003,7 @@ const AppLayout = () => {
                 <Route path="/profile/:id" element={<MemberRoute><ProfileDetail /></MemberRoute>} />
                 {/* Rutas LIBRES - para todos */}
                 <Route path="/activity" element={<ActivityView />} />
-                <Route path="/my-profile" element={<MyProfileView />} />
+                <Route path="/my-profile" element={<MyProfileView fontSize={fontSize} setFontSize={setFontSize} />} />
                 <Route path="/admin" element={<AdminPanelInline />} />
                 <Route path="/academia" element={<AcademiaViewWrapper />} />
                 <Route path="/beneficios" element={<MemberRoute><ClubBienestarView /></MemberRoute>} />
@@ -8032,7 +8034,7 @@ const AppLayout = () => {
                   <line x1="3" y1="12" x2="21" y2="12" />
                   <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
-                <span className="text-[10px] mt-1 font-medium">Menú</span>
+                <span className="text-[0.625rem] mt-1 font-medium">Menú</span>
               </button>
 
               {/* Inicio - BLOQUEADO para invitados */}
@@ -8044,7 +8046,7 @@ const AppLayout = () => {
                 }`}
               >
                 <Home size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Inicio</span>
+                <span className="text-[0.625rem] mt-1 font-medium">Inicio</span>
                 {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
               
@@ -8064,7 +8066,7 @@ const AppLayout = () => {
                 >
                   {!isMember ? <Lock size={24} className="text-white" /> : <CheckCircle size={26} className="text-white" strokeWidth={2} />}
                 </div>
-                <span className={`text-[10px] mt-1 font-semibold ${
+                <span className={`text-[0.625rem] mt-1 font-semibold ${
                   !isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
                 }`}>Mi Tribu</span>
               </button>
@@ -8078,7 +8080,7 @@ const AppLayout = () => {
                 }`}
               >
                 <Gift size={22} strokeWidth={isBeneficios ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Beneficios</span>
+                <span className="text-[0.625rem] mt-1 font-medium">Beneficios</span>
                 {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
               </button>
 
@@ -8088,7 +8090,7 @@ const AppLayout = () => {
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
               >
                 <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
-                <span className="text-[10px] mt-1 font-medium">Ajustes</span>
+                <span className="text-[0.625rem] mt-1 font-medium">Ajustes</span>
               </button>
             </div>
           </nav>

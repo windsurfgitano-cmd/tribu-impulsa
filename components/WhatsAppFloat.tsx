@@ -67,7 +67,7 @@ export const WhatsAppFloat: React.FC = () => {
             style={{ animationDelay: '0.1s' }}
             aria-label="Instagram Tribu Impulsa"
           >
-            <span className="bg-white/95 backdrop-blur-sm text-[#181B34] text-[10px] font-semibold px-2 py-1 rounded-l-lg shadow-md mr-0 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <span className="bg-white/95 backdrop-blur-sm text-[#181B34] text-[0.625rem] font-semibold px-2 py-1 rounded-l-lg shadow-md mr-0 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
               Síguenos
             </span>
             <div 
@@ -87,7 +87,7 @@ export const WhatsAppFloat: React.FC = () => {
             style={{ animationDelay: '0.2s' }}
             aria-label="WhatsApp Tribu Impulsa"
           >
-            <span className="bg-white/95 backdrop-blur-sm text-[#181B34] text-[10px] font-semibold px-2 py-1 rounded-l-lg shadow-md mr-0 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
+            <span className="bg-white/95 backdrop-blur-sm text-[#181B34] text-[0.625rem] font-semibold px-2 py-1 rounded-l-lg shadow-md mr-0 opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap">
               Escríbenos
             </span>
             <div 

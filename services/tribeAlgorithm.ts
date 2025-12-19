@@ -16,25 +16,35 @@ export interface TribeAssignment {
 }
 
 // Categorías que son competencia directa (no deben asignarse entre sí)
+// ACTUALIZADO según CATEGORY_GROUPS de constants/categories.ts
 const COMPETITION_GROUPS: string[][] = [
-  ['Joyería y Accesorios', 'Moda y Estilo'],
-  ['Paisajismo y Jardinería', 'Hogar y Jardín'],
-  ['Marketing Digital', 'Tecnología y Desarrollo'],
-  ['Belleza y Estética', 'Cosméticos y Skincare', 'Manicure y Pedicure'],
-  ['Coaching y Bienestar', 'Salud y Kinesiología'],
-  ['Consultoría de Negocios', 'Consultoría Estratégica', 'Educación Financiera'],
+  ['Moda Mujer', 'Moda Hombre'], // Competencia en moda
+  ['Peluquería', 'Barbería', 'Estética'], // Competencia en belleza
+  ['Marketing digital', 'Diseño gráfico', 'Branding'], // Competencia en marketing
+  ['Coaching', 'Consultoría', 'Mentoring'], // Competencia en asesoría
+  ['Desarrollo software', 'E-commerce', 'Tecnología'], // Competencia en tech
+  ['Pastelería', 'Repostería', 'Panadería'], // Competencia en dulces
+  ['Abogados', 'Contadores'], // Servicios profesionales similares
+  ['Psicólogos', 'Coaching'], // Servicios de desarrollo personal
 ];
 
 // Afinidades complementarias (se benefician mutuamente)
+// ACTUALIZADO según AFFINITY_GROUPS de constants/affinities.ts
 const COMPLEMENTARY_AFFINITIES: Record<string, string[]> = {
-  'Moda y Estilo': ['Belleza', 'Eventos', 'Fotografía'],
-  'Bienestar': ['Gastronomía', 'Deportes', 'Naturaleza'],
-  'Negocios': ['Tecnología', 'Educación', 'Marketing'],
-  'Hogar y Jardín': ['Arquitectura', 'Decoración', 'Construcción'],
-  'Gastronomía': ['Eventos', 'Turismo', 'Bienestar'],
-  'Eventos': ['Gastronomía', 'Fotografía', 'Moda'],
-  'Maternidad': ['Educación', 'Bienestar', 'Familia'],
-  'Tecnología': ['Negocios', 'Educación', 'Marketing'],
+  'Moda Mujer': ['Belleza', 'Eventos', 'Fotografía', 'Arte'],
+  'Moda Hombre': ['Belleza', 'Eventos', 'Fotografía', 'Deportes'],
+  'Belleza, Estética y Bienestar': ['Moda', 'Eventos', 'Gastronomía', 'Salud'],
+  'Bienestar y Salud': ['Gastronomía', 'Deportes', 'Naturaleza', 'Educación'],
+  'Economía y Negocios': ['Tecnología', 'Educación', 'Marketing', 'Servicios'],
+  'Negocio': ['Servicios Profesionales', 'Tecnología', 'Transporte'],
+  'Alimentos y Gastronomía': ['Eventos', 'Turismo', 'Bienestar', 'Industria'],
+  'Eventos': ['Gastronomía', 'Fotografía', 'Moda', 'Transporte', 'Arte'],
+  'Familia y Hogar': ['Educación', 'Bienestar', 'Mascotas', 'Construcción'],
+  'Tecnología y Desarrollo': ['Negocios', 'Educación', 'Marketing', 'Arte'],
+  'Turismo': ['Gastronomía', 'Eventos', 'Transporte', 'Arte'],
+  'Mascotas y Animales': ['Belleza', 'Gastronomía', 'Veterinaria'],
+  'Educación y Capacitación': ['Tecnología', 'Negocios', 'Arte', 'Servicios'],
+  'Arte, Diseño y Creatividad': ['Moda', 'Eventos', 'Tecnología', 'Educación'],
 };
 
 // Verificar si dos usuarios son competencia directa

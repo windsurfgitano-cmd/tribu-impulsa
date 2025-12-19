@@ -6,10 +6,10 @@
 import React, { useState } from 'react';
 import { Crown, CreditCard, CheckCircle, Shield, Users, Zap, ArrowRight, Loader, Star, Gift } from 'lucide-react';
 
-// Planes de membresía
+// Planes de membresía - IDs deben coincidir con api/create-subscription.ts
 const MEMBERSHIP_PLANS = {
-  monthly: {
-    id: 'monthly',
+  mensual: {
+    id: 'mensual',
     name: 'Mensual',
     price: 19990,
     originalPrice: 19990,
@@ -17,8 +17,8 @@ const MEMBERSHIP_PLANS = {
     savings: null,
     popular: false
   },
-  semester: {
-    id: 'semester',
+  semestral: {
+    id: 'semestral',
     name: '6 Meses',
     price: 99990,
     originalPrice: 119940, // 6 × 19990
@@ -26,10 +26,10 @@ const MEMBERSHIP_PLANS = {
     savings: '¡Paga 5, llévate 6!',
     popular: true
   },
-  annual: {
-    id: 'annual',
+  anual: {
+    id: 'anual',
     name: '12 Meses',
-    price: 179910,
+    price: 179990,
     originalPrice: 239880, // 12 × 19990
     duration: '1 año',
     savings: '¡Paga 9, llévate 12!',
@@ -53,7 +53,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({
   onClose
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'semester' | 'annual'>('semester');
+  const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'semestral' | 'anual'>('semestral');
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -155,7 +155,7 @@ export const PaywallScreen: React.FC<PaywallScreenProps> = ({
             {Object.values(MEMBERSHIP_PLANS).map((plan) => (
               <button
                 key={plan.id}
-                onClick={() => setSelectedPlan(plan.id as 'monthly' | 'semester' | 'annual')}
+                onClick={() => setSelectedPlan(plan.id as 'mensual' | 'semestral' | 'anual')}
                 className={`w-full p-3 rounded-xl border-2 transition-all relative ${
                   selectedPlan === plan.id
                     ? 'border-[#6161FF] bg-[#6161FF]/5'

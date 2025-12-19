@@ -3635,27 +3635,44 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                         <span className="text-sm font-medium">Volver</span>
                     </button>
                     <button 
-                        onClick={() => {
-                          setSaveMessage('🔄 Actualizando datos...');
-                          setTimeout(() => {
-                            setProfile(getMyProfile());
-                            const user = getCurrentUser();
-                            if (user) {
-                              setEditScope(user.scope || 'NACIONAL');
-                              setEditSelectedRegions(user.selectedRegions || []);
-                              setEditComuna(user.comuna || '');
-                              setEditCategory(user.category || '');
-                              setEditAffinity(user.affinity || '');
-                              setEditRevenue(user.revenue || '');
+                        onClick={async () => {
+                          setSaveMessage('☁️ Sincronizando desde la nube...');
+                          try {
+                            // Forzar sincronización desde Firebase
+                            const session = getStoredSession();
+                            if (session?.email) {
+                              const freshUser = await getUserFromFirebaseByEmail(session.email);
+                              if (freshUser) {
+                                setCurrentUser(freshUser.id);
+                                setProfile(getMyProfile());
+                                const user = getCurrentUser();
+                                if (user) {
+                                  setEditScope(user.scope || 'NACIONAL');
+                                  setEditSelectedRegions(user.selectedRegions || []);
+                                  setEditComuna(user.comuna || '');
+                                  setEditCategory(user.category || '');
+                                  setEditAffinity(user.affinity || '');
+                                  setEditRevenue(user.revenue || '');
+                                }
+                                setSaveMessage('✅ Datos sincronizados desde Firebase');
+                              } else {
+                                setSaveMessage('⚠️ No se encontró usuario en la nube');
+                              }
+                            } else {
+                              // Fallback: recargar de localStorage
+                              setProfile(getMyProfile());
+                              setSaveMessage('✅ Datos actualizados');
                             }
-                            setSaveMessage('✅ Datos actualizados');
-                            setTimeout(() => setSaveMessage(null), 2000);
-                          }, 500);
+                          } catch (error) {
+                            console.error('Error sincronizando:', error);
+                            setSaveMessage('❌ Error al sincronizar');
+                          }
+                          setTimeout(() => setSaveMessage(null), 3000);
                         }}
                         className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
                     >
                         <RefreshCw size={18} />
-                        <span className="text-sm font-medium">Refrescar</span>
+                        <span className="text-sm font-medium">Sincronizar</span>
                     </button>
                 </div>
             </div>

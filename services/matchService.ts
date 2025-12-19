@@ -41,24 +41,25 @@ const extractAffinityGroup = (affinityString: string): string => {
   return parts[0]?.trim() || affinityString;
 };
 
-// Grupos de categorías que tienen SINERGIA entre sí
+// Grupos de categorías que tienen SINERGIA entre sí - COMPLETO según CATEGORY_GROUPS
 const SYNERGY_MAP: Record<string, string[]> = {
-  'Moda Mujer': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos'],
-  'Moda Hombre': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos'],
-  'Belleza, Estética y Bienestar': ['Moda Mujer', 'Moda Hombre', 'Alimentos y Gastronomía', 'Eventos'],
-  'Alimentos y Gastronomía': ['Eventos', 'Turismo', 'Belleza, Estética y Bienestar'],
-  'Eventos': ['Alimentos y Gastronomía', 'Arte, Diseño y Creatividad', 'Turismo', 'Transporte y Logística'],
-  'Arte, Diseño y Creatividad': ['Moda Mujer', 'Moda Hombre', 'Tecnología y Desarrollo', 'Educación y Capacitación'],
-  'Tecnología y Desarrollo': ['Arte, Diseño y Creatividad', 'Educación y Capacitación', 'Servicios Profesionales'],
-  'Servicios Profesionales': ['Tecnología y Desarrollo', 'Educación y Capacitación', 'Negocio'],
+  'Moda Mujer': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos', 'Moda Hombre'],
+  'Moda Hombre': ['Belleza, Estética y Bienestar', 'Arte, Diseño y Creatividad', 'Eventos', 'Moda Mujer'],
+  'Belleza, Estética y Bienestar': ['Moda Mujer', 'Moda Hombre', 'Alimentos y Gastronomía', 'Eventos', 'Servicios Profesionales'],
+  'Alimentos y Gastronomía': ['Eventos', 'Turismo', 'Belleza, Estética y Bienestar', 'Industria y Manufactura', 'Transporte y Logística'],
+  'Eventos': ['Alimentos y Gastronomía', 'Arte, Diseño y Creatividad', 'Turismo', 'Transporte y Logística', 'Moda Mujer'],
+  'Arte, Diseño y Creatividad': ['Moda Mujer', 'Moda Hombre', 'Tecnología y Desarrollo', 'Educación y Capacitación', 'Eventos'],
+  'Tecnología y Desarrollo': ['Arte, Diseño y Creatividad', 'Educación y Capacitación', 'Servicios Profesionales', 'Negocio'],
+  'Servicios Profesionales': ['Tecnología y Desarrollo', 'Educación y Capacitación', 'Negocio', 'Belleza, Estética y Bienestar'],
   'Educación y Capacitación': ['Servicios Profesionales', 'Arte, Diseño y Creatividad', 'Tecnología y Desarrollo'],
-  'Turismo': ['Eventos', 'Alimentos y Gastronomía', 'Transporte y Logística'],
-  'Mascotas y Animales': ['Belleza, Estética y Bienestar', 'Alimentos y Gastronomía'],
-  'Negocio': ['Servicios Profesionales', 'Tecnología y Desarrollo', 'Transporte y Logística'],
-  'Industria y Manufactura': ['Negocio', 'Alimentos y Gastronomía'],
-  'Construcción y Mantención': ['Negocio', 'Oficio'],
-  'Oficio': ['Construcción y Mantención', 'Negocio'],
-  'Transporte y Logística': ['Negocio', 'Eventos', 'Turismo'],
+  'Turismo': ['Eventos', 'Alimentos y Gastronomía', 'Transporte y Logística', 'Arte, Diseño y Creatividad'],
+  'Mascotas y Animales': ['Belleza, Estética y Bienestar', 'Alimentos y Gastronomía', 'Servicios Profesionales'],
+  'Negocio': ['Servicios Profesionales', 'Tecnología y Desarrollo', 'Transporte y Logística', 'Industria y Manufactura'],
+  'Industria y Manufactura': ['Negocio', 'Alimentos y Gastronomía', 'Transporte y Logística'],
+  'Construcción y Mantención': ['Negocio', 'Oficio', 'Servicios Profesionales'],
+  'Oficio': ['Construcción y Mantención', 'Negocio', 'Transporte y Logística'],
+  'Transporte y Logística': ['Negocio', 'Eventos', 'Turismo', 'Alimentos y Gastronomía', 'Industria y Manufactura'],
+  'Otro': ['Negocio', 'Servicios Profesionales', 'Tecnología y Desarrollo'],
 };
 
 // Rangos de facturación ordenados para comparación
@@ -472,9 +473,14 @@ const DUMMY_DATABASE: MatchProfile[] = Array.from({ length: 50 }, (_, index) => 
 const userToMatchProfile = (user: UserProfile): MatchProfile => {
   const slug = user.companyName.toLowerCase().replace(/\s+/g, '');
   
-  // Usar datos REALES del perfil, no generar placeholders
-  const mainCategory = user.category || 'General';
-  const subCategory = user.affinity || 'General';
+  // Extraer categoría principal y subcategoría del campo category
+  // Formato esperado: "Grupo Principal  Subcategoría" o solo "Grupo Principal"
+  const categoryParts = (user.category || 'General').split('  ').filter(Boolean);
+  const mainCategory = categoryParts[0] || 'General';
+  // subCategory: usar segunda parte de category, o sector, o extraer de affinity
+  const subCategory = categoryParts.length > 1 
+    ? categoryParts.slice(1).join(' / ') 
+    : (user.sector || extractAffinityGroup(user.affinity) || 'General');
   
   // Usar avatar real del perfil o generar uno basado en el nombre
   const avatarUrl = user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=6161FF&color=fff&size=200&bold=true`;

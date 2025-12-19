@@ -620,40 +620,40 @@ const LoginScreen = () => {
     affinity: ''
   });
   
-  // Sistema de categorías anidadas
+  // Sistema de categorías anidadas - SINCRONIZADO con constants/categories.ts
   const CATEGORY_TREE: Record<string, string[]> = {
-    'Moda y Accesorios': ['Ropa mujer', 'Ropa hombre', 'Joyas/Bijouterie', 'Zapatos', 'Carteras', 'Anteojos', 'Relojes', 'Accesorios varios'],
-    'Belleza y Bienestar': ['Peluquería/Barbería', 'Manicure/Pedicure', 'Cejas/Pestañas', 'Estética/Spa', 'Maquillaje', 'Skincare/Cosmética', 'Terapias alternativas', 'Masoterapia'],
-    'Salud y Fitness': ['Entrenamiento personal', 'Nutrición', 'Psicología', 'Kinesiología', 'Medicina estética', 'Dentista'],
-    'Alimentación y Gastronomía': ['Restaurante/Café', 'Pastelería/Repostería', 'Panadería', 'Comida saludable', 'Productos gourmet', 'Catering', 'Delivery', 'Food truck'],
-    'Hogar y Decoración': ['Muebles', 'Decoración', 'Ropa de cama', 'Menaje/Cocina', 'Jardinería/Paisajismo', 'Piscinas'],
-    'Arte y Diseño': ['Fotografía/Video', 'Diseño gráfico', 'Ilustración', 'Pintura/Cerámica', 'Producción audiovisual', 'Impresión'],
-    'Servicios Profesionales': ['Abogados', 'Contadores', 'Arquitectos', 'Coaching', 'Consultoría', 'Traductores', 'Corredores seguros', 'Corredores propiedades'],
-    'Marketing y Digital': ['Marketing digital', 'Redes sociales', 'Desarrollo web', 'E-commerce', 'Branding', 'Publicidad'],
-    'Educación': ['Clases particulares', 'Cursos idiomas', 'Talleres arte/música', 'Coaching/Mentoring', 'Capacitación empresarial'],
-    'Eventos': ['Matrimonios', 'Cumpleaños', 'Eventos corporativos', 'DJ/Música', 'Arriendo espacios', 'Producción ferias'],
-    'Mascotas': ['Peluquería canina', 'Alimentos mascotas', 'Accesorios mascotas', 'Veterinaria', 'Paseo perros', 'Hotel mascotas'],
-    'Transporte y Logística': ['Delivery', 'Mudanzas', 'Transporte pasajeros', 'Arriendo vehículos'],
-    'Construcción': ['Remodelación', 'Electricidad', 'Gasfitería', 'Carpintería', 'Pintura', 'Paneles solares'],
-    'Niños y Bebés': ['Ropa infantil', 'Juguetes', 'Accesorios bebé', 'Fiestas infantiles', 'Educación inicial'],
-    'Tecnología': ['Desarrollo software', 'Soporte técnico', 'Venta equipos', 'Ciberseguridad', 'Automatización'],
-    'Turismo': ['Agencia viajes', 'Hotelería', 'Guías turísticos', 'Cabañas/Arriendo'],
+    'Moda Mujer': ['Ropa de mujer', 'Vestidos de fiesta', 'Joyas/Bijouterie', 'Zapatos', 'Carteras', 'Cosméticos/Skincare', 'Accesorios varios'],
+    'Moda Hombre': ['Ropa de hombre', 'Zapatos/Zapatillas', 'Accesorios hombre'],
+    'Belleza, Estética y Bienestar': ['Peluquería/Barbería', 'Manicure/Pedicure', 'Cejas/Pestañas', 'Centro de estética', 'Maquillaje', 'Masoterapia', 'Terapias alternativas', 'Personal Trainer', 'Nutricionista'],
+    'Alimentos y Gastronomía': ['Restaurante/Café', 'Pastelería/Repostería', 'Panadería', 'Comida saludable', 'Productos gourmet', 'Catering', 'Delivery', 'Food truck'],
+    'Negocio': ['Decoración/Hogar', 'Muebles', 'Artículos deportivos', 'Packaging', 'Impresión/Branding', 'Tecnología/Electrónicos', 'Librería', 'Comercio internacional'],
+    'Servicios Profesionales': ['Abogados', 'Contadores', 'Arquitectos', 'Psicólogos', 'Coaching', 'Dentistas', 'Kinesiólogos', 'Corredores seguros', 'Corredores propiedades'],
+    'Educación y Capacitación': ['Clases particulares', 'Cursos idiomas', 'Talleres arte/música', 'Coaching/Mentoring', 'Educación financiera', 'Plataforma educativa'],
+    'Arte, Diseño y Creatividad': ['Fotografía/Video', 'Diseño gráfico', 'Ilustración', 'Pintura/Cerámica', 'Marketing digital', 'Producción audiovisual'],
+    'Construcción y Mantención': ['Remodelación', 'Paisajismo', 'Piscinas', 'Paneles solares', 'Fumigación'],
+    'Tecnología y Desarrollo': ['Desarrollo software', 'Hosting/Dominios', 'Soporte técnico', 'E-commerce', 'Ciberseguridad', 'Automatización/IA'],
+    'Turismo': ['Agencia viajes', 'Hotelería', 'Guías turísticos', 'Viñas'],
+    'Eventos': ['Centro de eventos', 'Matrimonios', 'Cumpleaños', 'Eventos corporativos', 'DJs', 'Food truck', 'Globos/Decoración'],
+    'Transporte y Logística': ['Delivery', 'Mudanzas', 'Transporte pasajeros', 'Rent a Car', 'Logística e-commerce'],
+    'Mascotas y Animales': ['Peluquería mascotas', 'Alimentos mascotas', 'Accesorios mascotas', 'Veterinaria', 'Paseo perros', 'Hotel mascotas'],
+    'Industria y Manufactura': ['Jabones artesanales', 'Productos limpieza', 'Envases', 'Cerveza/Bebidas artesanales'],
+    'Oficio': ['Carpintero', 'Electricista', 'Jardinero', 'Mecánico', 'Limpieza', 'Modista/Arreglos'],
     'Otro': ['Otro']
   };
   
+  // Afinidades simplificadas para registro rápido - basadas en constants/affinities.ts
   const AFFINITY_OPTIONS_REG = [
-    'Bienestar y salud',
-    'Moda y estilo', 
-    'Gastronomía',
-    'Familia',
-    'Mascotas',
-    'Tecnología',
-    'Arte y cultura',
-    'Deportes',
-    'Viajes',
-    'Emprendimiento',
-    'Sustentabilidad',
-    'Educación'
+    'Bienestar y Salud',
+    'Diseño y Creatividad', 
+    'Digital y Tecnología',
+    'Economía y Negocios',
+    'Educación y Desarrollo',
+    'Estilo de Vida',
+    'Eventos y Celebraciones',
+    'Familia y Hogar',
+    'Gastronomía y Alimentación',
+    'Impacto y Propósito',
+    'Servicios Profesionales'
   ];
 
   // Check existing session
@@ -1000,7 +1000,7 @@ const LoginScreen = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="text-[0.625rem] text-[#7C8193] mt-1">Contraseña inicial: TRIBU2026 (cámbiala en Ajustes)</p>
+              <p className="text-[0.625rem] text-[#7C8193] mt-1">Si es tu primera vez, usa: TRIBU2026</p>
             </div>
             
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}

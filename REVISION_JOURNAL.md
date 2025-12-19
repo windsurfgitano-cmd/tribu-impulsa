@@ -34,6 +34,11 @@
 | `productionInit.ts` | 15 categorías actualizadas a nomenclatura oficial | ✅ |
 | `REVISION_JOURNAL.md` | Journal de tracking creado | ✅ |
 
+### Commit `aec9048` - seedFirestore.ts categorías
+| Archivo | Cambio | Estado |
+|---------|--------|--------|
+| `seedFirestore.ts` | 17 categorías actualizadas a nomenclatura oficial | ✅ |
+
 ---
 
 ## 🔄 EN REVISIÓN
@@ -43,10 +48,10 @@
 | `firestoreService.ts` | ✅ OK | Interfaces bien definidas |
 | `productionInit.ts` | ✅ FIXED | 15 categorías actualizadas |
 | `seedData.ts` | ✅ OK | Usa formato correcto de categorías |
-| `seedFirestore.ts` | ⚠️ ISSUE | Categorías desactualizadas (Moda y Accesorios, Marketing Digital) |
+| `seedFirestore.ts` | ✅ FIXED | 17 categorías actualizadas |
 | `cloudBridge.ts` | ✅ OK | Bridge local/cloud correcto |
 | `dataPersistence.ts` | ✅ OK | Backup/restore funcional |
-| `academia/` | 🔍 Pendiente | |
+| `academia/` | ✅ OK | Componentes bien estructurados |
 | `AdminPanel.tsx` | ✅ OK | Mock data para admin |
 | `vercel.json` | ✅ OK | Cron job configurado |
 | `netlify.toml` | ✅ OK | SPA redirect correcto |
@@ -65,9 +70,9 @@
 
 ## 📊 ESTADÍSTICAS
 
-- **Archivos revisados:** 30+
-- **Archivos modificados:** 8
-- **Commits:** 4
+- **Archivos revisados:** 35+
+- **Archivos modificados:** 10
+- **Commits:** 5
 - **Issues críticos encontrados:** 0
-- **Issues moderados encontrados:** 2 (seedFirestore pendiente)
+- **Issues moderados encontrados:** 0 (todos resueltos)
 

@@ -28,6 +28,12 @@
 | `types.ts` | CATEGORY_MAPPING sincronizado | ✅ |
 | `api/create-preference.ts` | Default planId corregido | ✅ |
 
+### Commit `87b25af` - productionInit.ts categorías
+| Archivo | Cambio | Estado |
+|---------|--------|--------|
+| `productionInit.ts` | 15 categorías actualizadas a nomenclatura oficial | ✅ |
+| `REVISION_JOURNAL.md` | Journal de tracking creado | ✅ |
+
 ---
 
 ## 🔄 EN REVISIÓN
@@ -35,7 +41,7 @@
 | Archivo | Estado | Notas |
 |---------|--------|-------|
 | `firestoreService.ts` | ✅ OK | Interfaces bien definidas |
-| `productionInit.ts` | ⚠️ ISSUE | Categorías desactualizadas (Moda y Accesorios, Hogar y Jardín) |
+| `productionInit.ts` | ✅ FIXED | 15 categorías actualizadas |
 | `seedData.ts` | ✅ OK | Usa formato correcto de categorías |
 | `seedFirestore.ts` | ⚠️ ISSUE | Categorías desactualizadas (Moda y Accesorios, Marketing Digital) |
 | `cloudBridge.ts` | ✅ OK | Bridge local/cloud correcto |
@@ -59,9 +65,9 @@
 
 ## 📊 ESTADÍSTICAS
 
-- **Archivos revisados:** 25+
-- **Archivos modificados:** 6
-- **Commits:** 3
+- **Archivos revisados:** 30+
+- **Archivos modificados:** 8
+- **Commits:** 4
 - **Issues críticos encontrados:** 0
-- **Issues moderados encontrados:** 3
+- **Issues moderados encontrados:** 2 (seedFirestore pendiente)
 

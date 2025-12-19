@@ -53,31 +53,37 @@ export interface TribeAssignments {
   shareWithMe: MatchProfile[];
 }
 
-// Based on PDF "Afinidad" and "Categoría" columns
+// Afinidades - SINCRONIZADO con constants/affinities.ts AFFINITY_GROUPS
 export const AFFINITY_OPTIONS = [
   "Bienestar y Salud",
-  "Diseño y Estilo",
+  "Diseño y Creatividad",
   "Digital y Tecnología",
-  "Sustentabilidad",
-  "Conciencia y Propósito",
-  "Estilo de Vida y Experiencias",
-  "Educación y Desarrollo",
   "Economía y Negocios",
-  "Servicios Profesionales",
-  "Industria y Manufactura",
-  "Oficio"
+  "Educación y Desarrollo",
+  "Estilo de Vida",
+  "Eventos y Celebraciones",
+  "Familia y Hogar",
+  "Gastronomía y Alimentación",
+  "Impacto y Propósito",
+  "Servicios Profesionales"
 ];
 
-// Detailed mapping based on PDF pages
+// Categorías principales - SINCRONIZADO con constants/categories.ts CATEGORY_GROUPS
 export const CATEGORY_MAPPING: Record<string, string[]> = {
-  "Bienestar y Salud": ["Nutrición", "Fitness", "Medicina Preventiva", "Terapias Alternativas", "Psicología", "Suplementos"],
-  "Diseño y Estilo": ["Moda Mujer", "Moda Hombre", "Decoración", "Arte", "Joyería", "Zapatos y Carteras", "Cosmética"],
-  "Digital y Tecnología": ["Desarrollo Software", "Marketing Digital", "E-commerce", "Ciberseguridad", "Automatización", "Soporte Técnico"],
-  "Sustentabilidad": ["Economía Circular", "Reciclaje", "Energías Renovables", "Productos Eco-friendly"],
-  "Servicios Profesionales": ["Abogados", "Contadores", "Arquitectos", "Consultoría", "Coaching", "Corretaje", "Seguros"],
-  "Estilo de Vida y Experiencias": ["Gastronomía", "Turismo", "Eventos", "Mascotas", "Hotelería", "Viajes"],
-  "Industria y Manufactura": ["Envases", "Limpieza", "Alimentos Procesados", "Jabones Artesanales"],
-  "Oficio": ["Carpintería", "Electricidad", "Mecánica", "Confección", "Jardinería", "Gasfitería"],
-  "Educación y Desarrollo": ["Idiomas", "Clases Particulares", "Talleres de Arte", "Capacitación Empresas"],
-  "Economía y Negocios": ["Inversiones", "Fintech", "Asesoría Financiera", "Comercio Exterior"]
+  "Moda Mujer": ["Ropa", "Joyas", "Zapatos", "Carteras", "Cosméticos", "Accesorios"],
+  "Moda Hombre": ["Ropa", "Zapatos", "Accesorios"],
+  "Belleza, Estética y Bienestar": ["Peluquería", "Manicure", "Estética", "Maquillaje", "Terapias", "Personal Trainer"],
+  "Alimentos y Gastronomía": ["Restaurante", "Pastelería", "Catering", "Delivery", "Gourmet", "Food truck"],
+  "Negocio": ["Decoración", "Tecnología", "Librería", "Importación"],
+  "Servicios Profesionales": ["Abogados", "Contadores", "Arquitectos", "Psicólogos", "Coaching", "Dentistas"],
+  "Educación y Capacitación": ["Clases", "Idiomas", "Talleres", "Capacitación"],
+  "Arte, Diseño y Creatividad": ["Fotografía", "Diseño", "Marketing", "Audiovisual"],
+  "Tecnología y Desarrollo": ["Software", "E-commerce", "Soporte", "Ciberseguridad", "IA"],
+  "Turismo": ["Agencia viajes", "Hotelería", "Guías"],
+  "Eventos": ["Matrimonios", "Cumpleaños", "Corporativos", "DJs"],
+  "Transporte y Logística": ["Delivery", "Mudanzas", "Rent a Car"],
+  "Mascotas y Animales": ["Peluquería", "Veterinaria", "Accesorios"],
+  "Industria y Manufactura": ["Jabones", "Limpieza", "Envases", "Bebidas"],
+  "Construcción y Mantención": ["Remodelación", "Paisajismo", "Piscinas"],
+  "Oficio": ["Carpintero", "Electricista", "Mecánico", "Jardinero"]
 };

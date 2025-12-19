@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { userId, userEmail, planId = 'monthly' } = req.body;
+    const { userId, userEmail, planId = 'mensual' } = req.body;
 
     // Validar datos requeridos
     if (!userId || !userEmail) {
@@ -60,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Obtener plan seleccionado
     const plan = MEMBERSHIP_PLANS[planId as keyof typeof MEMBERSHIP_PLANS];
     if (!plan) {
-      return res.status(400).json({ error: 'Invalid plan. Use: monthly, semester, or annual' });
+      return res.status(400).json({ error: 'Invalid plan. Use: mensual, semestral, or anual' });
     }
 
     // Crear external_reference para identificar el pago

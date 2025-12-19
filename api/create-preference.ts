@@ -93,6 +93,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         pending: `${APP_URL}/#/payment-result?status=pending`
       },
       auto_return: 'approved',
+      binary_mode: false,
+      payment_methods: {
+        excluded_payment_methods: [],
+        excluded_payment_types: [],
+        installments: 1
+      },
       notification_url: `${APP_URL}/api/mercadopago-webhook`,
       statement_descriptor: 'TRIBU IMPULSA',
       expires: false

@@ -141,8 +141,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auto_return: 'approved',
       notification_url: `${APP_URL}/api/mercadopago-webhook`,
       statement_descriptor: 'TRIBU IMPULSA',
-      // Importante: guardar tarjeta para cobros futuros
-      binary_mode: true,
+      // Importante: permitir todos los métodos (saldo, débito, prepago)
+      binary_mode: false,
+      payment_methods: {
+        excluded_payment_methods: [],
+        excluded_payment_types: [],
+        installments: 1
+      },
       // Metadata para identificar que es suscripción
       metadata: {
         subscription: true,

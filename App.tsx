@@ -644,13 +644,34 @@ const LoginScreen = () => {
   // Afinidades COMPLETAS para registro - usar todas las 41 opciones de constants/affinities.ts
   const AFFINITY_OPTIONS_REG = SURVEY_AFFINITY_OPTIONS;
 
-  // Check existing session
+  // Check existing session AND sync user data from Firebase if needed
   useEffect(() => {
-    const session = getStoredSession();
-    if (session?.isLoggedIn) {
-      if (hasCompletedSurvey()) navigate('/dashboard');
-      else navigate('/survey');
-    }
+    const syncAndNavigate = async () => {
+      const session = getStoredSession();
+      if (session?.isLoggedIn && session.email) {
+        // Verificar si el usuario existe en localStorage
+        let localUser = getUserByEmail(session.email);
+        
+        // Si no existe localmente, sincronizar desde Firebase
+        if (!localUser) {
+          console.log('🔄 Sesión activa pero usuario no en localStorage, sincronizando desde Firebase...');
+          localUser = await getUserFromFirebaseByEmail(session.email);
+          if (localUser) {
+            console.log('✅ Usuario sincronizado desde Firebase:', localUser.name);
+            setCurrentUser(localUser.id);
+          } else {
+            console.log('⚠️ Usuario no encontrado en Firebase, limpiando sesión');
+            localStorage.removeItem(AUTH_SESSION_KEY);
+            return; // No navegar, mostrar login
+          }
+        }
+        
+        if (hasCompletedSurvey()) navigate('/dashboard');
+        else navigate('/survey');
+      }
+    };
+    
+    syncAndNavigate();
   }, [navigate]);
 
   // Paso 1: Verificar email

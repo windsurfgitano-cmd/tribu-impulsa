@@ -1,0 +1,67 @@
+# 📋 JOURNAL DE REVISIÓN EXHAUSTIVA
+## Tribu Impulsa - 19 Diciembre 2025
+
+---
+
+## ✅ CAMBIOS YA APLICADOS
+
+### Commit `771e8ec` - Sincronización inicial
+| Archivo | Cambio | Estado |
+|---------|--------|--------|
+| `App.tsx` | CATEGORY_TREE sincronizado con 17 categorías oficiales | ✅ |
+| `App.tsx` | AFFINITY_OPTIONS_REG sincronizado con 11 grupos | ✅ |
+| `App.tsx` | Hint contraseña mejorado | ✅ |
+| `matchService.ts` | userToMatchProfile extrae subCategory real | ✅ |
+| `matchService.ts` | SYNERGY_MAP completado con 17 categorías | ✅ |
+
+### Commit `d3f7135` - tribeAlgorithm y PaywallScreen
+| Archivo | Cambio | Estado |
+|---------|--------|--------|
+| `tribeAlgorithm.ts` | COMPETITION_GROUPS actualizado | ✅ |
+| `tribeAlgorithm.ts` | COMPLEMENTARY_AFFINITIES actualizado | ✅ |
+| `PaywallScreen.tsx` | IDs planes: monthly→mensual | ✅ |
+
+### Commit `108ff04` - types.ts y create-preference
+| Archivo | Cambio | Estado |
+|---------|--------|--------|
+| `types.ts` | AFFINITY_OPTIONS sincronizado | ✅ |
+| `types.ts` | CATEGORY_MAPPING sincronizado | ✅ |
+| `api/create-preference.ts` | Default planId corregido | ✅ |
+
+---
+
+## 🔄 EN REVISIÓN
+
+| Archivo | Estado | Notas |
+|---------|--------|-------|
+| `firestoreService.ts` | ✅ OK | Interfaces bien definidas |
+| `productionInit.ts` | ⚠️ ISSUE | Categorías desactualizadas (Moda y Accesorios, Hogar y Jardín) |
+| `seedData.ts` | ✅ OK | Usa formato correcto de categorías |
+| `seedFirestore.ts` | ⚠️ ISSUE | Categorías desactualizadas (Moda y Accesorios, Marketing Digital) |
+| `cloudBridge.ts` | ✅ OK | Bridge local/cloud correcto |
+| `dataPersistence.ts` | ✅ OK | Backup/restore funcional |
+| `academia/` | 🔍 Pendiente | |
+| `AdminPanel.tsx` | ✅ OK | Mock data para admin |
+| `vercel.json` | ✅ OK | Cron job configurado |
+| `netlify.toml` | ✅ OK | SPA redirect correcto |
+
+---
+
+## 📝 ISSUES ENCONTRADOS (pendientes de fix)
+
+| # | Archivo | Issue | Prioridad |
+|---|---------|-------|----------|
+| 1 | `productionInit.ts` | Categorías usando nombres antiguos | Media |
+| 2 | `seedFirestore.ts` | Categorías usando nombres antiguos | Media |
+| 3 | `AdminPanel.tsx` | Credenciales admin hardcodeadas (admin123, mod123) | Baja |
+
+---
+
+## 📊 ESTADÍSTICAS
+
+- **Archivos revisados:** 25+
+- **Archivos modificados:** 6
+- **Commits:** 3
+- **Issues críticos encontrados:** 0
+- **Issues moderados encontrados:** 3
+

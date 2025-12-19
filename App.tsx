@@ -3566,30 +3566,46 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         const updated = updateUser(currentUser.id, profileData);
         
         if (updated) {
-            // Sincronizar con Firebase - TODOS los campos
-            try {
-                const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('./services/firebaseService');
-                
-                // Sincronizar perfil completo
-                await syncProfileToCloud({
-                    id: currentUser.id,
-                    ...profileData,
-                    subCategory: profile.subCategory,
-                });
-                
-                // También sincronizar a la colección users
-                await syncUserToFirebase(currentUser.id, profileData);
-                
-                // Registrar la interacción
-                await logInteraction(currentUser.id, 'profile_updated', {
-                    fields: Object.keys(profileData),
-                    timestamp: new Date().toISOString()
-                });
-                
-                setSaveMessage('✅ Perfil guardado y sincronizado');
-            } catch {
-                // Fallback si Firebase falla
-                setSaveMessage('✅ Perfil guardado localmente');
+            // Sincronizar con Firebase - OBLIGATORIO, con reintentos
+            let firebaseSaved = false;
+            let retries = 3;
+            
+            while (!firebaseSaved && retries > 0) {
+                try {
+                    const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('./services/firebaseService');
+                    
+                    setSaveMessage(`☁️ Guardando en la nube... (intento ${4 - retries}/3)`);
+                    
+                    // Sincronizar a la colección users (PRINCIPAL)
+                    await syncUserToFirebase(currentUser.id, profileData);
+                    
+                    // Sincronizar perfil completo
+                    await syncProfileToCloud({
+                        id: currentUser.id,
+                        ...profileData,
+                        subCategory: profile.subCategory,
+                    });
+                    
+                    // Registrar la interacción
+                    await logInteraction(currentUser.id, 'profile_updated', {
+                        fields: Object.keys(profileData),
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    firebaseSaved = true;
+                    setSaveMessage('✅ Perfil guardado y sincronizado');
+                } catch (error) {
+                    retries--;
+                    console.error(`❌ Error guardando en Firebase (quedan ${retries} intentos):`, error);
+                    if (retries > 0) {
+                        await new Promise(r => setTimeout(r, 1000)); // Esperar 1s antes de reintentar
+                    }
+                }
+            }
+            
+            if (!firebaseSaved) {
+                // Si después de 3 intentos no se guardó, mostrar advertencia CLARA
+                setSaveMessage('⚠️ Guardado local. Presiona Sincronizar para subir a la nube.');
             }
         } else {
             setSaveMessage('❌ Error al guardar');
@@ -3636,9 +3652,37 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                     </button>
                     <button 
                         onClick={async () => {
-                          setSaveMessage('☁️ Sincronizando desde la nube...');
+                          setSaveMessage('☁️ Sincronizando con la nube...');
                           try {
-                            // Forzar sincronización desde Firebase
+                            const { syncUserToFirebase } = await import('./services/firebaseService');
+                            const localUser = getCurrentUser();
+                            
+                            // PASO 1: PRIMERO subir datos locales a Firebase (para no perderlos)
+                            if (localUser) {
+                              setSaveMessage('⬆️ Subiendo datos locales a la nube...');
+                              await syncUserToFirebase(localUser.id, {
+                                name: localUser.name,
+                                companyName: localUser.companyName,
+                                bio: localUser.bio,
+                                phone: localUser.phone,
+                                whatsapp: localUser.whatsapp,
+                                instagram: localUser.instagram,
+                                website: localUser.website,
+                                city: localUser.city,
+                                category: localUser.category,
+                                affinity: localUser.affinity,
+                                scope: localUser.scope,
+                                comuna: localUser.comuna,
+                                selectedRegions: localUser.selectedRegions,
+                                revenue: localUser.revenue,
+                                avatarUrl: localUser.avatarUrl,
+                                coverUrl: localUser.coverUrl,
+                              });
+                              console.log('✅ Datos locales subidos a Firebase');
+                            }
+                            
+                            // PASO 2: Luego descargar datos frescos de Firebase
+                            setSaveMessage('⬇️ Descargando datos de la nube...');
                             const session = getStoredSession();
                             if (session?.email) {
                               const freshUser = await getUserFromFirebaseByEmail(session.email);
@@ -3654,14 +3698,10 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                                   setEditAffinity(user.affinity || '');
                                   setEditRevenue(user.revenue || '');
                                 }
-                                setSaveMessage('✅ Datos sincronizados desde Firebase');
+                                setSaveMessage('✅ Sincronización completa');
                               } else {
                                 setSaveMessage('⚠️ No se encontró usuario en la nube');
                               }
-                            } else {
-                              // Fallback: recargar de localStorage
-                              setProfile(getMyProfile());
-                              setSaveMessage('✅ Datos actualizados');
                             }
                           } catch (error) {
                             console.error('Error sincronizando:', error);

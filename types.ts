@@ -53,19 +53,60 @@ export interface TribeAssignments {
   shareWithMe: MatchProfile[];
 }
 
-// Afinidades - SINCRONIZADO con constants/affinities.ts AFFINITY_GROUPS
+// Afinidades COMPLETAS - SINCRONIZADO con constants/affinities.ts AFFINITIES (41 opciones)
 export const AFFINITY_OPTIONS = [
-  "Bienestar y Salud",
-  "Diseño y Creatividad",
-  "Digital y Tecnología",
-  "Economía y Negocios",
-  "Educación y Desarrollo",
-  "Estilo de Vida",
-  "Eventos y Celebraciones",
-  "Familia y Hogar",
-  "Gastronomía y Alimentación",
-  "Impacto y Propósito",
-  "Servicios Profesionales"
+  // Bienestar y Salud (5)
+  "Bienestar y Salud - Aire libre / naturaleza / outdoor",
+  "Bienestar y Salud - Bienestar emocional / espiritualidad",
+  "Bienestar y Salud - Fitness / deporte / wellness",
+  "Bienestar y Salud - Medicina preventiva / estética / longevidad",
+  "Bienestar y Salud - Nutrición / alimentación saludable",
+  // Diseño y Creatividad (5)
+  "Diseño y Creatividad - Arquitectura / interiorismo",
+  "Diseño y Creatividad - Arte / manualidades / artesanía",
+  "Diseño y Creatividad - Diseño gráfico / branding",
+  "Diseño y Creatividad - Fotografía / video / audiovisual",
+  "Diseño y Creatividad - Moda / tendencias / lujo",
+  // Digital y Tecnología (4)
+  "Digital y Tecnología - E-commerce / ventas online",
+  "Digital y Tecnología - Marketing digital / RRSS / contenido",
+  "Digital y Tecnología - Software / apps / desarrollo",
+  "Digital y Tecnología - Tecnología / innovación / IA",
+  // Economía y Negocios (4)
+  "Economía y Negocios - Emprendimiento / startups",
+  "Economía y Negocios - Finanzas / inversiones / seguros",
+  "Economía y Negocios - Importación / exportación / comercio",
+  "Economía y Negocios - Legal / contabilidad / tributario",
+  // Educación y Desarrollo (4)
+  "Educación y Desarrollo - Capacitación / talleres / cursos",
+  "Educación y Desarrollo - Coaching / mentorías / liderazgo",
+  "Educación y Desarrollo - Desarrollo personal / profesional",
+  "Educación y Desarrollo - Educación infantil / reforzamiento",
+  // Estilo de Vida (4)
+  "Estilo de Vida - Cultura / arte / entretenimiento",
+  "Estilo de Vida - Mascotas / pet friendly",
+  "Estilo de Vida - Turismo / viajes / experiencias",
+  "Estilo de Vida - Vida al aire libre / aventura",
+  // Eventos y Celebraciones (3)
+  "Eventos y Celebraciones - Bodas / matrimonios",
+  "Eventos y Celebraciones - Eventos corporativos / ferias",
+  "Eventos y Celebraciones - Fiestas / cumpleaños / celebraciones",
+  // Familia y Hogar (3)
+  "Familia y Hogar - Hogar / decoración / organización",
+  "Familia y Hogar - Maternidad / bebés / niños",
+  "Familia y Hogar - Vida familiar / parenting",
+  // Gastronomía y Alimentación (3)
+  "Gastronomía y Alimentación - Gastronomía / restaurantes / café",
+  "Gastronomía y Alimentación - Productos gourmet / artesanales",
+  "Gastronomía y Alimentación - Vinos / bebidas / sommelier",
+  // Impacto y Propósito (3)
+  "Impacto y Propósito - Diversidad / inclusión / comunidad",
+  "Impacto y Propósito - Impacto social / ONGs / voluntariado",
+  "Impacto y Propósito - Sustentabilidad / economía circular",
+  // Servicios Profesionales (3)
+  "Servicios Profesionales - Consultoría / asesoría empresarial",
+  "Servicios Profesionales - RRHH / selección / talento",
+  "Servicios Profesionales - Servicios B2B / corporativos"
 ];
 
 // Categorías principales - SINCRONIZADO con constants/categories.ts CATEGORY_GROUPS

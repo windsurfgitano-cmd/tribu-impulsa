@@ -641,20 +641,8 @@ const LoginScreen = () => {
     'Otro': ['Otro']
   };
   
-  // Afinidades simplificadas para registro rápido - basadas en constants/affinities.ts
-  const AFFINITY_OPTIONS_REG = [
-    'Bienestar y Salud',
-    'Diseño y Creatividad', 
-    'Digital y Tecnología',
-    'Economía y Negocios',
-    'Educación y Desarrollo',
-    'Estilo de Vida',
-    'Eventos y Celebraciones',
-    'Familia y Hogar',
-    'Gastronomía y Alimentación',
-    'Impacto y Propósito',
-    'Servicios Profesionales'
-  ];
+  // Afinidades COMPLETAS para registro - usar todas las 41 opciones de constants/affinities.ts
+  const AFFINITY_OPTIONS_REG = SURVEY_AFFINITY_OPTIONS;
 
   // Check existing session
   useEffect(() => {
@@ -3982,6 +3970,16 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                   className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                 />
               </div>
+            </div>
+
+            {/* Botones Cancelar/Guardar al final del formulario */}
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-[#E4E7EF] p-4 -mx-4 mt-4 flex justify-center gap-3">
+              <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-semibold">
+                <X size={16}/> Cancelar
+              </button>
+              <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-semibold disabled:opacity-50 shadow-lg">
+                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16}/>} Guardar Cambios
+              </button>
             </div>
           </div>
         )}

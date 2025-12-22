@@ -8,7 +8,7 @@ import { getFirestoreInstance } from './firebaseService';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 // Tipos de membresía
-export type MembershipStatus = 'invitado' | 'miembro' | 'admin';
+export type MembershipStatus = 'invitado' | 'trial' | 'miembro' | 'admin';
 
 export interface UserMembership {
   id: string;
@@ -19,6 +19,12 @@ export interface UserMembership {
   expiresAt?: string;
   createdAt: string;
   updatedAt: string;
+  membershipType?: 'trial' | 'paid' | 'admin' | string;
+  paymentMethod?: string;
+  trialStartDate?: string;
+  trialEndDate?: string;
+  nextPlanId?: string;
+  autoRenew?: boolean;
 }
 
 export interface PaymentRecord {
@@ -48,6 +54,63 @@ export const getMembershipPrice = () => {
     }
   }
   return defaultPrice;
+};
+
+// Activar trial gratuito (30 días sin cobro)
+export const activateTrialMembership = async (
+  userId: string,
+  email: string,
+  selectedPlan: 'mensual' | 'semestral' | 'anual' = 'mensual'
+): Promise<UserMembership | null> => {
+  const db = getFirestoreInstance();
+  if (!db) return null;
+
+  try {
+    const membershipRef = doc(db, 'memberships', userId);
+    const existingSnapshot = await getDoc(membershipRef);
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setDate(trialEnd.getDate() + 30);
+
+    const payload: Partial<UserMembership> = {
+      id: userId,
+      email: email.toLowerCase(),
+      status: 'trial',
+      membershipType: 'trial_free',
+      paymentMethod: 'trial_free',
+      paymentId: `trial_${Date.now()}`,
+      paymentDate: now.toISOString(),
+      trialStartDate: now.toISOString(),
+      trialEndDate: trialEnd.toISOString(),
+      expiresAt: trialEnd.toISOString(),
+      nextPlanId: selectedPlan,
+      autoRenew: false,
+      updatedAt: now.toISOString()
+    };
+
+    const existingData = existingSnapshot.exists() 
+      ? (existingSnapshot.data() as UserMembership) 
+      : null;
+    const createdAt = existingData?.createdAt || now.toISOString();
+
+    await setDoc(
+      membershipRef,
+      {
+        ...payload,
+        createdAt
+      },
+      { merge: true }
+    );
+
+    return {
+      ...(existingSnapshot.data() as UserMembership | undefined),
+      ...payload,
+      createdAt
+    } as UserMembership;
+  } catch (error) {
+    console.error('Error activando trial gratuito:', error);
+    return null;
+  }
 };
 
 // Para compatibilidad con código existente

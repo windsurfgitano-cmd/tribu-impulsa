@@ -10,6 +10,7 @@ export interface UserProfile {
   email: string;
   phone: string;
   password?: string; // Para auth temporal
+  termsAccepted?: boolean;
   // Emprendimiento
   companyName: string;
   city: string;
@@ -21,6 +22,7 @@ export interface UserProfile {
   facebook?: string;
   tiktok?: string;
   twitter?: string;
+  linkedin?: string;
   website?: string;
   otherChannel?: string;
   whatsapp?: string;
@@ -42,6 +44,8 @@ export interface UserProfile {
   status: 'pending' | 'active' | 'suspended';
   surveyCompleted?: boolean;
   tribeAssigned?: boolean;
+  onboardingComplete?: boolean;
+  profileComplete?: boolean;
 }
 
 export interface Notification {

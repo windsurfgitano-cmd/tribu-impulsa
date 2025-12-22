@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tribu Impulsa - Paleta de colores monday.com */
+
+:root {
+  /* Danger (rojo) - Estados stuck, alertas */
+  --color-danger-050: #FFF0F5;
+  --color-danger-100: #FFD5E1;
+  --color-danger-300: #FF8EA9;
+  --color-danger-500: #FB275D;
+  --color-danger-700: #C11243;
+  --color-danger-900: #7A0F2C;
+
+  /* Warning (amarillo) - Working on it */
+  --color-warning-050: #FFF8E1;
+  --color-warning-100: #FFEDB3;
+  --color-warning-300: #FFE066;
+  --color-warning-500: #FFCC00;
+  --color-warning-700: #E0A800;
+  --color-warning-900: #8C6400;
+
+  /* Success (verde) - Done, completado */
+  --color-success-050: #E6FFF3;
+  --color-success-100: #C1F8DF;
+  --color-success-300: #4AE698;
+  --color-success-500: #00CA72;
+  --color-success-700: #008C4F;
+  --color-success-900: #005432;
+
+  /* Accent (purple) - Tecnología, links */
+  --color-accent-050: #F3F3FF;
+  --color-accent-100: #DCDCFD;
+  --color-accent-300: #A4A4FF;
+  --color-accent-500: #6161FF;
+  --color-accent-700: #2C2CA0;
+  --color-accent-900: #1B1B66;
+
+  /* Lila Pastel - Estados especiales, afinidades */
+  --color-lila-050: #FAF5FF;
+  --color-lila-100: #E8D5FF;
+  --color-lila-300: #C9A8FF;
+  --color-lila-500: #A78BFA;
+  --color-lila-700: #7C3AED;
+  --color-lila-900: #5B21B6;
+
+  /* Fucsia Pastel - Notificaciones, highlights */
+  --color-fucsia-050: #FDF2F8;
+  --color-fucsia-100: #FFD5E5;
+  --color-fucsia-300: #FF9EC4;
+  --color-fucsia-500: #EC4899;
+  --color-fucsia-700: #BE185D;
+  --color-fucsia-900: #831843;
+
+  /* Lavanda - Hover, selecciones */
+  --color-lavanda: #DDD6FE;
+  --color-rosa-suave: #FDF2F8;
+
+  /* Neutrales */
+  --neutral-000: #FFFFFF;
+  --neutral-050: #F5F7FB;
+  --neutral-100: #E4E7EF;
+  --neutral-300: #B3B8C6;
+  --neutral-500: #7C8193;
+  --neutral-700: #434343;
+  --neutral-900: #181B34;
+
+  /* Gradientes */
+  --gradient-tribe: linear-gradient(135deg, #181B34 0%, #1B1B66 45%, #6161FF 100%);
+  --gradient-hero: linear-gradient(160deg, #181B34 0%, #1B1B66 55%, #6161FF 100%);
+  --gradient-success: linear-gradient(135deg, #005432 0%, #00CA72 100%);
+  --gradient-warning: linear-gradient(135deg, #FFEDB3 0%, #FFCC00 100%);
+  --gradient-cta: linear-gradient(135deg, #00CA72 0%, #4AE698 100%);
+  --gradient-orange: linear-gradient(135deg, #FF9900 0%, #FFCC00 100%);
+
+  /* Semánticos */
+  --bg-primary: var(--neutral-900);
+  --bg-secondary: var(--neutral-050);
+  --bg-card: var(--neutral-000);
+  --text-primary: var(--neutral-700);
+  --text-secondary: var(--neutral-500);
+  --text-inverse: var(--neutral-000);
+  --border-light: var(--neutral-100);
+  --border-dark: var(--neutral-300);
+}
+
+html {
+  /* Importante para que safe-areas funcionen correctamente */
+  height: -webkit-fill-available;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--neutral-050);
+  color: var(--neutral-700);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Safe areas automáticas para iPhone */
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
+
+/* ===== SAFE AREAS PARA iPHONE ===== */
+/* Soporte completo para notch y home indicator */
+
+/* Padding individual */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Padding combinados */
+.px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.py-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--neutral-300);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neutral-500);
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Common Classes Replicated from V2 */
+.card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}

@@ -14,7 +14,7 @@ const getAvatarUrl = (name: string, _instagram?: string): string => {
   const colors = ['6161FF', '00CA72', 'FF6B6B', 'FFD93D', '6BCB77', 'FF8E53', '4D96FF', 'FF6B9D'];
   const colorIndex = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
   const bgColor = colors[colorIndex];
-  
+
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=${bgColor}&color=fff&size=200&bold=true&rounded=true`;
 };
 
@@ -42,7 +42,7 @@ const getCoverUrl = (category: string): string => {
     'Construcción': 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800',
     'default': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800'
   };
-  
+
   for (const [key, url] of Object.entries(covers)) {
     if (category.toLowerCase().includes(key.toLowerCase())) return url;
   }
@@ -1408,7 +1408,7 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  
+
   {
     email: 'fuentesvivianpaola@gmail.com',
     name: 'Vivian Fuentes Doñez',
@@ -2060,9 +2060,9 @@ export const REAL_USERS: RealUser[] = [
   // ===============================================
   // USUARIOS ADICIONALES DEL CSV (Faltantes)
   // ===============================================
-  
-  
-  
+
+
+
   {
     email: 'emedinapaez@gmail.com',
     name: 'Emiliano Medina',
@@ -2135,7 +2135,7 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  
+
   {
     email: 'lionskill@gmail.com',
     name: 'Emiliano Lion',
@@ -2190,8 +2190,8 @@ export const REAL_USERS: RealUser[] = [
     followers: 500,
     firstLogin: true
   },
-  
-  
+
+
   {
     email: 'ryaropa.accesorios@gmail.com',
     name: 'Juliette Poblete',
@@ -2219,18 +2219,18 @@ export const REAL_USERS: RealUser[] = [
 // Cargar usuarios reales en localStorage
 export const loadRealUsers = (): void => {
   const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-  
+
   // Verificar si ya hay usuarios reales cargados
   const realEmails = REAL_USERS.map(u => u.email.toLowerCase());
-  const existingRealUsers = existingUsers.filter((u: UserProfile) => 
+  const existingRealUsers = existingUsers.filter((u: UserProfile) =>
     realEmails.includes(u.email.toLowerCase())
   );
-  
+
   if (existingRealUsers.length >= REAL_USERS.length) {
     console.log('✅ Usuarios reales ya cargados');
     return;
   }
-  
+
   // Limpiar usuarios anteriores y cargar los nuevos
   const usersWithIds: (UserProfile & { firstLogin: boolean })[] = REAL_USERS.map((user, index) => ({
     ...user,
@@ -2242,7 +2242,7 @@ export const loadRealUsers = (): void => {
     // Actualizar avatarUrl con foto real de Instagram si existe
     avatarUrl: getAvatarUrl(user.name, user.instagram)
   }));
-  
+
   localStorage.setItem('tribu_users', JSON.stringify(usersWithIds));
   console.log(`✅ ${REAL_USERS.length} usuarios REALES cargados con avatares de Instagram`);
 };
@@ -2259,17 +2259,17 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
     const { getFirestoreInstance } = await import('./firebaseService');
     const { collection, query, where, getDocs } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (!db) return null;
-    
+
     const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) return null;
-    
+
     const userData = querySnapshot.docs[0].data();
     const userId = querySnapshot.docs[0].id;
-    
+
     // Convertir datos de Firebase a formato UserProfile
     const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
       id: userId,
@@ -2301,11 +2301,11 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
       firstLogin: userData.firstLogin ?? false,
       password: userData.password || UNIVERSAL_PASSWORD
     };
-    
+
     // Sincronizar a localStorage para futuras sesiones
     const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
     const existingIndex = users.findIndex((u: UserProfile) => u.id === userId || u.email.toLowerCase() === email.toLowerCase());
-    
+
     if (existingIndex >= 0) {
       // Actualizar usuario existente con datos de Firebase (Firebase es la fuente de verdad)
       users[existingIndex] = { ...users[existingIndex], ...userProfile };
@@ -2313,10 +2313,10 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
       // Agregar usuario nuevo
       users.push(userProfile);
     }
-    
+
     localStorage.setItem('tribu_users', JSON.stringify(users));
     console.log('☁️ Usuario cargado desde Firebase y sincronizado:', email);
-    
+
     return userProfile;
   } catch (error) {
     console.error('❌ Error cargando usuario desde Firebase:', error);
@@ -2328,12 +2328,12 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
 export const validateCredentials = (email: string, password: string): (UserProfile & { firstLogin?: boolean }) | null => {
   const user = getUserByEmail(email);
   if (!user) return null;
-  
+
   // Verificar contraseña universal o la personalizada del usuario
-  if (password === UNIVERSAL_PASSWORD || password === (user as UserProfile & {password?: string}).password) {
+  if (password === UNIVERSAL_PASSWORD || password === (user as UserProfile & { password?: string }).password) {
     return user;
   }
-  
+
   return null;
 };
 
@@ -2370,28 +2370,28 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc, getDoc, collection } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (!db) {
       console.log('⚠️ Firebase no disponible para migración');
       return { migrated: 0, existing: 0 };
     }
-    
+
     let migrated = 0;
     let existing = 0;
-    
+
     for (let i = 0; i < REAL_USERS.length; i++) {
       const user = REAL_USERS[i];
       const id = `real_user_${i + 1}`;
-      
+
       // Verificar si ya existe
       const docRef = doc(db, 'users', id);
       const docSnap = await getDoc(docRef);
-      
+
       if (docSnap.exists()) {
         existing++;
         continue;
       }
-      
+
       // Crear documento en Firebase
       const userData = {
         id,
@@ -2413,15 +2413,15 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
         password: UNIVERSAL_PASSWORD,
         firstLogin: true
       };
-      
+
       await setDoc(docRef, userData);
       migrated++;
     }
-    
+
     // Marcar migración como completa
     localStorage.setItem('tribu_migration_complete', 'true');
     console.log(`✅ Migración completa: ${migrated} nuevos, ${existing} ya existían`);
-    
+
     return { migrated, existing };
   } catch (error) {
     console.error('❌ Error en migración:', error);
@@ -2433,39 +2433,38 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
 // CARGA DE USUARIOS - FIREBASE ES LA FUENTE DE VERDAD
 // ===============================================
 
+const ENABLE_FIRESTORE_USERS = true; // Feature Flag: E2P2 Step 1.3
+
 export const forceReloadRealUsers = async (): Promise<void> => {
-  console.log('🔄 Cargando usuarios...');
-  
-  // PASO 1: Cargar desde Firebase
-  const firebaseUsers = await loadUsersFromFirebase();
-  console.log(`📊 Firebase tiene ${firebaseUsers.length} usuarios`);
-  
-  // PASO 2: Verificar si necesita migración (menos de 100 usuarios = no migrado)
-  const MIN_USERS_EXPECTED = 100; // Los 108 usuarios base
-  
-  if (firebaseUsers.length < MIN_USERS_EXPECTED) {
-    console.log(`📤 Migración necesaria: ${firebaseUsers.length} < ${MIN_USERS_EXPECTED}`);
-    console.log('📤 Ejecutando migración de usuarios base a Firebase...');
-    
-    const result = await migrateUsersToFirebase();
-    console.log(`✅ Migración: ${result.migrated} nuevos, ${result.existing} existentes`);
-    
-    // Recargar desde Firebase después de migrar
-    const usersAfterMigration = await loadUsersFromFirebase();
-    localStorage.setItem('tribu_users', JSON.stringify(usersAfterMigration));
-    console.log(`✅ ${usersAfterMigration.length} usuarios totales cargados`);
-    return;
+  console.log('🔄 Sincronizando usuarios...');
+
+  // PASO 1: Intentar cargar desde Firebase (Si el flag está activo)
+  if (ENABLE_FIRESTORE_USERS) {
+    try {
+      const firebaseUsers = await loadUsersFromFirebase();
+
+      // Si hay usuarios en Firebase, usarlos como fuente de verdad
+      if (firebaseUsers.length > 0) {
+        console.log(`✅ USANDO FIRESTORE: ${firebaseUsers.length} usuarios cargados.`);
+        localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
+
+        // 🔍 Auto-diagnóstico simple
+        if (firebaseUsers.length < 50) {
+          console.warn('⚠️ Alerta: Pocos usuarios en Firestore comparado con base histórica.');
+        }
+        return;
+      } else {
+        console.warn('⚠️ Firestore retornó 0 usuarios. Usando fallback.');
+      }
+    } catch (error) {
+      console.error('❌ Error leyendo Firestore:', error);
+      // Continúa al fallback
+    }
   }
-  
-  // PASO 3: Firebase tiene suficientes usuarios - usar esos
-  if (firebaseUsers.length > 0) {
-    localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
-    console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Firebase`);
-    return;
-  }
-  
-  // PASO 4: Fallback - usar datos hardcodeados (solo si todo falla)
-  console.log('⚠️ Usando fallback local (Firebase no disponible)');
+
+  // PASO 2: Fallback - usar datos hardcodeados del archivo
+  // Esto ocurre si el flag está apagado OR si Firestore falla/vacío
+  console.log('⚠️ USANDO FALLBACK LOCAL (Hardcoded Data)');
   const usersWithIds = REAL_USERS.map((user, index) => ({
     ...user,
     id: `real_user_${index + 1}`,
@@ -2484,14 +2483,14 @@ const loadUsersFromFirebase = async (): Promise<(UserProfile & { password: strin
     const { getFirestoreInstance } = await import('./firebaseService');
     const { collection, getDocs } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (!db) return [];
-    
+
     const snapshot = await getDocs(collection(db, 'users'));
     if (snapshot.empty) return [];
-    
+
     const users: (UserProfile & { password: string; firstLogin: boolean })[] = [];
-    
+
     snapshot.forEach(doc => {
       const data = doc.data();
       users.push({
@@ -2518,7 +2517,7 @@ const loadUsersFromFirebase = async (): Promise<(UserProfile & { password: strin
         tribeAssigned: true
       });
     });
-    
+
     return users;
   } catch (error) {
     console.log('⚠️ Error cargando desde Firebase:', error);
@@ -2532,29 +2531,29 @@ export const syncUsersFromFirebase = async (): Promise<void> => {
     const { getFirestoreInstance } = await import('./firebaseService');
     const { collection, getDocs } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (!db) {
       console.log('⚠️ Firebase no disponible para sync de usuarios');
       return;
     }
-    
+
     const usersRef = collection(db, 'users');
     const snapshot = await getDocs(usersRef);
-    
+
     if (snapshot.empty) {
       console.log('📭 No hay usuarios en Firebase');
       return;
     }
-    
+
     const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
     const existingEmails = existingUsers.map((u: UserProfile) => u.email.toLowerCase());
-    
+
     let addedCount = 0;
-    
+
     snapshot.forEach(doc => {
       const firebaseUser = doc.data();
       const email = (firebaseUser.email || '').toLowerCase();
-      
+
       // Si el usuario no existe localmente, agregarlo
       if (email && !existingEmails.includes(email)) {
         const newUser: UserProfile & { firstLogin: boolean; password: string } = {
@@ -2580,13 +2579,13 @@ export const syncUsersFromFirebase = async (): Promise<void> => {
           surveyCompleted: true,
           tribeAssigned: true
         };
-        
+
         existingUsers.push(newUser);
         existingEmails.push(email);
         addedCount++;
       }
     });
-    
+
     if (addedCount > 0) {
       localStorage.setItem('tribu_users', JSON.stringify(existingUsers));
       console.log(`☁️ ${addedCount} usuarios sincronizados desde Firebase. Total: ${existingUsers.length}`);
@@ -2610,6 +2609,25 @@ export interface NewUserData {
   phone: string;
   category?: string;
   affinity?: string;
+  password?: string; // Contraseña creada por el usuario
+  // Campos de ubicación
+  scope?: 'NACIONAL' | 'REGIONAL' | 'LOCAL';
+  city?: string;
+  comuna?: string;
+  selectedRegions?: string[];
+  // Campos de perfil completo
+  bio?: string;
+  businessDescription?: string;
+  revenue?: string;
+  termsAccepted?: boolean;
+  // RRSS opcionales
+  website?: string;
+  linkedin?: string;
+  tiktok?: string;
+  // Estado del perfil
+  profileComplete?: boolean;
+  onboardingComplete?: boolean;
+  status?: 'active' | 'inactive' | 'pending';
 }
 
 // Verificar si un email ya existe
@@ -2625,10 +2643,10 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     console.log('⚠️ Email ya registrado');
     return null;
   }
-  
+
   const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const newUser: UserProfile & { firstLogin: boolean; password: string } = {
     id: newId,
     email: userData.email.toLowerCase(),
@@ -2638,32 +2656,47 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     phone: userData.phone,
     category: userData.category || 'General',
     affinity: userData.affinity || userData.category || 'Emprendimiento',
-    bio: '',
-    businessDescription: '',
-    city: 'Chile',
+    // Campos de ubicación
+    scope: userData.scope || 'NACIONAL',
+    city: userData.city || 'Chile',
+    comuna: userData.comuna || '',
+    selectedRegions: userData.selectedRegions || [],
+    // Campos de perfil completo
+    bio: userData.bio || '',
+    businessDescription: userData.businessDescription || '',
+    revenue: userData.revenue || '',
+    termsAccepted: userData.termsAccepted || false,
+    // RRSS opcionales
+    website: userData.website || '',
+    linkedin: userData.linkedin || '',
+    tiktok: userData.tiktok || '',
+    // Visual
     avatarUrl: getAvatarUrl(userData.name, userData.instagram),
     companyLogoUrl: getLogoUrl(userData.companyName),
-    coverUrl: getCoverUrl('default'),
-    status: 'active',
+    coverUrl: getCoverUrl(userData.category || 'default'),
+    // Estado
+    status: userData.status || 'active',
+    profileComplete: userData.profileComplete || false,
+    onboardingComplete: userData.onboardingComplete || false,
     followers: 500,
-    firstLogin: true,
-    password: UNIVERSAL_PASSWORD,
+    firstLogin: !userData.password,
+    password: userData.password || UNIVERSAL_PASSWORD,
     createdAt: new Date().toISOString(),
     surveyCompleted: true,
     tribeAssigned: true
   };
-  
+
   users.push(newUser);
   localStorage.setItem('tribu_users', JSON.stringify(users));
-  
-  // Sincronizar con Firebase - GUARDAR TODOS LOS DATOS
+
+  // Sincronizar con Firebase - GUARDAR TODOS LOS DATOS COMPLETOS
   try {
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (db) {
-      // Guardar usuario completo en Firebase
+      // Guardar usuario completo en Firebase con TODOS los campos
       await setDoc(doc(db, 'users', newUser.id), {
         id: newUser.id,
         email: newUser.email,
@@ -2672,21 +2705,61 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
         instagram: newUser.instagram,
         phone: newUser.phone,
         category: newUser.category,
+        affinity: newUser.affinity,
         subCategory: newUser.affinity,
+        // Ubicación
+        scope: newUser.scope,
+        city: newUser.city,
         location: newUser.city,
+        comuna: newUser.comuna,
+        selectedRegions: newUser.selectedRegions,
+        // Perfil completo
         bio: newUser.bio,
+        businessDescription: newUser.businessDescription,
+        revenue: newUser.revenue,
+        termsAccepted: newUser.termsAccepted,
+        // RRSS
+        website: newUser.website,
+        linkedin: newUser.linkedin,
+        tiktok: newUser.tiktok,
+        // Visual
         avatarUrl: newUser.avatarUrl,
         coverUrl: newUser.coverUrl,
-        status: 'active',
+        // Estado
+        status: newUser.status,
+        profileComplete: newUser.profileComplete,
+        onboardingComplete: newUser.onboardingComplete,
+        password: newUser.password,
         createdAt: newUser.createdAt,
         source: 'app_registration'
       });
       console.log('☁️ Nuevo usuario guardado en Firebase:', newUser.email);
+
+      // 📊 Actualizar contador global de perfiles
+      const { getDoc, updateDoc, increment } = await import('firebase/firestore');
+      const statsRef = doc(db, 'system_stats', 'global');
+      const statsDoc = await getDoc(statsRef);
+      
+      if (statsDoc.exists()) {
+        await updateDoc(statsRef, {
+          profilesCompleted: increment(1),
+          membersActive: increment(1)
+        });
+        console.log('📊 Contador de perfiles actualizado (+1)');
+      } else {
+        // Crear documento si no existe
+        await setDoc(statsRef, {
+          profilesCompleted: 1,
+          membersActive: 1,
+          profilesTarget: 1000
+        });
+        console.log('📊 Documento system_stats creado');
+      }
     }
   } catch (error) {
     console.log('⚠️ Error sincronizando con Firebase:', error);
   }
-  
+
   console.log(`✅ Nuevo usuario registrado: ${userData.email}`);
   return newUser;
 };
@@ -2708,17 +2781,17 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
     const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
     const filteredUsers = users.filter((u: UserProfile) => u.id !== userId);
     localStorage.setItem('tribu_users', JSON.stringify(filteredUsers));
-    
+
     // Eliminar de Firebase
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, deleteDoc } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (db) {
       await deleteDoc(doc(db, 'users', userId));
       console.log(`🗑️ Usuario ${userId} eliminado de Firebase`);
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ Error eliminando usuario:', error);
@@ -2736,12 +2809,12 @@ export const updateUserInFirebase = async (userId: string, updates: Partial<User
       users[index] = { ...users[index], ...updates };
       localStorage.setItem('tribu_users', JSON.stringify(users));
     }
-    
+
     // Actualizar Firebase
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
     const db = getFirestoreInstance();
-    
+
     if (db) {
       await updateDoc(doc(db, 'users', userId), {
         ...updates,
@@ -2749,7 +2822,7 @@ export const updateUserInFirebase = async (userId: string, updates: Partial<User
       });
       console.log(`✏️ Usuario ${userId} actualizado en Firebase`);
     }
-    
+
     return true;
   } catch (error) {
     console.error('❌ Error actualizando usuario:', error);
@@ -2771,12 +2844,12 @@ export const diagnoseUsers = async (): Promise<{
 }> => {
   const localUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
   const baseEmails = REAL_USERS.map(u => u.email.toLowerCase());
-  
+
   // Usuarios nuevos (no están en la base de 108)
   const nuevos = localUsers
     .filter((u: UserProfile) => !baseEmails.includes((u.email || '').toLowerCase()))
     .map((u: UserProfile) => ({ id: u.id, email: u.email, name: u.name }));
-  
+
   // Contar en Firebase
   let firebaseCount = 0;
   try {
@@ -2790,21 +2863,21 @@ export const diagnoseUsers = async (): Promise<{
   } catch (e) {
     console.log('Error contando Firebase:', e);
   }
-  
+
   const result = {
     local: localUsers.length,
     firebase: firebaseCount,
     base: REAL_USERS.length,
     nuevos
   };
-  
+
   console.log('📊 DIAGNÓSTICO USUARIOS:');
   console.log(`   Base hardcodeados: ${result.base}`);
   console.log(`   En localStorage: ${result.local}`);
   console.log(`   En Firebase: ${result.firebase}`);
   console.log(`   Nuevos registrados: ${result.nuevos.length}`);
   console.log('   Lista nuevos:', result.nuevos);
-  
+
   return result;
 };
 

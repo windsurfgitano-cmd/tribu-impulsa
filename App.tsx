@@ -1,9 +1,10 @@
 
-import React, { useState, useEffect, FormEvent, useMemo } from 'react';
+import React, { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star, Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from './components/GlassCard';
+import { ProgressBanner } from './components/ProgressBanner';
 import { AcademiaView } from './components/academia/AcademiaView';
 import { WhatsAppFloat } from './components/WhatsAppFloat';
 import { PaymentResult } from './components/PaymentResult';
@@ -15,12 +16,12 @@ import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
 import { AFFINITIES } from './constants/affinities';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
-import { 
-  exportForGoogleDrive, 
-  getDashboardStats, 
-  getAllUsers, 
-  createUser, 
-  getCurrentUser, 
+import {
+  exportForGoogleDrive,
+  getDashboardStats,
+  getAllUsers,
+  createUser,
+  getCurrentUser,
   setCurrentUser,
   getUserNotifications,
   markNotificationAsRead,
@@ -47,30 +48,35 @@ import {
 import { loadRealUsers, validateCredentials, getUserByEmail, getUserFromFirebaseByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
 import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
-import { 
-  initializeFirebase, 
-  requestNotificationPermission, 
-  onForegroundMessage, 
-  getNotificationStatus, 
-  sendLocalNotification, 
-  saveUserFCMToken, 
-  sendPushToAll, 
-  countUsersWithPush, 
+import {
+  initializeFirebase,
+  requestNotificationPermission,
+  onForegroundMessage,
+  getNotificationStatus,
+  sendLocalNotification,
+  saveUserFCMToken,
+  sendPushToAll,
+  countUsersWithPush,
   clearFCMToken,
   // Sincronización con Firestore
   syncProfileToCloud,
+  syncTribeAssignments,
+  loadTribeAssignments,
   getProfileFromCloud,
   getAllProfilesFromCloud,
   syncChecklistProgress,
   loadChecklistFromFirebase,
   syncAdminConfig,
   loadAdminConfig,
-  syncTribeAssignments,
-  loadTribeAssignments,
   getFirestoreInstance,
   logInteraction
 } from './services/firebaseService';
+import { activateTrialMembership } from './services/membershipService';
 import { ensureInitialized } from './services/productionInit';
+import { SearchableSelect } from './components/SearchableSelect';
+import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from './utils/selectOptions';
+import { Confetti, useConfetti } from './components/Confetti';
+import { OnboardingTutorial, useOnboardingTutorial } from './components/OnboardingTutorial';
 
 // ============================================
 // INICIALIZACIÓN DE PRODUCCIÓN
@@ -84,11 +90,11 @@ initializeFirebase();
   try {
     await ensureInitialized();
     console.log('✅ Producción inicializada');
-    
+
     // Cargar usuarios REALES + sincronizar con Firebase
     await forceReloadRealUsers();
     console.log('✅ Usuarios cargados y sincronizados');
-    
+
     // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
     try {
       const { syncPhotosFromFirebase } = await import('./services/firebaseService');
@@ -99,7 +105,7 @@ initializeFirebase();
     } catch (photoErr) {
       console.log('⚠️ Sync de fotos pendiente');
     }
-    
+
     // Generar asignaciones de tribu si es necesario
     ensureTribeAssignments();
   } catch (err) {
@@ -153,10 +159,10 @@ const syncUserToCloud = async (user: UserProfile) => {
 // Sincronizar checklist a la nube
 const syncChecklistToCloud = async (userId: string, checklist: { toShare: Record<string, boolean>; shareWithMe: Record<string, boolean> }) => {
   try {
-    const completed = Object.values(checklist.toShare).filter(Boolean).length + 
-                      Object.values(checklist.shareWithMe).filter(Boolean).length;
+    const completed = Object.values(checklist.toShare).filter(Boolean).length +
+      Object.values(checklist.shareWithMe).filter(Boolean).length;
     const total = Object.keys(checklist.toShare).length + Object.keys(checklist.shareWithMe).length;
-    
+
     await syncChecklistProgress(userId, {
       completed,
       total,
@@ -195,12 +201,11 @@ const SURVEY_SCOPE_OPTIONS = [
 ];
 
 const SURVEY_REVENUE_OPTIONS = [
-  '1-500.000',
-  '500.000 -  1.000.000',
-  '1.000.001 - 1.500.000',
-  '1.500.001 - 2.000.000',
-  '2.000.001 - 3.000.000',
-  '3.000.000 +'
+  'Menos de $500.000',
+  '$500.000 - $2.000.000',
+  '$2.000.000 - $5.000.000',
+  '$5.000.000 - $10.000.000',
+  'Más de $10.000.000'
 ];
 
 // IMPORTANTE: Todas las claves usan el userId para segregar datos por usuario
@@ -261,7 +266,7 @@ const getStoredTribeAssignments = (category: string, userId?: string): TribeAssi
 
   // Key específica por usuario para que cada uno tenga sus propias asignaciones
   const storageKey = getUserStorageKey(TRIBE_ASSIGNMENTS_KEY);
-  
+
   const raw = localStorage.getItem(storageKey);
   if (!raw) {
     const generated = generateTribeAssignments(category, userId);
@@ -288,7 +293,7 @@ const getStoredTribeAssignments = (category: string, userId?: string): TribeAssi
 const persistTribeAssignments = async (data: TribeAssignments, userId?: string) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(getUserStorageKey(TRIBE_ASSIGNMENTS_KEY), JSON.stringify(data));
-  
+
   // Sincronizar a Firebase
   if (userId) {
     const month = new Date().toISOString().slice(0, 7); // "2025-01"
@@ -376,7 +381,7 @@ const persistReport = (report: TribeReport) => {
   const current = getStoredReports();
   const next = [...current, report];
   localStorage.setItem(getUserStorageKey(TRIBE_REPORTS_KEY), JSON.stringify(next));
-  
+
   // ☁️ Sincronizar a Firestore
   const userId = localStorage.getItem('tribu_current_user');
   if (userId) {
@@ -488,41 +493,71 @@ type ProfileValidation = {
   completionPercent: number;
 };
 
-const MANDATORY_FIELDS = [
-  { key: 'name', label: 'Nombre' },
-  { key: 'companyName', label: 'Nombre de tu emprendimiento' },
-  { key: 'category', label: 'Giro / Rubro' },
-  { key: 'affinity', label: 'Afinidad / Intereses' },
-  { key: 'scope', label: 'Alcance geográfico' },
-  { key: 'phone', label: 'Teléfono / WhatsApp' },
+const BASE_PROFILE_REQUIREMENTS = [
+  'Nombre',
+  'Nombre de tu emprendimiento',
+  'Giro / Rubro',
+  'Afinidad / Intereses',
+  'Alcance geográfico',
+  'Teléfono / WhatsApp',
+  'Ciudad',
+  'Biografía (mín. 140 caracteres)',
+  'Descripción del negocio (mín. 200 caracteres)',
+  'Canal principal (Instagram / sitio / otro)',
+  'Facturación mensual',
+  'Foto o avatar del perfil',
+  'Aceptar términos y condiciones',
+  'Onboarding completado',
+  'Estado de cuenta activo'
 ];
+
+const MIN_BIO_LENGTH = 140;
+const MIN_BUSINESS_DESC_LENGTH = 200;
 
 const validateUserProfile = (user: UserProfile | null): ProfileValidation => {
   if (!user) {
-    return { isComplete: false, missingFields: MANDATORY_FIELDS.map(f => f.label), completionPercent: 0 };
+    return { isComplete: false, missingFields: BASE_PROFILE_REQUIREMENTS, completionPercent: 0 };
   }
 
-  const missingFields: string[] = [];
-  
-  // Validar campos básicos obligatorios
-  if (!user.name?.trim()) missingFields.push('Nombre');
-  if (!user.companyName?.trim()) missingFields.push('Nombre de tu emprendimiento');
-  if (!user.category?.trim()) missingFields.push('Giro / Rubro');
-  if (!user.affinity?.trim()) missingFields.push('Afinidad / Intereses');
-  if (!user.scope) missingFields.push('Alcance geográfico');
-  if (!user.phone?.trim() && !user.whatsapp?.trim()) missingFields.push('Teléfono / WhatsApp');
+  const hasChannel = Boolean(
+    user.instagram?.trim() ||
+    user.website?.trim() ||
+    (user as Partial<UserProfile> & { otherChannel?: string }).otherChannel?.trim()
+  );
 
-  // Validación especial para geografía según alcance
-  if (user.scope === 'LOCAL' && !user.comuna) {
-    missingFields.push('Comuna (requerida para alcance LOCAL)');
-  }
-  if (user.scope === 'REGIONAL' && (!user.selectedRegions || user.selectedRegions.length === 0)) {
-    missingFields.push('Regiones (requeridas para alcance REGIONAL)');
-  }
+  const validationChecks = [
+    { valid: Boolean(user.name?.trim()), label: 'Nombre' },
+    { valid: Boolean(user.companyName?.trim()), label: 'Nombre de tu emprendimiento' },
+    { valid: Boolean(user.category?.trim()), label: 'Giro / Rubro' },
+    { valid: Boolean(user.affinity?.trim()), label: 'Afinidad / Intereses' },
+    { valid: Boolean(user.scope), label: 'Alcance geográfico' },
+    { valid: Boolean(user.phone?.trim() || user.whatsapp?.trim()), label: 'Teléfono / WhatsApp' },
+    { valid: Boolean(user.city?.trim()), label: 'Ciudad' },
+    { valid: Boolean(user.bio?.trim() && user.bio.trim().length >= MIN_BIO_LENGTH), label: 'Biografía (mín. 140 caracteres)' },
+    { valid: Boolean(user.businessDescription?.trim() && user.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH), label: 'Descripción del negocio (mín. 200 caracteres)' },
+    { valid: hasChannel, label: 'Canal principal (Instagram / sitio / otro)' },
+    { valid: Boolean(user.revenue?.trim()), label: 'Facturación mensual' },
+    {
+      valid: user.scope === 'LOCAL' ? Boolean(user.comuna?.trim()) : true,
+      label: 'Comuna (requerida para alcance LOCAL)'
+    },
+    {
+      valid: user.scope === 'REGIONAL' ? Boolean(user.selectedRegions && user.selectedRegions.length > 0) : true,
+      label: 'Regiones (requeridas para alcance REGIONAL)'
+    },
+    { valid: Boolean(user.avatarUrl?.trim()), label: 'Foto o avatar del perfil' },
+    { valid: user.status === 'active', label: 'Estado de cuenta activo' },
+    { valid: Boolean(user.onboardingComplete), label: 'Onboarding completado' },
+    { valid: user.termsAccepted !== false, label: 'Aceptar términos y condiciones' }
+  ];
 
-  const totalFields = MANDATORY_FIELDS.length + 1; // +1 por geografía
-  const completedFields = totalFields - missingFields.length;
-  const completionPercent = Math.round((completedFields / totalFields) * 100);
+  const missingFields = validationChecks
+    .filter(check => !check.valid)
+    .map(check => check.label);
+
+  const completionPercent = Math.round(
+    ((validationChecks.length - missingFields.length) / validationChecks.length) * 100
+  );
 
   return {
     isComplete: missingFields.length === 0,
@@ -533,6 +568,38 @@ const validateUserProfile = (user: UserProfile | null): ProfileValidation => {
 
 const isProfileComplete = (user: UserProfile | null): boolean => {
   return validateUserProfile(user).isComplete;
+};
+
+const syncProfileCompletionState = async (user: UserProfile, isComplete: boolean) => {
+  if (!user) return;
+
+  const updates: Partial<UserProfile> = {};
+
+  if (user.profileComplete !== isComplete) {
+    updates.profileComplete = isComplete;
+  }
+
+  if (isComplete && !user.onboardingComplete) {
+    updates.onboardingComplete = true;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return;
+  }
+
+  updateUser(user.id, updates);
+  setCurrentUser(user.id);
+
+  try {
+    const { getFirestoreInstance } = await import('./services/firebaseService');
+    const { doc, setDoc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    if (db) {
+      await setDoc(doc(db, 'users', user.id), updates, { merge: true });
+    }
+  } catch (error) {
+    console.warn('⚠️ No se pudo sincronizar el estado de perfil completo con Firestore:', error);
+  }
 };
 
 // --- Components defined here for file constraint compliance ---
@@ -595,6 +662,50 @@ const initAppConfigFromFirebase = async () => {
 // Ejecutar al cargar la app
 initAppConfigFromFirebase();
 
+type CloudMembership = {
+  status?: string;
+  paymentMethod?: string;
+  paymentDate?: string;
+  expiresAt?: string;
+  trialStartDate?: string;
+  trialEndDate?: string;
+  membershipType?: string;
+  amount?: number;
+};
+
+const fetchMembershipFromCloud = async (userId: string): Promise<CloudMembership | null> => {
+  try {
+    const { getFirestoreInstance } = await import('./services/firebaseService');
+    const { doc, getDoc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    if (!db) return null;
+    const membershipDoc = await getDoc(doc(db, 'memberships', userId));
+    return membershipDoc.exists() ? (membershipDoc.data() as CloudMembership) : null;
+  } catch (error) {
+    console.log('⚠️ Error obteniendo membresía desde Firebase:', error);
+    return null;
+  }
+};
+
+const syncMembershipToLocalCache = (userId: string, membership: CloudMembership | null) => {
+  if (!membership) return;
+  const status = membership.status || 'invitado';
+  localStorage.setItem(`membership_status_${userId}`, status);
+  if (status === 'miembro' || status === 'admin' || status === 'trial') {
+    localStorage.setItem(
+      `membership_payment_${userId}`,
+      JSON.stringify({
+        method: membership.paymentMethod,
+        amount: membership.amount,
+        date: membership.paymentDate || membership.trialStartDate,
+        expiresAt: membership.expiresAt || membership.trialEndDate
+      })
+    );
+  } else {
+    localStorage.removeItem(`membership_payment_${userId}`);
+  }
+};
+
 // 1. Login / Landing - FLUJO UNIFICADO SEAMLESS
 const LoginScreen = () => {
   const navigate = useNavigate();
@@ -608,8 +719,37 @@ const LoginScreen = () => {
   const [devMode, setDevMode] = useState(false);
   const [devPassword, setDevPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   
-  // Datos de registro (si es usuario nuevo)
+  // Contador dinámico de perfiles desde Firebase
+  const [profilesCount, setProfilesCount] = useState(0);
+  
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    
+    const setupListener = async () => {
+      const db = getFirestoreInstance();
+      if (!db) return;
+      
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      
+      // Suscripción en tiempo real al contador
+      unsubscribe = onSnapshot(doc(db, 'system_stats', 'global'), (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setProfilesCount(data.profilesCompleted || 0);
+        }
+      });
+    };
+    
+    setupListener();
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  // Datos de registro (si es usuario nuevo) - TODOS los campos obligatorios
   const [registerData, setRegisterData] = useState({
     name: '',
     companyName: '',
@@ -617,9 +757,24 @@ const LoginScreen = () => {
     phone: '',
     category: '',
     subcategory: '',
-    affinity: ''
+    affinity: '',
+    password: '',
+    confirmPassword: '',
+    // Campos adicionales obligatorios
+    scope: '' as '' | 'NACIONAL' | 'REGIONAL' | 'LOCAL',
+    city: '',
+    comuna: '',
+    selectedRegions: [] as string[],
+    bio: '',
+    businessDescription: '',
+    revenue: '',
+    termsAccepted: false,
+    // RRSS opcionales
+    website: '',
+    linkedin: '',
+    tiktok: ''
   });
-  
+
   // Sistema de categorías anidadas - SINCRONIZADO con constants/categories.ts
   const CATEGORY_TREE: Record<string, string[]> = {
     'Moda Mujer': ['Ropa de mujer', 'Vestidos de fiesta', 'Joyas/Bijouterie', 'Zapatos', 'Carteras', 'Cosméticos/Skincare', 'Accesorios varios'],
@@ -640,7 +795,7 @@ const LoginScreen = () => {
     'Oficio': ['Carpintero', 'Electricista', 'Jardinero', 'Mecánico', 'Limpieza', 'Modista/Arreglos'],
     'Otro': ['Otro']
   };
-  
+
   // Afinidades COMPLETAS para registro - usar todas las 41 opciones de constants/affinities.ts
   const AFFINITY_OPTIONS_REG = SURVEY_AFFINITY_OPTIONS;
 
@@ -651,7 +806,7 @@ const LoginScreen = () => {
       if (session?.isLoggedIn && session.email) {
         // Verificar si el usuario existe en localStorage
         let localUser = getUserByEmail(session.email);
-        
+
         // Si no existe localmente, sincronizar desde Firebase
         if (!localUser) {
           console.log('🔄 Sesión activa pero usuario no en localStorage, sincronizando desde Firebase...');
@@ -665,12 +820,12 @@ const LoginScreen = () => {
             return; // No navegar, mostrar login
           }
         }
-        
+
         if (hasCompletedSurvey()) navigate('/dashboard');
         else navigate('/survey');
       }
     };
-    
+
     syncAndNavigate();
   }, [navigate]);
 
@@ -678,25 +833,25 @@ const LoginScreen = () => {
   const handleEmailCheck = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!email) {
       setError('Por favor ingresa tu email');
       return;
     }
 
     setIsLoading(true);
-    
+
     // Verificar si el email existe localmente
     let existingUser = getUserByEmail(email);
-    
+
     // Si no está local, buscar en Firebase y sincronizar
     if (!existingUser) {
       console.log('🔍 Usuario no encontrado localmente, buscando en Firebase...');
       existingUser = await getUserFromFirebaseByEmail(email);
     }
-    
+
     setIsLoading(false);
-    
+
     if (existingUser) {
       // Usuario existe → pedir contraseña
       setStep('password');
@@ -710,18 +865,18 @@ const LoginScreen = () => {
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!password) {
       setError('Por favor ingresa tu contraseña');
       return;
     }
 
     setIsLoading(true);
-    
+
     // Primero buscar localmente
     let user = validateCredentials(email, password);
     let existingUser = getUserByEmail(email);
-    
+
     // Si no está local, buscar en Firebase
     if (!existingUser) {
       console.log('🔍 Cargando usuario desde Firebase para login...');
@@ -731,16 +886,16 @@ const LoginScreen = () => {
         user = validateCredentials(email, password);
       }
     }
-    
+
     const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
-    
+
     if (user || (existingUser && isProfilePasswordValid)) {
       const loggedUser = user || existingUser;
       completeLogin(loggedUser);
     } else {
-      setError('Contraseña incorrecta. Recuerda: TRIBU2026');
+      setError('Contraseña incorrecta');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -748,29 +903,71 @@ const LoginScreen = () => {
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     // Validar TODOS los campos obligatorios
     if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || !registerData.category) {
       setError('Por favor completa TODOS los campos obligatorios');
       return;
     }
-    
-    // Validar subcategoría si la categoría no es "Otro"
-    if (registerData.category !== 'Otro' && CATEGORY_TREE[registerData.category] && !registerData.subcategory) {
-      setError('Por favor selecciona qué ofreces específicamente');
+
+    // Validar ubicación
+    if (!registerData.scope || !registerData.city) {
+      setError('Por favor indica tu ubicación');
       return;
     }
-    
+
+    if (registerData.scope === 'LOCAL' && !registerData.comuna) {
+      setError('Por favor indica tu comuna');
+      return;
+    }
+
+    if (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) {
+      setError('Por favor selecciona al menos una región');
+      return;
+    }
+
+    // Validar biografía y descripción
+    if (registerData.bio.length < 140) {
+      setError('Tu biografía debe tener al menos 140 caracteres');
+      return;
+    }
+
+    if (registerData.businessDescription.length < 200) {
+      setError('La descripción de tu negocio debe tener al menos 200 caracteres');
+      return;
+    }
+
+    // Validar facturación
+    if (!registerData.revenue) {
+      setError('Por favor indica tu rango de ingresos');
+      return;
+    }
+
+    // Validar términos
+    if (!registerData.termsAccepted) {
+      setError('Debes aceptar los términos y condiciones');
+      return;
+    }
+
+    // Validar contraseña
+    if (!registerData.password || registerData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
     // Validar formato de Instagram
     const instagramHandle = registerData.instagram.startsWith('@') ? registerData.instagram : `@${registerData.instagram}`;
-    
-    // Combinar categoría y subcategoría para el perfil
-    const fullCategory = registerData.subcategory 
-      ? `${registerData.category} - ${registerData.subcategory}` 
-      : registerData.category;
+
+    // Usar la categoría seleccionada directamente
+    const fullCategory = registerData.category;
 
     setIsLoading(true);
-    
+
     try {
       const { registerNewUser } = await import('./services/realUsersData');
       const newUser = await registerNewUser({
@@ -780,11 +977,31 @@ const LoginScreen = () => {
         instagram: instagramHandle,
         phone: registerData.phone,
         category: fullCategory,
-        affinity: registerData.affinity || registerData.category // Usar afinidad o categoría como fallback
+        affinity: registerData.affinity || registerData.category,
+        password: registerData.password,
+        // Campos adicionales completos
+        scope: registerData.scope,
+        city: registerData.city,
+        comuna: registerData.comuna,
+        selectedRegions: registerData.selectedRegions,
+        bio: registerData.bio,
+        businessDescription: registerData.businessDescription,
+        revenue: registerData.revenue,
+        termsAccepted: registerData.termsAccepted,
+        // RRSS opcionales
+        website: registerData.website,
+        linkedin: registerData.linkedin,
+        tiktok: registerData.tiktok,
+        // Marcar perfil como completo desde el inicio
+        profileComplete: true,
+        onboardingComplete: true,
+        status: 'active'
       });
-      
+
       if (newUser) {
-        console.log('✅ Nuevo usuario registrado:', newUser.name, fullCategory);
+        console.log('✅ Nuevo usuario registrado con perfil COMPLETO:', newUser.name, fullCategory);
+        // 🎉 Marcar para confeti de bienvenida
+        localStorage.setItem('tribu_new_registration', 'true');
         completeLogin(newUser);
       } else {
         setError('Error al registrar. Intenta de nuevo.');
@@ -793,7 +1010,7 @@ const LoginScreen = () => {
       console.error('Error en registro:', err);
       setError('Error al registrar. Intenta de nuevo.');
     }
-    
+
     setIsLoading(false);
   };
 
@@ -807,10 +1024,10 @@ const LoginScreen = () => {
     setStoredSession(session);
     setCurrentUser(loggedUser.id);
     localStorage.setItem('tribu_current_user', loggedUser.id);
-    
+
     // Sincronizar notificaciones desde Firebase
     syncNotificationsFromFirebase(loggedUser.id);
-    
+
     const surveyData = {
       email: loggedUser.email,
       name: loggedUser.name,
@@ -825,54 +1042,37 @@ const LoginScreen = () => {
       selectedRegions: loggedUser.selectedRegions || []
     };
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
-    
+
     // Solo mostrar popup de cambio de contraseña si:
     // 1. Es firstLogin Y
     // 2. La contraseña actual es TRIBU2026 (no la ha cambiado)
     // 3. No ha cambiado su contraseña previamente
     const hasDefaultPassword = (loggedUser as { password?: string }).password === 'TRIBU2026';
     const hasChangedPassword = localStorage.getItem(`password_changed_${loggedUser.id}`) === 'true';
-    
+
     if ((loggedUser as { firstLogin?: boolean }).firstLogin && hasDefaultPassword && !hasChangedPassword) {
       localStorage.setItem('show_password_change', 'true');
     }
-    
-    // Verificar membresía
-    const membershipStatus = localStorage.getItem(`membership_status_${loggedUser.id}`);
-    
-    // Si no tiene membresía, verificar en Firebase
-    if (!membershipStatus) {
-      try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const db = getFirestoreInstance();
-        if (db) {
-          const membershipDoc = await getDoc(doc(db, 'memberships', loggedUser.id));
-          if (membershipDoc.exists()) {
-            const membership = membershipDoc.data();
-            localStorage.setItem(`membership_status_${loggedUser.id}`, membership.status);
-            if (membership.status === 'miembro' || membership.status === 'admin') {
-              navigate('/searching');
-              return;
-            }
-          }
+
+    try {
+      const membershipData = await fetchMembershipFromCloud(loggedUser.id);
+      if (membershipData) {
+        syncMembershipToLocalCache(loggedUser.id, membershipData);
+        const status = membershipData.status;
+        if (status === 'miembro' || status === 'admin') {
+          navigate('/searching');
+          return;
         }
-      } catch (err) {
-        console.log('⚠️ Error verificando membresía:', err);
+        if (status === 'trial') {
+          navigate('/searching');
+          return;
+        }
       }
-      
-      // Usuario nuevo sin membresía → pantalla de pago
-      navigate('/membership');
-      return;
+    } catch (error) {
+      console.log('⚠️ Error obteniendo membresía al iniciar sesión:', error);
     }
-    
-    // Si ya es miembro → continuar
-    if (membershipStatus === 'miembro' || membershipStatus === 'admin') {
-      navigate('/searching');
-    } else {
-      // Es invitado → pantalla de pago
-      navigate('/membership');
-    }
+
+    navigate('/membership');
   };
 
   return (
@@ -886,99 +1086,149 @@ const LoginScreen = () => {
 
       {/* Logo grande */}
       <div className="mb-4 flex justify-center">
-        <img 
-          src="/NuevoLogo.jpeg" 
-          alt="Tribu Impulsa" 
+        <img
+          src="/NuevoLogo.png"
+          alt="Tribu Impulsa"
           className="w-[90%] max-w-[380px] object-contain"
         />
       </div>
 
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
-        
-        {/* PASO 0: Landing / Bienvenida */}
+
+        {/* PASO 0: Landing / Bienvenida - RALLY 1000 MEJORADO */}
         {step === 'landing' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-[#181B34] text-center">¡Bienvenido/a a Tribu Impulsa!</h2>
-            <p className="text-[#7C8193] text-sm text-center">
-              La comunidad donde emprendedores <span className="text-[#6161FF] font-semibold">crecen juntos</span>
-            </p>
+          <div className="space-y-5">
+            {/* Badge Rally 1000 con urgencia */}
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 text-white text-xs font-bold rounded-full shadow-lg relative overflow-hidden">
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0 animate-shimmer" />
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span className="relative">🚀 RALLY 1000 - ¡Últimos cupos!</span>
+              </div>
+            </div>
+
+            {/* Headline potente */}
+            <div className="text-center">
+              <h2 className="text-2xl font-black text-[#181B34] leading-tight mb-2">
+                20 emprendedores te <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6161FF] to-[#00CA72]">impulsan cada mes</span>
+              </h2>
+              <p className="text-sm text-gray-500">El sistema de crecimiento colaborativo #1 en Chile</p>
+            </div>
             
-            {/* Explicación visual */}
-            <div className="space-y-3 my-6">
-              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#6161FF] to-[#00CA72] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Users size={20} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#181B34]">Tu Tribu Mensual</p>
-                  <p className="text-xs text-[#7C8193]">Cada mes recibes 10 emprendedores para impulsar y 10 que te impulsan a ti</p>
-                </div>
-              </div>
+            {/* Contador de progreso MEJORADO */}
+            <div className="relative bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-4 border border-indigo-100 overflow-hidden">
+              {/* Efecto brillo */}
+              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-pulse" style={{ animationDuration: '3s' }} />
               
-              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#00CA72] to-[#4AE698] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Share2 size={20} className="text-white" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Rally Activo</span>
+                  </div>
+                  <span className="text-xs text-red-500 font-semibold animate-pulse">⏰ Cierra pronto</span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#181B34]">Impulso Mutuo</p>
-                  <p className="text-xs text-[#7C8193]">Compartes en tus redes y ellos comparten las tuyas. Todos ganan exposición</p>
+                
+                {/* Barra de progreso animada */}
+                <div className="h-4 bg-white/80 rounded-full overflow-hidden shadow-inner mb-2">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-1000 relative"
+                    style={{ width: `${Math.max((profilesCount / 1000) * 100, 0.5)}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 animate-shimmer" />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Sparkles size={20} className="text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-[#181B34]">Matching Inteligente</p>
-                  <p className="text-xs text-[#7C8193]">El algoritmo te conecta con emprendedores complementarios, nunca competencia</p>
+                
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-gray-700">
+                    <span className="font-black text-xl text-indigo-600">{profilesCount}</span>
+                    <span className="text-gray-400 mx-1">/</span>
+                    <span className="font-bold">1000</span>
+                    <span className="text-gray-500 ml-1">inscritos</span>
+                  </p>
+                  <div className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">
+                    {1000 - profilesCount} cupos 🔥
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <button 
-              onClick={() => setStep('email')}
-              className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
-            >
-              Comenzar
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
-            </button>
-            
-            <p className="text-[0.625rem] text-[#B3B8C6] text-center mt-2">
-              ¿Ya tienes cuenta? Ingresa tu email para continuar
-            </p>
+
+            {/* Beneficios compactos MEJORADOS */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-3 border border-indigo-100">
+                <div className="text-2xl mb-1">🎯</div>
+                <p className="text-[10px] font-bold text-indigo-700">10+10</p>
+                <p className="text-[9px] text-gray-500">Matching IA</p>
+              </div>
+              <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-3 border border-violet-100">
+                <div className="text-2xl mb-1">📈</div>
+                <p className="text-[10px] font-bold text-violet-700">2x</p>
+                <p className="text-[9px] text-gray-500">Más alcance</p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-100">
+                <div className="text-2xl mb-1">🤝</div>
+                <p className="text-[10px] font-bold text-emerald-700">100%</p>
+                <p className="text-[9px] text-gray-500">Garantizado</p>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="space-y-3">
+              {/* CTA Principal - Nuevo usuario */}
+              <button
+                onClick={() => setStep('email')}
+                className="w-full bg-gradient-to-r from-[#6161FF] via-[#7B5EFF] to-[#8B5CF6] text-white py-4 rounded-xl font-bold text-lg hover:shadow-[0_8px_25px_rgba(97,97,255,0.45)] transition-all shadow-xl flex items-center justify-center gap-3 group relative overflow-hidden transform hover:scale-[1.02]"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 animate-shimmer" />
+                <Gift size={22} className="relative animate-bounce" style={{ animationDuration: '2s' }} />
+                <span className="relative">¡Crear mi cuenta GRATIS!</span>
+                <ArrowRight size={20} className="relative group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              {/* Botón secundario - Ya tengo cuenta */}
+              <button
+                onClick={() => setStep('email')}
+                className="w-full bg-white border-2 border-[#6161FF] text-[#6161FF] py-3 rounded-xl font-semibold hover:bg-[#6161FF]/5 transition-all flex items-center justify-center gap-2"
+              >
+                <UserIcon size={18} />
+                Ya tengo cuenta - Ingresar
+              </button>
+            </div>
           </div>
         )}
-        
+
         {/* PASO 1: Email */}
         {step === 'email' && (
           <>
             <p className="text-[#7C8193] mb-6 text-sm text-center -mt-2">
               Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
             </p>
-          <form onSubmit={handleEmailCheck} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                placeholder="tu@email.com"
-                autoFocus
-              />
-            </div>
-            
-            {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
-            
-            <button 
-              type="submit"
-              className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
-            >
-              Continuar
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
-            </button>
-          </form>
+            <form onSubmit={handleEmailCheck} className="space-y-4 text-left">
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  placeholder="tu@email.com"
+                  autoFocus
+                />
+              </div>
+
+              {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
+              >
+                Continuar
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </form>
           </>
         )}
 
@@ -989,11 +1239,11 @@ const LoginScreen = () => {
               <p className="text-[#008A4E] text-sm font-medium">✅ ¡Te encontramos!</p>
               <p className="text-[#008A4E]/80 text-xs">{email}</p>
             </div>
-            
+
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Contraseña</label>
               <div className="relative">
-                <input 
+                <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -1009,29 +1259,28 @@ const LoginScreen = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="text-[0.625rem] text-[#7C8193] mt-1">Si es tu primera vez, usa: TRIBU2026</p>
             </div>
-            
+
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
-            
-            <button 
+
+            <button
               type="submit"
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50"
             >
               {isLoading ? 'Ingresando...' : 'Ingresar'}
-              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
+              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
             </button>
-            
+
             <div className="flex justify-between items-center">
-              <button 
+              <button
                 type="button"
                 onClick={() => { setStep('email'); setError(''); setPassword(''); }}
                 className="text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
               >
                 ← Cambiar email
               </button>
-              <button 
+              <button
                 type="button"
                 onClick={() => { setStep('forgot'); setError(''); setResetSent(false); }}
                 className="text-[#6161FF] hover:text-[#5050DD] text-sm font-medium transition-colors"
@@ -1052,16 +1301,16 @@ const LoginScreen = () => {
               <h3 className="text-lg font-bold text-[#181B34]">Recuperar contraseña</h3>
               <p className="text-[#7C8193] text-sm mt-1">Te enviaremos un email para restablecer tu contraseña</p>
             </div>
-            
+
             {!resetSent ? (
               <>
                 <div className="bg-[#F5F7FB] rounded-xl p-3 text-sm text-[#434343]">
                   📧 {email}
                 </div>
-                
+
                 {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
-                
-                <button 
+
+                <button
                   onClick={async () => {
                     setIsLoading(true);
                     setError('');
@@ -1098,7 +1347,7 @@ const LoginScreen = () => {
                 <p className="text-[#7C8193] text-xs">
                   ¿No llegó? Revisa tu carpeta de spam o solicita otro email
                 </p>
-                <button 
+                <button
                   onClick={() => setResetSent(false)}
                   className="text-[#6161FF] hover:text-[#5050DD] text-sm font-medium transition-colors"
                 >
@@ -1106,8 +1355,8 @@ const LoginScreen = () => {
                 </button>
               </div>
             )}
-            
-            <button 
+
+            <button
               type="button"
               onClick={() => { setStep('password'); setError(''); }}
               className="w-full text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
@@ -1120,96 +1369,79 @@ const LoginScreen = () => {
         {/* PASO 2b: Registro (usuario nuevo) - FORMULARIO COMPLETO */}
         {step === 'register' && (
           <form onSubmit={handleRegister} className="space-y-3 text-left">
-            <div className="bg-[#6161FF]/10 border border-[#6161FF]/30 rounded-xl p-3 mb-2">
+            <div className="bg-gradient-to-r from-[#6161FF]/10 to-[#00CA72]/10 border border-[#6161FF]/30 rounded-xl p-3 mb-2">
               <p className="text-[#6161FF] text-sm font-medium">🎉 ¡Bienvenido/a a la Tribu!</p>
               <p className="text-[#6161FF]/80 text-xs">Completa tus datos para que podamos asignarte tu grupo 10+10</p>
+              <div className="mt-2 flex items-center gap-2 bg-[#00CA72]/20 rounded-lg px-2 py-1.5">
+                <span className="text-[#00CA72] text-lg">🆓</span>
+                <div>
+                  <p className="text-[#00873C] text-[0.65rem] font-bold">PRIMER MES 100% GRATIS</p>
+                  <p className="text-[#00873C]/70 text-[0.55rem]">Sin tarjeta • Sin compromiso • Cancela cuando quieras</p>
+                </div>
+              </div>
             </div>
-            
+
             <div className="bg-[#F5F7FB] rounded-xl p-2.5 text-sm text-[#434343]">
               📧 {email}
             </div>
-            
+
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Tu nombre completo *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={registerData.name}
-                onChange={(e) => setRegisterData({...registerData, name: e.target.value})}
+                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                 placeholder="María González"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Nombre de tu emprendimiento *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={registerData.companyName}
-                onChange={(e) => setRegisterData({...registerData, companyName: e.target.value})}
+                onChange={(e) => setRegisterData({ ...registerData, companyName: e.target.value })}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                 placeholder="Mi Empresa"
                 required
               />
             </div>
-            
-            {/* Categoría madre */}
+
+            {/* Rubro principal - SearchableSelect */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Rubro principal *</label>
-              <select 
+              <SearchableSelect
                 value={registerData.category}
-                onChange={(e) => setRegisterData({...registerData, category: e.target.value, subcategory: ''})}
-                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                required
-              >
-                <option value="">Selecciona tu rubro...</option>
-                {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
-                  <option key={idx} value={cat}>{cat}</option>
-                ))}
-              </select>
+                onChange={(val) => setRegisterData({ ...registerData, category: val, subcategory: '' })}
+                options={CATEGORY_SELECT_OPTIONS}
+                placeholder="🔍 Escribe para buscar tu rubro..."
+                helperText="Escribe para filtrar o navega por categorías"
+                emptyStateText="No encontramos ese rubro. Prueba con otra palabra."
+              />
             </div>
-            
-            {/* Subcategoría - aparece solo si hay categoría */}
-            {registerData.category && CATEGORY_TREE[registerData.category] && (
-              <div>
-                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Específico *</label>
-                <select 
-                  value={registerData.subcategory}
-                  onChange={(e) => setRegisterData({...registerData, subcategory: e.target.value})}
-                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                  required
-                >
-                  <option value="">¿Qué ofreces específicamente?</option>
-                  {CATEGORY_TREE[registerData.category].map(sub => (
-                    <option key={sub} value={sub}>{sub}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            {/* Afinidad / Estilo de vida */}
+
+            {/* Afinidad / Estilo de vida - SearchableSelect */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Afinidad / Estilo de vida</label>
-              <select 
+              <SearchableSelect
                 value={registerData.affinity}
-                onChange={(e) => setRegisterData({...registerData, affinity: e.target.value})}
-                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-              >
-                <option value="">¿Con qué te identificas? (opcional)</option>
-                {AFFINITY_OPTIONS_REG.map(aff => (
-                  <option key={aff} value={aff}>{aff}</option>
-                ))}
-              </select>
-              <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">Ayuda al algoritmo a conectarte mejor</p>
+                onChange={(val) => setRegisterData({ ...registerData, affinity: val })}
+                options={AFFINITY_SELECT_OPTIONS_WITH_GROUP}
+                placeholder="🔍 ¿Con qué te identificas? (opcional)"
+                helperText="Ayuda al algoritmo a conectarte mejor"
+                emptyStateText="No encontramos esa afinidad."
+              />
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Instagram *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={registerData.instagram}
-                  onChange={(e) => setRegisterData({...registerData, instagram: e.target.value})}
+                  onChange={(e) => setRegisterData({ ...registerData, instagram: e.target.value })}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                   placeholder="@usuario"
                   required
@@ -1218,89 +1450,331 @@ const LoginScreen = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono *</label>
-                <input 
-                  type="tel" 
+                <input
+                  type="tel"
                   value={registerData.phone}
-                  onChange={(e) => setRegisterData({...registerData, phone: e.target.value})}
+                  onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                   placeholder="+56912345678"
                   required
                 />
               </div>
             </div>
-            
+
+            {/* RRSS Opcionales */}
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">Web (opcional)</label>
+                <input
+                  type="url"
+                  value={registerData.website}
+                  onChange={(e) => setRegisterData({ ...registerData, website: e.target.value })}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-xs text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-1 focus:ring-[#6161FF]/30"
+                  placeholder="miweb.cl"
+                />
+              </div>
+              <div>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">LinkedIn (opcional)</label>
+                <input
+                  type="text"
+                  value={registerData.linkedin}
+                  onChange={(e) => setRegisterData({ ...registerData, linkedin: e.target.value })}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-xs text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-1 focus:ring-[#6161FF]/30"
+                  placeholder="/in/usuario"
+                />
+              </div>
+              <div>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">TikTok (opcional)</label>
+                <input
+                  type="text"
+                  value={registerData.tiktok}
+                  onChange={(e) => setRegisterData({ ...registerData, tiktok: e.target.value })}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-xs text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-1 focus:ring-[#6161FF]/30"
+                  placeholder="@usuario"
+                />
+              </div>
+            </div>
+
+            {/* Alcance geográfico */}
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">¿Dónde ofreces tus servicios? *</label>
+              <div className="grid grid-cols-3 gap-2">
+                {(['NACIONAL', 'REGIONAL', 'LOCAL'] as const).map(scope => (
+                  <button
+                    key={scope}
+                    type="button"
+                    onClick={() => setRegisterData({ ...registerData, scope, selectedRegions: [], comuna: '' })}
+                    className={`p-2.5 rounded-xl border-2 text-xs font-medium transition-all ${
+                      registerData.scope === scope
+                        ? 'border-[#6161FF] bg-[#6161FF]/10 text-[#6161FF]'
+                        : 'border-[#E4E7EF] bg-[#F5F7FB] text-[#7C8193] hover:border-[#6161FF]/50'
+                    }`}
+                  >
+                    {scope === 'NACIONAL' && '🌎 Nacional'}
+                    {scope === 'REGIONAL' && '📍 Regional'}
+                    {scope === 'LOCAL' && '🏠 Local'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Ciudad */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Ciudad *</label>
+                <input
+                  type="text"
+                  value={registerData.city}
+                  onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
+                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                  placeholder="Santiago"
+                  required
+                />
+              </div>
+              {registerData.scope === 'LOCAL' && (
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Comuna *</label>
+                  <input
+                    type="text"
+                    value={registerData.comuna}
+                    onChange={(e) => setRegisterData({ ...registerData, comuna: e.target.value })}
+                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                    placeholder="Providencia"
+                    required
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Regiones (si es REGIONAL) */}
+            {registerData.scope === 'REGIONAL' && (
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Regiones donde operas *</label>
+                <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto bg-[#F5F7FB] rounded-xl p-2">
+                  {['Metropolitana', 'Valparaíso', 'Biobío', 'La Araucanía', 'O\'Higgins', 'Maule', 'Los Lagos', 'Coquimbo', 'Antofagasta', 'Los Ríos', 'Atacama', 'Tarapacá', 'Ñuble', 'Arica y Parinacota', 'Magallanes', 'Aysén'].map(region => (
+                    <label key={region} className="flex items-center gap-1.5 text-xs text-[#434343] cursor-pointer hover:text-[#6161FF]">
+                      <input
+                        type="checkbox"
+                        checked={registerData.selectedRegions.includes(region)}
+                        onChange={(e) => {
+                          const newRegions = e.target.checked
+                            ? [...registerData.selectedRegions, region]
+                            : registerData.selectedRegions.filter(r => r !== region);
+                          setRegisterData({ ...registerData, selectedRegions: newRegions });
+                        }}
+                        className="w-3.5 h-3.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
+                      />
+                      {region}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Facturación mensual */}
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Rango de ingresos mensual *</label>
+              <select
+                value={registerData.revenue}
+                onChange={(e) => setRegisterData({ ...registerData, revenue: e.target.value })}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                required
+              >
+                <option value="">Selecciona un rango</option>
+                <option value="0-500k">$0 - $500.000</option>
+                <option value="500k-1M">$500.000 - $1.000.000</option>
+                <option value="1M-3M">$1.000.000 - $3.000.000</option>
+                <option value="3M-5M">$3.000.000 - $5.000.000</option>
+                <option value="5M-10M">$5.000.000 - $10.000.000</option>
+                <option value="10M+">Más de $10.000.000</option>
+              </select>
+              <p className="text-[0.5rem] text-[#9CA3B3] mt-0.5">🔒 Esta información es privada y ayuda al matching</p>
+            </div>
+
+            {/* Biografía */}
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
+                Tu biografía corta * <span className="text-[#9CA3B3] font-normal">({registerData.bio.length}/140 mín.)</span>
+              </label>
+              <textarea
+                value={registerData.bio}
+                onChange={(e) => setRegisterData({ ...registerData, bio: e.target.value })}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all resize-none"
+                placeholder="Cuéntanos brevemente quién eres y qué te apasiona..."
+                rows={2}
+                required
+                minLength={140}
+              />
+            </div>
+
+            {/* Descripción del negocio */}
+            <div>
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
+                Descripción de tu negocio * <span className="text-[#9CA3B3] font-normal">({registerData.businessDescription.length}/200 mín.)</span>
+              </label>
+              <textarea
+                value={registerData.businessDescription}
+                onChange={(e) => setRegisterData({ ...registerData, businessDescription: e.target.value })}
+                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all resize-none"
+                placeholder="Describe qué hace tu negocio, qué productos/servicios ofreces y qué te diferencia..."
+                rows={3}
+                required
+                minLength={200}
+              />
+            </div>
+
+            {/* Términos y condiciones */}
+            <label className="flex items-start gap-2 cursor-pointer bg-[#F5F7FB] rounded-xl p-3">
+              <input
+                type="checkbox"
+                checked={registerData.termsAccepted}
+                onChange={(e) => setRegisterData({ ...registerData, termsAccepted: e.target.checked })}
+                className="w-4 h-4 mt-0.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
+                required
+              />
+              <span className="text-xs text-[#434343]">
+                Acepto los <a href="#" className="text-[#6161FF] underline">términos y condiciones</a> y la <a href="#" className="text-[#6161FF] underline">política de privacidad</a> de Tribu Impulsa
+              </span>
+            </label>
+
+            {/* Crear contraseña */}
+            <div className="pt-2 border-t border-[#E4E7EF]">
+              <p className="text-xs text-[#6161FF] font-semibold mb-3 flex items-center gap-2">
+                🔐 Crea tu contraseña
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Contraseña *</label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={registerData.password}
+                      onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 pr-10 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                      placeholder="••••••"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7C8193] hover:text-[#6161FF] transition-colors"
+                    >
+                      {showRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Confirmar *</label>
+                  <div className="relative">
+                    <input
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={registerData.confirmPassword}
+                      onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
+                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 pr-10 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                      placeholder="••••••"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7C8193] hover:text-[#6161FF] transition-colors"
+                    >
+                      {showRegisterPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-[0.5625rem] text-[#7C8193] mt-1">Mínimo 6 caracteres</p>
+            </div>
+
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
-            
-            <button 
+
+            <button
               type="submit"
-              disabled={isLoading || !registerData.name || !registerData.companyName || !registerData.category || !registerData.instagram || !registerData.phone || (registerData.category !== 'Otro' && CATEGORY_TREE[registerData.category] && !registerData.subcategory)}
+              disabled={
+                isLoading || 
+                !registerData.name || 
+                !registerData.companyName || 
+                !registerData.category || 
+                !registerData.instagram || 
+                !registerData.phone || 
+                !registerData.scope ||
+                !registerData.city ||
+                (registerData.scope === 'LOCAL' && !registerData.comuna) ||
+                (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) ||
+                !registerData.revenue ||
+                registerData.bio.length < 140 ||
+                registerData.businessDescription.length < 200 ||
+                !registerData.termsAccepted ||
+                !registerData.password || 
+                registerData.password !== registerData.confirmPassword ||
+                registerData.password.length < 6
+              }
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
             >
-              {isLoading ? 'Registrando...' : '¡Unirme a la Tribu!'}
-              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>}
+              {isLoading ? 'Registrando...' : '¡Unirme a la Tribu GRATIS!'}
+              {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
             </button>
-            
-            <button 
+
+            <button
               type="button"
               onClick={() => { setStep('email'); setError(''); }}
               className="w-full text-[#7C8193] hover:text-[#6161FF] text-sm transition-colors"
             >
               ← Cambiar email
             </button>
-            
-            <p className="text-[0.625rem] text-[#7C8193] text-center">
-              Tu contraseña inicial será: <strong>TRIBU2026</strong><br/>
-              Podrás cambiarla después en tu perfil
-            </p>
           </form>
         )}
-        
-        {/* Menú protegido para uso interno */}
-        {!devMode ? (
-          <div className="mt-4 flex items-center gap-2">
-            <input
-              type="password"
-              value={devPassword}
-              onChange={(e) => setDevPassword(e.target.value)}
-              placeholder="PIN"
-              className="w-16 text-center text-xs bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg px-2 py-1.5"
-            />
-            <button
-              onClick={() => devPassword === '1234' && setDevMode(true)}
-              className="text-[0.625rem] text-[#B3B8C6] hover:text-[#7C8193] transition"
-            >
-              ⚙️
-            </button>
-          </div>
-        ) : (
-          <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-[0.625rem] text-[#6161FF] uppercase tracking-wide font-bold">🔐 Modo Desarrollo</p>
-              <button onClick={() => setDevMode(false)} className="text-[0.625rem] text-[#7C8193] hover:text-[#FB275D]">✕</button>
-            </div>
-            <p className="text-[0.625rem] text-[#7C8193] mb-2">Contraseña universal: TRIBU2026</p>
-            <div className="space-y-1 text-xs text-left">
-              <button 
-                onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setPassword('TRIBU2026'); }}
-                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+
+        {/* Menú protegido para uso interno - Solo visible en desarrollo */}
+        {import.meta.env.DEV && (
+          !devMode ? (
+            <div className="mt-4 flex items-center gap-2">
+              <input
+                type="password"
+                value={devPassword}
+                onChange={(e) => setDevPassword(e.target.value)}
+                placeholder="PIN"
+                className="w-16 text-center text-xs bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg px-2 py-1.5"
+              />
+              <button
+                onClick={() => devPassword === '1234' && setDevMode(true)}
+                className="text-[0.625rem] text-[#B3B8C6] hover:text-[#7C8193] transition"
               >
-                👉 Dafna - By Turquía
-              </button>
-              <button 
-                onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setPassword('TRIBU2026'); }}
-                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
-              >
-                👉 Doraluz - Terraflor
-              </button>
-              <button 
-                onClick={() => { setEmail('guille@elevatecreativo.com'); setPassword('TRIBU2026'); }}
-                className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
-              >
-                👉 Guillermo - Elevate
+                ⚙️
               </button>
             </div>
-            <p className="mt-2 text-[0.625rem] text-[#00CA72] uppercase tracking-widest font-semibold">✓ 107+ Usuarios</p>
-          </div>
+          ) : (
+            <div className="mt-4 p-3 bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#E4E7EF]">
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-[0.625rem] text-[#6161FF] uppercase tracking-wide font-bold">🔐 Modo Desarrollo</p>
+                <button onClick={() => setDevMode(false)} className="text-[0.625rem] text-[#7C8193] hover:text-[#FB275D]">✕</button>
+              </div>
+              <p className="text-[0.625rem] text-[#7C8193] mb-2">Usuarios de prueba (acceso directo)</p>
+              <div className="space-y-1 text-xs text-left">
+                <button
+                  onClick={() => { setEmail('dafnafinkelstein@gmail.com'); setStep('password'); }}
+                  className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+                >
+                  👉 Dafna - By Turquía
+                </button>
+                <button
+                  onClick={() => { setEmail('doraluz@terraflorpaisajismo.cl'); setStep('password'); }}
+                  className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+                >
+                  👉 Doraluz - Terraflor
+                </button>
+                <button
+                  onClick={() => { setEmail('guille@elevatecreativo.com'); setStep('password'); }}
+                  className="block w-full text-left px-2 py-1.5 hover:bg-white rounded text-[#181B34] hover:text-[#6161FF] transition"
+                >
+                  👉 Guillermo - Elevate
+                </button>
+              </div>
+            </div>
+          )
         )}
       </div>
     </div>
@@ -1339,9 +1813,17 @@ const RegisterScreen = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
+  const completeProfileCategoryOptions = useMemo(
+    () => [...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')),
+    []
+  );
+  const completeProfileAffinityOptions = useMemo(
+    () => [...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')),
+    []
+  );
 
   const totalSteps = 5;
-  
+
   // Comunas filtradas por región seleccionada
   const comunasDeRegion = selectedRegionForComuna
     ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
@@ -1349,7 +1831,7 @@ const RegisterScreen = () => {
 
   const validateStep = (): boolean => {
     const newErrors: Record<string, string> = {};
-    
+
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = 'Requerido';
       if (!formData.email.trim()) newErrors.email = 'Requerido';
@@ -1375,14 +1857,14 @@ const RegisterScreen = () => {
     } else if (step === 5) {
       if (!formData.instagram.trim()) newErrors.instagram = 'Instagram es requerido';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
     if (!validateStep()) return;
-    
+
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
@@ -1404,13 +1886,13 @@ const RegisterScreen = () => {
         scope: formData.scope,
         whatsapp: formData.phone // WhatsApp = teléfono por defecto
       });
-      
+
       // Establecer usuario actual con el ID (NO email)
       localStorage.setItem('tribu_current_user', newUser.id);
-      
+
       // ☁️ SINCRONIZAR A FIRESTORE (nube)
       syncUserToCloud(newUser);
-      
+
       // También guardar en formato antiguo para compatibilidad
       const surveyData: SurveyFormState = {
         email: formData.email,
@@ -1432,7 +1914,7 @@ const RegisterScreen = () => {
         copyResponse: false
       };
       persistSurveyResponse(surveyData);
-      
+
       console.log('✅ Usuario registrado en DB:', newUser.id);
       navigate('/searching');
     }
@@ -1466,52 +1948,52 @@ const RegisterScreen = () => {
         {step === 1 && (
           <div className="space-y-5 animate-fadeIn">
             <div className="text-center mb-6">
-              <img src="/NuevoLogo.jpeg" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
+              <img src="/NuevoLogo.png" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl font-bold text-[#181B34]">¡Bienvenido/a!</h2>
               <p className="text-[#7C8193] text-sm mt-1">Cuéntanos sobre ti</p>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Nombre y Apellido *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={`w-full bg-[#F5F7FB] border ${errors.name ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="Ej. María Pérez"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
               {errors.name && <p className="text-xs text-[#FB275D] mt-1">{errors.name}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Email *</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 className={`w-full bg-[#F5F7FB] border ${errors.email ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="tu@email.com"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
               {errors.email && <p className="text-xs text-[#FB275D] mt-1">{errors.email}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Teléfono *</label>
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 className={`w-full bg-[#F5F7FB] border ${errors.phone ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="+56 9 1234 5678"
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
               {errors.phone && <p className="text-xs text-[#FB275D] mt-1">{errors.phone}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Crea tu Contraseña *</label>
               <div className="relative">
-                <input 
+                <input
                   type={showPassword ? "text" : "password"}
                   className={`w-full bg-[#F5F7FB] border ${errors.password ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 pr-12 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                   placeholder="Mínimo 4 caracteres"
                   value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 />
                 <button
                   type="button"
@@ -1524,11 +2006,11 @@ const RegisterScreen = () => {
               {errors.password && <p className="text-xs text-[#FB275D] mt-1">{errors.password}</p>}
               <p className="text-[0.625rem] text-[#7C8193] mt-1">Elige una contraseña segura para tu cuenta</p>
             </div>
-            
+
             {/* Checkbox de Términos y Condiciones */}
-            <TermsCheckbox 
+            <TermsCheckbox
               checked={formData.termsAccepted}
-              onChange={(checked) => setFormData({...formData, termsAccepted: checked})}
+              onChange={(checked) => setFormData({ ...formData, termsAccepted: checked })}
               error={!!errors.termsAccepted}
             />
           </div>
@@ -1543,23 +2025,23 @@ const RegisterScreen = () => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Nombre del Emprendimiento *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={`w-full bg-[#F5F7FB] border ${errors.companyName ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="Ej. Cosmética Natural"
                 value={formData.companyName}
-                onChange={(e) => setFormData({...formData, companyName: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
               />
               {errors.companyName && <p className="text-xs text-[#FB275D] mt-1">{errors.companyName}</p>}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Ciudad *</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={`w-full bg-[#F5F7FB] border ${errors.city ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="Ej. Santiago"
                 value={formData.city}
-                onChange={(e) => setFormData({...formData, city: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
               />
               {errors.city && <p className="text-xs text-[#FB275D] mt-1">{errors.city}</p>}
             </div>
@@ -1570,7 +2052,7 @@ const RegisterScreen = () => {
                   <button
                     key={scope}
                     type="button"
-                    onClick={() => setFormData({...formData, scope: scope as typeof formData.scope})}
+                    onClick={() => setFormData({ ...formData, scope: scope as typeof formData.scope })}
                     className={`py-3 rounded-xl text-sm font-medium transition-all ${formData.scope === scope ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'}`}
                   >
                     {scope}
@@ -1588,7 +2070,7 @@ const RegisterScreen = () => {
                       value={selectedRegionForComuna}
                       onChange={(e) => {
                         setSelectedRegionForComuna(e.target.value);
-                        setFormData({...formData, comuna: ''});
+                        setFormData({ ...formData, comuna: '' });
                       }}
                     >
                       <option value="">Selecciona tu región</option>
@@ -1606,7 +2088,7 @@ const RegisterScreen = () => {
                       <select
                         className={`w-full bg-[#F5F7FB] border ${errors.comuna ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 appearance-none`}
                         value={formData.comuna}
-                        onChange={(e) => setFormData({...formData, comuna: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, comuna: e.target.value })}
                       >
                         <option value="">Selecciona tu comuna</option>
                         {comunasDeRegion.map(comuna => (
@@ -1634,7 +2116,7 @@ const RegisterScreen = () => {
                           const newRegions = e.target.checked
                             ? [...formData.selectedRegions, region.id]
                             : formData.selectedRegions.filter(r => r !== region.id);
-                          setFormData({...formData, selectedRegions: newRegions});
+                          setFormData({ ...formData, selectedRegions: newRegions });
                         }}
                         className="rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
                       />
@@ -1659,10 +2141,10 @@ const RegisterScreen = () => {
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Categoría Principal *</label>
               <div className="relative">
-                <select 
+                <select
                   className={`w-full bg-[#F5F7FB] border ${errors.category ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 appearance-none cursor-pointer`}
                   value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 >
                   <option value="">Selecciona tu giro</option>
                   {[...SURVEY_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1687,10 +2169,10 @@ const RegisterScreen = () => {
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Área de Interés *</label>
               <div className="relative">
-                <select 
+                <select
                   className={`w-full bg-[#F5F7FB] border ${errors.affinity ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 appearance-none cursor-pointer`}
                   value={formData.affinity}
-                  onChange={(e) => setFormData({...formData, affinity: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, affinity: e.target.value })}
                 >
                   <option value="">Selecciona una afinidad</option>
                   {[...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -1714,45 +2196,45 @@ const RegisterScreen = () => {
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Instagram * (Principal)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={`w-full bg-[#F5F7FB] border ${errors.instagram ? 'border-[#FB275D]' : 'border-[#E4E7EF]'} rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30`}
                 placeholder="@tuinstagram"
                 value={formData.instagram}
-                onChange={(e) => setFormData({...formData, instagram: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
               />
               {errors.instagram && <p className="text-xs text-[#FB275D] mt-1">{errors.instagram}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Facebook</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
                   placeholder="@facebook"
                   value={formData.facebook}
-                  onChange={(e) => setFormData({...formData, facebook: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">TikTok</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
                   placeholder="@tiktok"
                   value={formData.tiktok}
-                  onChange={(e) => setFormData({...formData, tiktok: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
                 />
               </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Sitio Web</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
                 placeholder="www.tusitio.cl"
                 value={formData.website}
-                onChange={(e) => setFormData({...formData, website: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
               />
             </div>
           </div>
@@ -1760,11 +2242,11 @@ const RegisterScreen = () => {
 
         {/* Botón Continuar */}
         <div className="mt-8">
-          <button 
+          <button
             onClick={handleNext}
             className="w-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white py-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2"
           >
-            {step === totalSteps ? '🚀 Buscar Mi Tribu' : 'Continuar'} 
+            {step === totalSteps ? '🚀 Buscar Mi Tribu' : 'Continuar'}
             <ArrowRight size={18} />
           </button>
         </div>
@@ -1780,7 +2262,7 @@ const MembershipScreen = () => {
   const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const currentUser = getCurrentUser();
   const session = getStoredSession();
-  
+
   // Fecha límite para promoción $1: 31 de diciembre 2025 a las 23:59:59
   const BETA_END_DATE = new Date('2025-12-31T23:59:59');
   const isBetaActive = new Date() <= BETA_END_DATE;
@@ -1792,43 +2274,45 @@ const MembershipScreen = () => {
     anual: { name: 'Anual', price: 179990, period: '12 meses', desc: '¡Ahorra 3 meses!', badge: '💎 Mejor valor' }
   };
 
-  // Verificar si ya es miembro (desde localStorage)
+  // Verificar si ya es miembro (consultar siempre a Firebase)
+  // Si ya es miembro, ir directamente al dashboard SIN video de loading
   useEffect(() => {
-    const membershipStatus = localStorage.getItem(`membership_status_${currentUser?.id}`);
-    if (membershipStatus === 'miembro' || membershipStatus === 'admin') {
-      navigate('/searching');
-    }
+    const checkMembership = async () => {
+      if (!currentUser?.id) return;
+      const membershipData = await fetchMembershipFromCloud(currentUser.id);
+      if (membershipData) {
+        syncMembershipToLocalCache(currentUser.id, membershipData);
+        const isActive = membershipData.status === 'miembro' || membershipData.status === 'admin' || (
+          membershipData.status === 'trial' &&
+          membershipData.expiresAt &&
+          new Date(membershipData.expiresAt) > new Date()
+        );
+
+        if (isActive) {
+          // Si ya está dentro de la app, ir directo al dashboard sin video
+          navigate('/dashboard');
+        }
+      }
+    };
+    checkMembership();
   }, [currentUser, navigate]);
-  
-  // Procesar suscripción con $1
-  const handleSubscribe = async () => {
+
+  const activateFreeTrial = async () => {
     if (!currentUser) return;
-    
     setIsProcessing(true);
-    
     try {
-      const response = await fetch('/api/create-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          userEmail: currentUser.email,
-          userName: currentUser.name,
-          planId: selectedPlan
-        })
-      });
-
-      const data = await response.json();
-
-      if (data.initPoint) {
-        window.location.href = data.initPoint;
-      } else if (data.error) {
-        console.error('Error:', data);
-        alert(`Error: ${data.error}`);
-        setIsProcessing(false);
+      const membership = await activateTrialMembership(currentUser.id, currentUser.email, selectedPlan);
+      setIsProcessing(false);
+      if (membership) {
+        syncMembershipToLocalCache(currentUser.id, membership);
+        localStorage.setItem(`trial_used_${currentUser.id}`, 'true');
+        // Ir directo al dashboard sin video de loading
+        navigate('/dashboard');
+      } else {
+        alert('No se pudo activar el trial. Intenta de nuevo.');
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error activando trial gratis:', error);
       alert('Error de conexión. Intenta de nuevo.');
       setIsProcessing(false);
     }
@@ -1836,7 +2320,9 @@ const MembershipScreen = () => {
 
   return isBetaActive ? (
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
+      <div className="w-full max-w-md space-y-4">
+        <ProgressBanner tone="dark" />
+        <div className="bg-white rounded-3xl p-6 w-full shadow-2xl">
         {/* Header */}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-[#FFCC00] to-[#FF9500] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
@@ -1849,23 +2335,15 @@ const MembershipScreen = () => {
             Hola <span className="font-semibold text-[#6161FF]">{session?.name?.split(' ')[0] || 'Emprendedor/a'}</span>
           </p>
         </div>
-        
-        {/* Promoción $1 */}
+
+        {/* Promoción Trial Gratis */}
         <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-2xl p-4 mb-4 border border-[#00CA72]/30 text-center">
-          <p className="text-3xl font-black text-[#00CA72] mb-1">$1</p>
+          <p className="text-3xl font-black text-[#00CA72] mb-1">Gratis</p>
           <p className="text-sm text-[#434343]">
-            <strong>1 mes completo</strong> de Tribu Impulsa
+            <strong>30 días de acceso completo</strong>
           </p>
           <p className="text-xs text-[#7C8193] mt-1">
-            Después continúa con el plan que elijas
-          </p>
-        </div>
-        
-        {/* Aviso OBLIGATORIO tarjeta de crédito */}
-        <div className="bg-[#FFF3CD] border border-[#FFD93D] rounded-xl p-3 mb-5 flex items-center gap-2">
-          <CreditCard size={18} className="text-[#B8860B] flex-shrink-0" />
-          <p className="text-xs text-[#856404]">
-            <strong>Requiere tarjeta de crédito.</strong> Débito y prepago no soportan suscripciones.
+            No pedimos tarjeta ahora. Evalúa con calma y decide después.
           </p>
         </div>
 
@@ -1879,11 +2357,10 @@ const MembershipScreen = () => {
               <button
                 key={id}
                 onClick={() => setSelectedPlan(id)}
-                className={`w-full p-3 rounded-xl border text-left transition-all relative ${
-                  selectedPlan === id 
-                    ? 'border-[#6161FF] bg-[#6161FF]/5 ring-2 ring-[#6161FF]/20' 
-                    : 'border-[#E4E7EF] hover:border-[#6161FF]/50'
-                }`}
+                className={`w-full p-3 rounded-xl border text-left transition-all relative ${selectedPlan === id
+                  ? 'border-[#6161FF] bg-[#6161FF]/5 ring-2 ring-[#6161FF]/20'
+                  : 'border-[#E4E7EF] hover:border-[#6161FF]/50'
+                  }`}
               >
                 {plan.badge && (
                   <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
@@ -1892,9 +2369,8 @@ const MembershipScreen = () => {
                 )}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedPlan === id ? 'border-[#6161FF] bg-[#6161FF]' : 'border-[#B3B8C6]'
-                    }`}>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan === id ? 'border-[#6161FF] bg-[#6161FF]' : 'border-[#B3B8C6]'
+                      }`}>
                       {selectedPlan === id && <CheckCircle size={12} className="text-white" />}
                     </div>
                     <div>
@@ -1924,10 +2400,10 @@ const MembershipScreen = () => {
             <span>Cancela cuando quieras, <strong>sin penalización</strong></span>
           </div>
         </div>
-        
-        {/* Botón de suscribirse */}
+
+        {/* Botón de activar trial */}
         <button
-          onClick={handleSubscribe}
+          onClick={activateFreeTrial}
           disabled={isProcessing}
           className="w-full bg-gradient-to-r from-[#00CA72] to-[#00B366] hover:from-[#00B366] hover:to-[#009A56] text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-lg hover:shadow-xl"
         >
@@ -1939,35 +2415,34 @@ const MembershipScreen = () => {
           ) : (
             <>
               <CreditCard size={20} />
-              Pagar $1 y Comenzar
+              Activar mes gratis
             </>
           )}
         </button>
-        
-        {/* Nota sobre tarjeta de crédito */}
-        <p className="text-[10px] text-[#7C8193] mt-3 text-center leading-relaxed">
-          Al continuar, aceptas que después de 30 días se cobrará el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}). Cancela cuando quieras.
-        </p>
-        <p className="text-[9px] text-[#B3B8C6] mt-2 text-center leading-relaxed">
-          *Las tarjetas de débito y prepago <strong>no soportan cobros recurrentes</strong> en Chile por limitación de los bancos emisores, no de Tribu Impulsa. Si tu pago es rechazado, intenta con tarjeta de crédito.
-        </p>
+
+          <p className="text-[10px] text-[#7C8193] mt-3 text-center leading-relaxed">
+            Te avisaremos antes de que termine el periodo gratuito. Después eliges si quieres pagar el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}).
+          </p>
+        </div>
       </div>
     </div>
   ) : (
     // Vista cuando la Beta ya terminó (después del 31 dic 2025)
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">
+      <div className="w-full max-w-md space-y-4">
+        <ProgressBanner tone="dark" />
+        <div className="bg-white rounded-3xl p-8 w-full text-center shadow-2xl">
         <div className="w-20 h-20 bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
           <Crown size={40} className="text-white" />
         </div>
-        
+
         <h1 className="text-2xl font-bold text-[#181B34] mb-2">
           ¡Únete a Tribu Impulsa!
         </h1>
         <p className="text-[#7C8193] text-sm mb-6">
           Selecciona el plan que mejor se adapte a tu negocio
         </p>
-        
+
         {/* Planes de pago */}
         <div className="space-y-3 mb-6">
           {[
@@ -1975,7 +2450,7 @@ const MembershipScreen = () => {
             { id: 'semestral', name: 'Semestral', price: 99990, desc: '¡1 mes gratis!', badge: '🔥 Popular', original: 119940 },
             { id: 'anual', name: 'Anual', price: 179990, desc: '¡3 meses gratis!', badge: '💎 Mejor valor', original: 239880 }
           ].map(plan => (
-            <div 
+            <div
               key={plan.id}
               className={`relative rounded-xl border p-4 text-left ${plan.badge ? 'border-[#6161FF] bg-[#6161FF]/5' : 'border-[#E4E7EF]'}`}
             >
@@ -2000,6 +2475,12 @@ const MembershipScreen = () => {
                 onClick={async () => {
                   setIsProcessing(true);
                   try {
+                    console.log('🔍 Iniciando pago MercadoPago:', {
+                      userId: currentUser?.id,
+                      userEmail: currentUser?.email,
+                      planId: plan.id
+                    });
+
                     const response = await fetch('/api/create-preference', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -2009,14 +2490,28 @@ const MembershipScreen = () => {
                         planId: plan.id
                       })
                     });
+
+                    console.log('📥 Response status:', response.status, response.statusText);
                     const data = await response.json();
+                    console.log('📦 Response data:', data);
+
+                    if (!response.ok) {
+                      console.error('❌ Error en respuesta:', data);
+                      alert(`Error: ${data.error || 'Error desconocido'}\n${data.details ? JSON.stringify(data.details, null, 2) : ''}`);
+                      setIsProcessing(false);
+                      return;
+                    }
+
                     if (data.initPoint) {
+                      console.log('✅ Redirigiendo a MercadoPago:', data.initPoint);
                       window.location.href = data.initPoint;
                     } else {
-                      alert('Error al crear el pago. Intenta de nuevo.');
+                      console.error('❌ No se recibió initPoint:', data);
+                      alert('Error: No se pudo crear el pago. Intenta de nuevo o contacta soporte.');
                     }
                   } catch (error) {
-                    alert('Error de conexión. Intenta de nuevo.');
+                    console.error('❌ Error de conexión:', error);
+                    alert(`Error de conexión: ${error instanceof Error ? error.message : 'Desconocido'}. Verifica tu internet y vuelve a intentar.`);
                   }
                   setIsProcessing(false);
                 }}
@@ -2028,10 +2523,11 @@ const MembershipScreen = () => {
             </div>
           ))}
         </div>
-        
-        <p className="text-xs text-[#7C8193]">
-          Pagos seguros con MercadoPago • Cancela cuando quieras
-        </p>
+
+          <p className="text-xs text-[#7C8193]">
+            Pagos seguros con MercadoPago • Cancela cuando quieras
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -2041,7 +2537,7 @@ const MembershipScreen = () => {
 const SearchingScreen = () => {
   const navigate = useNavigate();
   const [useThreeJS, setUseThreeJS] = useState(true);
-  
+
   // Detectar si es primera vez o login posterior
   const isFirstTime = !localStorage.getItem('algorithm_seen');
   const totalDuration = isFirstTime ? 8000 : 4000; // 8s primera vez, 4s después
@@ -2069,12 +2565,12 @@ const SearchingScreen = () => {
       <div className="min-h-screen flex flex-col items-center justify-center px-4 bg-[#181B34] relative overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#6161FF]/20 rounded-full blur-[100px] animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#00CA72]/20 rounded-full blur-[100px] animate-pulse" style={{animationDelay: '1s'}}></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-[#00CA72]/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
         <div className="relative z-10 text-center max-w-md">
           <div className="mb-8 relative">
             <div className="w-32 h-32 mx-auto relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full animate-spin" style={{animationDuration: '3s'}}></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
               <div className="absolute inset-2 bg-[#181B34] rounded-full flex items-center justify-center">
                 <Sparkles className="text-white" size={48} />
               </div>
@@ -2095,7 +2591,7 @@ const SearchingScreen = () => {
 // Loader de fallback simple
 const FallbackLoader = ({ onComplete, duration }: { onComplete: () => void; duration: number }) => {
   const [progress, setProgress] = useState(0);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress(prev => {
@@ -2109,13 +2605,13 @@ const FallbackLoader = ({ onComplete, duration }: { onComplete: () => void; dura
     }, duration / 50);
     return () => clearInterval(interval);
   }, [duration, onComplete]);
-  
+
   return (
     <>
       <div className="w-full bg-[#2D3154] rounded-full h-3 mb-4 overflow-hidden">
-        <div 
+        <div
           className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all"
-          style={{width: `${progress}%`}}
+          style={{ width: `${progress}%` }}
         />
       </div>
       <p className="text-[#6161FF] font-mono">{progress}%</p>
@@ -2132,7 +2628,7 @@ const SurveyScreen = () => {
   const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
 
   const requiredFields: (keyof SurveyFormState)[] = ['email', 'name', 'phone', 'city', 'category', 'affinity', 'scope'];
-  
+
   // Comunas filtradas por región seleccionada
   const comunasDeRegion = selectedRegionForComuna
     ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
@@ -2156,17 +2652,17 @@ const SurveyScreen = () => {
         nextErrors[field] = 'Campo obligatorio';
       }
     });
-    
+
     // Validar comuna si alcance es LOCAL
     if (formData.scope === 'LOCAL' && !formData.comuna) {
       nextErrors.comuna = 'Debes seleccionar tu comuna';
     }
-    
+
     // Validar regiones si alcance es REGIONAL
     if (formData.scope === 'REGIONAL' && (!formData.selectedRegions || formData.selectedRegions.length === 0)) {
       nextErrors.selectedRegions = 'Debes seleccionar al menos una región';
     }
-    
+
     return nextErrors;
   };
 
@@ -2204,7 +2700,7 @@ const SurveyScreen = () => {
 
         <div className="bg-white rounded-3xl p-8 shadow-[0_8px_40px_rgba(0,0,0,0.06)] border border-[#E4E7EF]">
           <header className="mb-8 text-center">
-            <img src="/NuevoLogo.jpeg" alt="Tribu Impulsa" className="w-20 h-20 mx-auto mb-4 object-contain" />
+            <img src="/NuevoLogo.png" alt="Tribu Impulsa" className="w-20 h-20 mx-auto mb-4 object-contain" />
             <p className="text-xs uppercase tracking-[0.35em] text-[#6161FF] mb-2 font-medium">Tu producto o servicio en manos que impulsan</p>
             <h1 className="text-4xl font-bold text-[#181B34] mb-2">Inscripción</h1>
             <p className="text-[#7C8193]">Responde esta encuesta para activar tu experiencia en Tribu Impulsa.</p>
@@ -2363,7 +2859,7 @@ const SurveyScreen = () => {
                       </select>
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6161FF]">▼</span>
                     </div>
-                    
+
                     {/* Paso 2: Seleccionar Comuna (solo si hay región) */}
                     {selectedRegionForComuna && (
                       <div className="mt-3">
@@ -2385,11 +2881,11 @@ const SurveyScreen = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <p className="text-xs text-[#7C8193] mt-2">Solo harás match con emprendedores de tu comuna.</p>
                   </>
                 )}
-                
+
                 {/* Selector de Regiones (si es REGIONAL) */}
                 {formData.scope === 'REGIONAL' && (
                   <>
@@ -2419,7 +2915,7 @@ const SurveyScreen = () => {
                     <p className="text-xs text-[#7C8193] mt-1">Selecciona todas las regiones donde ofreces tu servicio.</p>
                   </>
                 )}
-                
+
                 {/* Mensaje para NACIONAL */}
                 {formData.scope === 'NACIONAL' && (
                   <div className="mt-2 p-3 bg-[#00CA72]/10 rounded-xl border border-[#00CA72]/20">
@@ -2465,7 +2961,7 @@ const SurveyScreen = () => {
                 disabled={isSubmitting}
                 className="bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white font-bold px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition disabled:opacity-60"
               >
-                {isSubmitting ? 'Guardando...' : 'Enviar encuesta' }
+                {isSubmitting ? 'Guardando...' : 'Enviar encuesta'}
               </button>
             </div>
           </form>
@@ -2522,24 +3018,86 @@ const TribeAssignmentsView = () => {
   const [reportingProfile, setReportingProfile] = useState<MatchProfile | null>(null);
   const [reportNote, setReportNote] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-  
+
   // Estado para modal de cumplimiento
-  const [showShareModal, setShowShareModal] = useState<{profile: MatchProfile, type: 'shared_to' | 'received_from'} | null>(null);
+  const [showShareModal, setShowShareModal] = useState<{ profile: MatchProfile, type: 'shared_to' | 'received_from' } | null>(null);
   const [shareUrl, setShareUrl] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+
   // Estado para modal de Análisis TRIBU X
   const [analysisProfile, setAnalysisProfile] = useState<MatchProfile | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<{insight: string; opportunities: string[]; icebreaker: string} | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{ insight: string; opportunities: string[]; icebreaker: string } | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
+  const [globalProgress, setGlobalProgress] = useState({
+    current: 0,
+    target: 1000,
+    remaining: 1000,
+    percent: 0
+  });
+  const [showMilestoneToast, setShowMilestoneToast] = useState<string | null>(null);
+  const milestoneRef = useRef<number>(0);
+  const [progressLoading, setProgressLoading] = useState(true);
+
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    const init = async () => {
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, onSnapshot } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (!db) return;
+
+        const statsRef = doc(db, 'system_stats', 'global');
+        unsubscribe = onSnapshot(statsRef, snapshot => {
+          const data = snapshot.data() || {};
+          const current = typeof data.profilesCompleted === 'number' ? data.profilesCompleted : 0;
+          const target = typeof data.profilesTarget === 'number' ? data.profilesTarget : 1000;
+          const percent = Math.min(100, Math.round((current / target) * 100));
+          const remaining = Math.max(0, target - current);
+
+          setGlobalProgress({ current, target, percent, remaining });
+          setProgressLoading(false);
+
+          const milestoneStep = 50;
+          const previousMilestone = milestoneRef.current;
+          const milestoneReached = Math.floor(current / milestoneStep);
+          if (milestoneReached > previousMilestone && current < target) {
+            milestoneRef.current = milestoneReached;
+            const milestoneCount = milestoneReached * milestoneStep;
+            setShowMilestoneToast(`🎉 ¡${milestoneCount} perfiles completos!`);
+            setTimeout(() => setShowMilestoneToast(null), 4000);
+          }
+        }, error => {
+          console.error('Error escuchando system_stats/global:', error);
+          setProgressLoading(false);
+        });
+      } catch (error) {
+        console.error('Error inicializando escucha de progreso global:', error);
+        setProgressLoading(false);
+      }
+    };
+
+    init();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const matchingUnlocked = globalProgress.current >= globalProgress.target;
+  const milestoneToast = showMilestoneToast && (
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-[#181B34] text-white text-sm py-2 px-6 rounded-xl z-50 animate-fadeIn shadow-lg">
+      {showMilestoneToast}
+    </div>
+  );
+
   // Generar análisis con Azure AI cuando se abre el modal
   useEffect(() => {
     if (!analysisProfile) {
       setAnalysisResult(null);
       return;
     }
-    
+
     const generateAnalysis = async () => {
       setIsAnalyzing(true);
       try {
@@ -2548,7 +3106,7 @@ const TribeAssignmentsView = () => {
           { id: myProfile.id, name: myProfile.name, companyName: myProfile.companyName, city: myProfile.location || '', category: myProfile.category, affinity: myProfile.category },
           { id: analysisProfile.id, name: analysisProfile.name, companyName: analysisProfile.companyName, city: analysisProfile.location || '', category: analysisProfile.category, affinity: analysisProfile.category }
         );
-        
+
         if (result && result.analysis && result.analysis !== 'Análisis no disponible') {
           setAnalysisResult({
             insight: result.analysis,
@@ -2578,7 +3136,7 @@ const TribeAssignmentsView = () => {
         setIsAnalyzing(false);
       }
     };
-    
+
     generateAnalysis();
   }, [analysisProfile, myProfile]);
 
@@ -2632,8 +3190,8 @@ const TribeAssignmentsView = () => {
   // Estado automático basado en completion
   const isCompleted = completion === 100;
   const statusLabel = isCompleted ? 'Completado' : 'Pendiente';
-  const statusStyle = isCompleted 
-    ? 'bg-[#E6FFF3] text-[#008A4E] border-[#00CA72]' 
+  const statusStyle = isCompleted
+    ? 'bg-[#E6FFF3] text-[#008A4E] border-[#00CA72]'
     : 'bg-[#FFF8E6] text-[#9D6B00] border-[#FFCC00]';
 
   const handleToggle = (list: keyof AssignmentChecklist, profileId: string) => {
@@ -2646,10 +3204,10 @@ const TribeAssignmentsView = () => {
         }
       };
       persistChecklistState(next);
-      
+
       // ☁️ Sincronizar a Firestore (nube)
       syncChecklistToCloud(myProfile.id, next);
-      
+
       return next;
     });
   };
@@ -2672,7 +3230,7 @@ const TribeAssignmentsView = () => {
   const handleShareComplete = (profile: MatchProfile, type: 'shared_to' | 'received_from', url: string) => {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
-    
+
     saveShareRecord({
       profileId: profile.id,
       profileName: profile.companyName,
@@ -2680,7 +3238,7 @@ const TribeAssignmentsView = () => {
       contentUrl: url,
       userId: currentUser.id
     });
-    
+
     // Marcar como completado en el checklist
     const key = type === 'shared_to' ? 'toShare' : 'shareWithMe';
     setChecklist(prev => {
@@ -2688,22 +3246,22 @@ const TribeAssignmentsView = () => {
         ...prev,
         [key]: { ...prev[key], [profile.id]: true }
       };
-      
+
       // ☁️ Sincronizar checklist a Firestore
       syncChecklistToCloud(currentUser.id, next);
-      
+
       return next;
     });
-    
+
     // ☁️ Registrar interacción en Firestore
     logInteraction(currentUser.id, type, {
       targetId: profile.id,
       targetName: profile.companyName,
       contentUrl: url
     });
-    
-    setToastMessage(type === 'shared_to' 
-      ? `✅ Registrado: compartiste a ${profile.companyName}` 
+
+    setToastMessage(type === 'shared_to'
+      ? `✅ Registrado: compartiste a ${profile.companyName}`
       : `✅ Registrado: ${profile.companyName} te compartió`
     );
     setTimeout(() => setToastMessage(null), 3000);
@@ -2720,12 +3278,12 @@ const TribeAssignmentsView = () => {
 
   const renderList = (title: string, subtitle: string, list: MatchProfile[], key: keyof AssignmentChecklist) => {
     const isToShare = key === 'toShare';
-    const whatsappMessage = isToShare 
+    const whatsappMessage = isToShare
       ? (profile: MatchProfile) => `Hola ${profile.name.split(' ')[0]}! Te acabo de compartir en mis redes. Aquí está el enlace: `
       : (profile: MatchProfile) => `Hola ${profile.name.split(' ')[0]}! Vi que me compartiste, muchas gracias! Me podrías pasar el enlace?`;
-    
+
     const completedCount = Object.entries(checklist[key]).filter(([id, done]) => done && list.some(p => p.id === id)).length;
-    
+
     return (
       <div key={title} className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
         <header className="mb-3 flex items-center justify-between">
@@ -2739,11 +3297,10 @@ const TribeAssignmentsView = () => {
           {list.map(profile => {
             const isCompleted = checklist[key][profile.id] ?? false;
             return (
-              <div key={profile.id} className={`p-4 rounded-xl border transition ${
-                isCompleted 
-                  ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
-                  : 'bg-white border-[#E4E7EF]'
-              }`}>
+              <div key={profile.id} className={`p-4 rounded-xl border transition ${isCompleted
+                ? 'bg-[#E6FFF3] border-[#00CA72]/30'
+                : 'bg-white border-[#E4E7EF]'
+                }`}>
                 {/* Row 1: Checkbox + Name + Category Tag */}
                 <div className="flex items-start gap-3 mb-3">
                   <input
@@ -2753,15 +3310,27 @@ const TribeAssignmentsView = () => {
                     onChange={() => handleToggle(key, profile.id)}
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[0.9375rem] text-[#181B34] break-words leading-tight">{profile.companyName || 'Sin nombre de empresa'}</p>
-                    <p className="text-[0.8125rem] text-[#7C8193] mt-0.5">{profile.name}</p>
-                    {/* Tag de categoría para reconocimiento rápido */}
-                    <span className="inline-block mt-1.5 px-2 py-0.5 text-[0.625rem] font-medium rounded-full bg-[#6161FF]/10 text-[#6161FF]">
-                      {profile.category || profile.subCategory || 'Emprendimiento'}
-                    </span>
+                    {/* MARCA/EMPRESA MÁS PROMINENTE */}
+                    <h4 className="font-black text-base text-[#181B34] break-words leading-tight mb-0.5">
+                      {profile.companyName || 'Sin nombre de empresa'}
+                    </h4>
+                    <p className="text-xs text-[#7C8193]">por {profile.name}</p>
+                    {/* Tags de categoría y afinidad */}
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[0.625rem] font-semibold rounded-full bg-gradient-to-r from-indigo-50 to-violet-50 text-indigo-600 border border-indigo-100">
+                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                        {profile.category || profile.subCategory || 'Emprendimiento'}
+                      </span>
+                      {profile.instagram && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[0.625rem] font-medium rounded-full bg-pink-50 text-pink-600">
+                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z"/></svg>
+                          @{profile.instagram.replace('@', '').split('/').pop()}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                
+
                 {/* Row 2: Action buttons - WhatsApp directo al número */}
                 <div className="flex gap-2 pl-8 flex-wrap">
                   {/* YO DEBO IMPULSAR: "Yo compartí" + "Avisarle" */}
@@ -2786,7 +3355,7 @@ const TribeAssignmentsView = () => {
                       </a>
                     </>
                   )}
-                  
+
                   {/* ME IMPULSAN: WhatsApp para agradecer/preguntar */}
                   {!isToShare && (
                     <a
@@ -2798,7 +3367,7 @@ const TribeAssignmentsView = () => {
                       💬 Enviar WhatsApp
                     </a>
                   )}
-                  
+
                   {/* Análisis Inteligente TRIBU X */}
                   <button
                     type="button"
@@ -2807,7 +3376,7 @@ const TribeAssignmentsView = () => {
                   >
                     🔮 Análisis TRIBU X
                   </button>
-                  
+
                   {/* Ver perfil */}
                   <button
                     type="button"
@@ -2816,7 +3385,7 @@ const TribeAssignmentsView = () => {
                   >
                     Ver perfil
                   </button>
-                  
+
                   {/* Reportar */}
                   <button
                     type="button"
@@ -2841,6 +3410,8 @@ const TribeAssignmentsView = () => {
   const currentUser = getCurrentUser();
   const isProfileIncomplete = !currentUser?.scope || !currentUser?.comuna && currentUser?.scope === 'LOCAL' || !currentUser?.selectedRegions?.length && currentUser?.scope === 'REGIONAL';
 
+  // Ya no bloqueamos Mi Tribu - mostramos el contenido con un banner de progreso arriba
+
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
       {/* Toast de notificación */}
@@ -2849,7 +3420,15 @@ const TribeAssignmentsView = () => {
           {toastMessage}
         </div>
       )}
-      
+      {milestoneToast}
+
+      {/* Banner de progreso Rally 1000 */}
+      {!matchingUnlocked && (
+        <div className="mx-4 mt-4">
+          <ProgressBanner className="px-0" showFomo={true} />
+        </div>
+      )}
+
       {/* Banner de perfil incompleto */}
       {isProfileIncomplete && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#FF9500] to-[#FF6B00] rounded-xl shadow-lg">
@@ -2860,7 +3439,7 @@ const TribeAssignmentsView = () => {
               <p className="text-white/80 text-xs mt-1">
                 Sin tu ubicación geográfica, el algoritmo no puede encontrar matches cercanos a ti.
               </p>
-              <button 
+              <button
                 onClick={() => navigate('/my-profile')}
                 className="mt-3 px-4 py-2 bg-white text-[#FF6B00] rounded-lg text-xs font-bold hover:bg-white/90 transition"
               >
@@ -2870,14 +3449,14 @@ const TribeAssignmentsView = () => {
           </div>
         </div>
       )}
-      
+
       {/* Modal de registro de cumplimiento */}
       {showShareModal && ReactDOM.createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm"
           onClick={() => { setShowShareModal(null); setShareUrl(''); }}
         >
-          <div 
+          <div
             className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl animate-slideUp"
             onClick={e => e.stopPropagation()}
           >
@@ -2885,12 +3464,12 @@ const TribeAssignmentsView = () => {
               {showShareModal.type === 'shared_to' ? '📤 Registrar que compartiste' : '📥 Registrar que te compartieron'}
             </h3>
             <p className="text-sm text-[#7C8193] mb-4">
-              {showShareModal.type === 'shared_to' 
+              {showShareModal.type === 'shared_to'
                 ? `Pega el enlace del post donde compartiste a ${showShareModal.profile.companyName}`
                 : `Pega el enlace donde ${showShareModal.profile.companyName} te compartió`
               }
             </p>
-            
+
             <input
               type="url"
               value={shareUrl}
@@ -2899,7 +3478,7 @@ const TribeAssignmentsView = () => {
               className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF] mb-4"
               autoFocus
             />
-            
+
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowShareModal(null); setShareUrl(''); }}
@@ -2915,7 +3494,7 @@ const TribeAssignmentsView = () => {
                 Guardar
               </button>
             </div>
-            
+
             <p className="text-[0.625rem] text-[#7C8193] mt-3 text-center">
               Este registro queda guardado para que el admin pueda verificarlo
             </p>
@@ -2923,14 +3502,14 @@ const TribeAssignmentsView = () => {
         </div>,
         document.body
       )}
-      
+
       {/* Modal de Análisis TRIBU X - FULL SCREEN */}
       {analysisProfile && ReactDOM.createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 flex flex-col z-[99999] backdrop-blur-sm"
           onClick={() => setAnalysisProfile(null)}
         >
-          <div 
+          <div
             className="bg-gradient-to-br from-[#F5F7FB] to-white w-full h-full flex flex-col"
             style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             onClick={e => e.stopPropagation()}
@@ -2947,7 +3526,7 @@ const TribeAssignmentsView = () => {
                     <p className="text-white/80 text-xs truncate max-w-[180px]">{analysisProfile.companyName}</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setAnalysisProfile(null)}
                   className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition"
                 >
@@ -2955,123 +3534,123 @@ const TribeAssignmentsView = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Loading state - Animación Tribal épica FULLSCREEN */}
             {isAnalyzing && (
               <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-[#0a0a1a] to-[#1a1a3a]">
                 <TribalLoadingAnimation isLoading={isAnalyzing} duration={4500} />
               </div>
             )}
-            
+
             {/* Contenido - scrollable (solo cuando no está cargando) */}
             {!isAnalyzing && (
-            <div className="p-4 space-y-3 overflow-y-auto flex-1">
-              
-              {/* Análisis generado - PREMIUM LAYOUT */}
-              {!isAnalyzing && analysisResult && (
-                <>
-                  {/* Hero del análisis */}
-                  <div className="text-center mb-2">
-                    <h1 className="text-xl font-bold text-[#181B34] mb-1">
-                      🔮 Análisis de Sinergia
-                    </h1>
-                    <p className="text-sm text-[#7C8193]">
-                      <span className="font-semibold text-[#6161FF]">{analysisProfile.companyName}</span> × <span className="font-semibold text-[#8B5CF6]">Tu Negocio</span>
-                    </p>
-                  </div>
-                  
-                  {/* Insight principal - Card destacada */}
-                  <div className="bg-white rounded-2xl p-4 border border-[#E4E7EF] shadow-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] flex items-center justify-center">
-                        <span className="text-white text-sm">💡</span>
-                      </div>
-                      <h2 className="text-sm font-bold uppercase tracking-wide text-[#6161FF]">Insight de IA</h2>
-                    </div>
-                    <p className="text-sm text-[#434343] leading-relaxed">
-                      {analysisResult.insight.split('.').map((sentence, i) => {
-                        if (!sentence.trim()) return null;
-                        if (i === 0) return <span key={i} className="font-semibold text-[#181B34]">{sentence.trim()}. </span>;
-                        return <span key={i}>{sentence.trim()}. </span>;
-                      })}
-                    </p>
-                  </div>
-                  
-                  {/* Oportunidades - Card con mejor jerarquía */}
-                  <div className="bg-gradient-to-br from-[#6161FF]/5 via-[#8B5CF6]/5 to-[#C026D3]/5 rounded-2xl p-4 border border-[#8B5CF6]/20">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00CA72] to-[#00B366] flex items-center justify-center">
-                        <span className="text-white text-sm">🎯</span>
-                      </div>
-                      <h2 className="text-sm font-bold uppercase tracking-wide text-[#00CA72]">Oportunidades de Colaboración</h2>
-                    </div>
-                    <ul className="space-y-3">
-                      {analysisResult.opportunities.slice(0, 3).map((opp, i) => {
-                        const parts = opp.split(':');
-                        const hasTitle = parts.length > 1;
-                        return (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00CA72]/20 text-[#00CA72] flex items-center justify-center text-xs font-bold">
-                              {i + 1}
-                            </span>
-                            <div className="flex-1">
-                              {hasTitle ? (
-                                <>
-                                  <p className="font-semibold text-[#181B34] text-sm">{parts[0].trim()}</p>
-                                  <p className="text-[#434343] text-xs leading-relaxed">{parts.slice(1).join(':').trim()}</p>
-                                </>
-                              ) : (
-                                <p className="text-[#434343] text-sm leading-relaxed">{opp}</p>
-                              )}
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                  
-                  {/* Rompe el hielo - Card WhatsApp mejorada */}
-                  <div className="bg-gradient-to-br from-[#25D366]/10 to-[#25D366]/5 rounded-2xl p-4 border border-[#25D366]/30 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center">
-                        <span className="text-white text-sm">💬</span>
-                      </div>
-                      <div>
-                        <h2 className="text-sm font-bold uppercase tracking-wide text-[#25D366]">Rompe el Hielo</h2>
-                        <p className="text-[10px] text-[#7C8193]">Mensaje sugerido por IA</p>
-                      </div>
-                    </div>
-                    <div className="bg-white/80 rounded-xl p-3 mb-3 border-l-4 border-[#25D366]">
-                      <p className="text-sm text-[#434343] leading-relaxed italic">
-                        "{analysisResult.icebreaker}"
+              <div className="p-4 space-y-3 overflow-y-auto flex-1">
+
+                {/* Análisis generado - PREMIUM LAYOUT */}
+                {!isAnalyzing && analysisResult && (
+                  <>
+                    {/* Hero del análisis */}
+                    <div className="text-center mb-2">
+                      <h1 className="text-xl font-bold text-[#181B34] mb-1">
+                        🔮 Análisis de Sinergia
+                      </h1>
+                      <p className="text-sm text-[#7C8193]">
+                        <span className="font-semibold text-[#6161FF]">{analysisProfile.companyName}</span> × <span className="font-semibold text-[#8B5CF6]">Tu Negocio</span>
                       </p>
                     </div>
-                    <a
-                      href={`https://wa.me/${(analysisProfile.phone || (analysisProfile as any).whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(analysisResult.icebreaker)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-[#20BA5C] transition shadow-lg"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                      Enviar mensaje a WhatsApp
-                    </a>
-                  </div>
-                  
-                  {/* Footer con tips */}
-                  <div className="bg-[#F5F7FB] rounded-xl p-3 border border-[#E4E7EF]">
-                    <p className="text-[10px] text-[#7C8193] text-center">
-                      <span className="font-semibold text-[#6161FF]">Pro tip:</span> Personaliza el mensaje antes de enviarlo para hacerlo más auténtico 🎯
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
+
+                    {/* Insight principal - Card destacada */}
+                    <div className="bg-white rounded-2xl p-4 border border-[#E4E7EF] shadow-lg">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] flex items-center justify-center">
+                          <span className="text-white text-sm">💡</span>
+                        </div>
+                        <h2 className="text-sm font-bold uppercase tracking-wide text-[#6161FF]">Insight de IA</h2>
+                      </div>
+                      <p className="text-sm text-[#434343] leading-relaxed">
+                        {analysisResult.insight.split('.').map((sentence, i) => {
+                          if (!sentence.trim()) return null;
+                          if (i === 0) return <span key={i} className="font-semibold text-[#181B34]">{sentence.trim()}. </span>;
+                          return <span key={i}>{sentence.trim()}. </span>;
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Oportunidades - Card con mejor jerarquía */}
+                    <div className="bg-gradient-to-br from-[#6161FF]/5 via-[#8B5CF6]/5 to-[#C026D3]/5 rounded-2xl p-4 border border-[#8B5CF6]/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00CA72] to-[#00B366] flex items-center justify-center">
+                          <span className="text-white text-sm">🎯</span>
+                        </div>
+                        <h2 className="text-sm font-bold uppercase tracking-wide text-[#00CA72]">Oportunidades de Colaboración</h2>
+                      </div>
+                      <ul className="space-y-3">
+                        {analysisResult.opportunities.slice(0, 3).map((opp, i) => {
+                          const parts = opp.split(':');
+                          const hasTitle = parts.length > 1;
+                          return (
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00CA72]/20 text-[#00CA72] flex items-center justify-center text-xs font-bold">
+                                {i + 1}
+                              </span>
+                              <div className="flex-1">
+                                {hasTitle ? (
+                                  <>
+                                    <p className="font-semibold text-[#181B34] text-sm">{parts[0].trim()}</p>
+                                    <p className="text-[#434343] text-xs leading-relaxed">{parts.slice(1).join(':').trim()}</p>
+                                  </>
+                                ) : (
+                                  <p className="text-[#434343] text-sm leading-relaxed">{opp}</p>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+
+                    {/* Rompe el hielo - Card WhatsApp mejorada */}
+                    <div className="bg-gradient-to-br from-[#25D366]/10 to-[#25D366]/5 rounded-2xl p-4 border border-[#25D366]/30 shadow-sm">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center">
+                          <span className="text-white text-sm">💬</span>
+                        </div>
+                        <div>
+                          <h2 className="text-sm font-bold uppercase tracking-wide text-[#25D366]">Rompe el Hielo</h2>
+                          <p className="text-[10px] text-[#7C8193]">Mensaje sugerido por IA</p>
+                        </div>
+                      </div>
+                      <div className="bg-white/80 rounded-xl p-3 mb-3 border-l-4 border-[#25D366]">
+                        <p className="text-sm text-[#434343] leading-relaxed italic">
+                          "{analysisResult.icebreaker}"
+                        </p>
+                      </div>
+                      <a
+                        href={`https://wa.me/${(analysisProfile.phone || (analysisProfile as any).whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(analysisResult.icebreaker)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] text-white px-4 py-3 rounded-xl font-bold text-sm hover:bg-[#20BA5C] transition shadow-lg"
+                      >
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                        Enviar mensaje a WhatsApp
+                      </a>
+                    </div>
+
+                    {/* Footer con tips */}
+                    <div className="bg-[#F5F7FB] rounded-xl p-3 border border-[#E4E7EF]">
+                      <p className="text-[10px] text-[#7C8193] text-center">
+                        <span className="font-semibold text-[#6161FF]">Pro tip:</span> Personaliza el mensaje antes de enviarlo para hacerlo más auténtico 🎯
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>,
         document.body
       )}
-      
+
       <header className="px-5 pb-4 sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
         style={{
           paddingTop: 'max(16px, env(safe-area-inset-top, 16px))',
@@ -3107,7 +3686,7 @@ const TribeAssignmentsView = () => {
               Pendientes: {(assignments.toShare.length + assignments.shareWithMe.length) - (Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length)}
             </span>
           </div>
-          
+
           {/* Card: Ayuda - Amarillo */}
           <div className="bg-[#FFCC00] rounded-xl p-4">
             <div className="flex justify-between items-start mb-3">
@@ -3120,7 +3699,7 @@ const TribeAssignmentsView = () => {
             <span className="text-[#181B34]/60 text-xs">Solicitudes enviadas</span>
           </div>
         </div>
-        
+
         {/* Alert Card - if pending actions */}
         {(assignments.toShare.length + assignments.shareWithMe.length) - (Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length) > 0 && (
           <div className="bg-[#FB275D] rounded-xl p-4 flex items-center gap-3">
@@ -3135,7 +3714,7 @@ const TribeAssignmentsView = () => {
             </div>
           </div>
         )}
-        
+
         {/* Success Card - if all completed */}
         {completion === 100 && (
           <div className="bg-[#00CA72] rounded-xl p-4 flex items-center gap-3">
@@ -3158,14 +3737,14 @@ const TribeAssignmentsView = () => {
           <div className="flex items-end gap-4">
             <h2 className="text-4xl font-bold text-white">{completion}%</h2>
             <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white rounded-full transition-all duration-500" 
+              <div
+                className="h-full bg-white rounded-full transition-all duration-500"
                 style={{ width: `${completion}%` }}
               />
             </div>
           </div>
         </div>
-        
+
         {/* Quick Actions */}
         <div className="flex gap-2">
           <button
@@ -3201,13 +3780,13 @@ const TribeAssignmentsView = () => {
                     <span className="text-xs text-[#B3B8C6]">{report.timestamp}</span>
                   </div>
                   <p className="text-[#434343] text-sm mb-3">{report.reason}</p>
-                  <a 
+                  <a
                     href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`🚨 REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs px-3 py-1.5 bg-[#00CA72] text-white rounded-full hover:bg-[#00B366] transition"
                   >
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-4 h-4 filter invert brightness-200" alt="ws"/>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-4 h-4 filter invert brightness-200" alt="ws" />
                     Enviar por WhatsApp
                   </a>
                 </li>
@@ -3216,7 +3795,7 @@ const TribeAssignmentsView = () => {
           </div>
         )}
         {reportingProfile && ReactDOM.createPortal(
-          <div 
+          <div
             style={{
               position: 'fixed',
               top: 0,
@@ -3283,17 +3862,17 @@ const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    
+
     img.onload = () => {
       const ratio = maxWidth / img.width;
       canvas.width = maxWidth;
       canvas.height = img.height * ratio;
-      
+
       ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
       const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
       resolve(compressedBase64);
     };
-    
+
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
   });
@@ -3301,1108 +3880,1105 @@ const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
 
 // 5. My Profile View (Editable)
 const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {
-    const navigate = useNavigate();
-    useSurveyGuard();
-    const [isEditing, setIsEditing] = useState(false);
-    const [profile, setProfile] = useState(getMyProfile());
-    const [isSaving, setIsSaving] = useState(false);
-    const [saveMessage, setSaveMessage] = useState<string | null>(null);
-    const [newTag, setNewTag] = useState('');
-    const [showTagInput, setShowTagInput] = useState(false);
-    const currentUser = getCurrentUser();
-    
-    // Estados para selectores de matching (categoría, afinidad, geografía)
-    const [editScope, setEditScope] = useState<'LOCAL' | 'REGIONAL' | 'NACIONAL'>(currentUser?.scope || 'NACIONAL');
-    const [editSelectedRegionForComuna, setEditSelectedRegionForComuna] = useState<string>('');
-    const [editSelectedRegions, setEditSelectedRegions] = useState<string[]>(currentUser?.selectedRegions || []);
-    const [editComuna, setEditComuna] = useState<string>(currentUser?.comuna || '');
-    const [editCategory, setEditCategory] = useState<string>(currentUser?.category || '');
-    const [editAffinity, setEditAffinity] = useState<string>(currentUser?.affinity || '');
-    const [editRevenue, setEditRevenue] = useState<string>(currentUser?.revenue || '');
-    
-    // Comunas filtradas por región seleccionada
-    const editComunasDeRegion = editSelectedRegionForComuna 
-      ? REGIONS.find(r => r.id === editSelectedRegionForComuna)?.comunas || []
-      : [];
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const bannerInputRef = React.useRef<HTMLInputElement>(null);
-    
-    // Estados para cambio de contraseña
-    const [showPasswordModal, setShowPasswordModal] = useState(false);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-    const [passwordSuccess, setPasswordSuccess] = useState(false);
-    
-    // Estado para acceso secreto a Red (Directorio)
-    const [showSecretInput, setShowSecretInput] = useState(false);
-    const [secretCode, setSecretCode] = useState('');
-    const [secretCodeError, setSecretCodeError] = useState('');
-    
-    // Estado para tamaño de letra (accesibilidad)
-    const [showFontSizeModal, setShowFontSizeModal] = useState(false);
-    
-    const handleSecretAccess = () => {
-      if (secretCode === 'TRIBU2026') {
-        navigate('/directory');
-        setSecretCode('');
-        setShowSecretInput(false);
-      } else {
-        setSecretCodeError('Código incorrecto');
-        setTimeout(() => setSecretCodeError(''), 2000);
+  const navigate = useNavigate();
+  useSurveyGuard();
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(getMyProfile());
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [newTag, setNewTag] = useState('');
+  const [showTagInput, setShowTagInput] = useState(false);
+  const currentUser = getCurrentUser();
+
+  // Estados para selectores de matching (categoría, afinidad, geografía)
+  const [editScope, setEditScope] = useState<'LOCAL' | 'REGIONAL' | 'NACIONAL'>(currentUser?.scope || 'NACIONAL');
+  const [editSelectedRegionForComuna, setEditSelectedRegionForComuna] = useState<string>('');
+  const [editSelectedRegions, setEditSelectedRegions] = useState<string[]>(currentUser?.selectedRegions || []);
+  const [editComuna, setEditComuna] = useState<string>(currentUser?.comuna || '');
+  const [editCategory, setEditCategory] = useState<string>(currentUser?.category || '');
+  const [editAffinity, setEditAffinity] = useState<string>(currentUser?.affinity || '');
+  const [editRevenue, setEditRevenue] = useState<string>(currentUser?.revenue || '');
+
+  // Comunas filtradas por región seleccionada
+  const editComunasDeRegion = editSelectedRegionForComuna
+    ? REGIONS.find(r => r.id === editSelectedRegionForComuna)?.comunas || []
+    : [];
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const bannerInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Estados para cambio de contraseña
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+
+  // Estado para acceso secreto a Red (Directorio)
+  const [showSecretInput, setShowSecretInput] = useState(false);
+  const [secretCode, setSecretCode] = useState('');
+  const [secretCodeError, setSecretCodeError] = useState('');
+
+  // Estado para tamaño de letra (accesibilidad)
+  const [showFontSizeModal, setShowFontSizeModal] = useState(false);
+
+  const handleSecretAccess = () => {
+    if (secretCode === 'TRIBU2026') {
+      navigate('/directory');
+      setSecretCode('');
+      setShowSecretInput(false);
+    } else {
+      setSecretCodeError('Código incorrecto');
+      setTimeout(() => setSecretCodeError(''), 2000);
+    }
+  };
+
+  // Función para cambiar contraseña
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    // Validaciones
+    if (!currentPassword) {
+      setPasswordError('Ingresa tu contraseña actual');
+      return;
+    }
+
+    // Verificar contraseña actual
+    const user = getCurrentUser();
+    if (!user) {
+      setPasswordError('Error: usuario no encontrado');
+      return;
+    }
+
+    // Buscar usuario y verificar contraseña
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    const userIndex = users.findIndex((u: { id: string }) => u.id === user.id);
+
+    if (userIndex === -1) {
+      setPasswordError('Error: usuario no encontrado');
+      return;
+    }
+
+    const currentUserData = users[userIndex];
+    if (currentUserData.password !== currentPassword && currentPassword !== 'TRIBU2026') {
+      setPasswordError('Contraseña actual incorrecta');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // Actualizar contraseña en localStorage
+    users[userIndex].password = newPassword;
+    localStorage.setItem('tribu_users', JSON.stringify(users));
+
+    // Marcar que ya cambió su contraseña (nunca más mostrar popup)
+    localStorage.setItem(`password_changed_${user.id}`, 'true');
+
+    // Sincronizar contraseña con Firebase (persistente entre dispositivos)
+    try {
+      const { updateUserPassword } = await import('./services/firebaseService');
+      const synced = await updateUserPassword(user.id, newPassword);
+      if (synced) {
+        console.log('✅ Contraseña sincronizada con Firebase');
       }
-    };
-    
-    // Función para cambiar contraseña
-    const handleChangePassword = async () => {
-      setPasswordError('');
+    } catch (err) {
+      console.log('⚠️ Contraseña guardada localmente (Firebase no disponible):', err);
+    }
+
+    setPasswordSuccess(true);
+    setTimeout(() => {
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
       setPasswordSuccess(false);
-      
-      // Validaciones
-      if (!currentPassword) {
-        setPasswordError('Ingresa tu contraseña actual');
+    }, 1500);
+  };
+
+  // Manejar upload de foto de perfil - SUBE A FIREBASE STORAGE
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setSaveMessage('📷 Subiendo foto a la nube...');
+
+      const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+
+      // Validar archivo
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        setSaveMessage(`❌ ${validation.error}`);
+        setTimeout(() => setSaveMessage(null), 3000);
         return;
       }
-      
-      // Verificar contraseña actual
-      const user = getCurrentUser();
-      if (!user) {
-        setPasswordError('Error: usuario no encontrado');
-        return;
-      }
-      
-      // Buscar usuario y verificar contraseña
-      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-      const userIndex = users.findIndex((u: { id: string }) => u.id === user.id);
-      
-      if (userIndex === -1) {
-        setPasswordError('Error: usuario no encontrado');
-        return;
-      }
-      
-      const currentUserData = users[userIndex];
-      if (currentUserData.password !== currentPassword && currentPassword !== 'TRIBU2026') {
-        setPasswordError('Contraseña actual incorrecta');
-        return;
-      }
-      
-      if (newPassword.length < 6) {
-        setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
-        return;
-      }
-      
-      if (newPassword !== confirmPassword) {
-        setPasswordError('Las contraseñas no coinciden');
-        return;
-      }
-      
-      // Actualizar contraseña en localStorage
-      users[userIndex].password = newPassword;
-      localStorage.setItem('tribu_users', JSON.stringify(users));
-      
-      // Marcar que ya cambió su contraseña (nunca más mostrar popup)
-      localStorage.setItem(`password_changed_${user.id}`, 'true');
-      
-      // Sincronizar contraseña con Firebase (persistente entre dispositivos)
-      try {
-        const { updateUserPassword } = await import('./services/firebaseService');
-        const synced = await updateUserPassword(user.id, newPassword);
-        if (synced) {
-          console.log('✅ Contraseña sincronizada con Firebase');
+
+      // Subir a Firebase Storage (ya comprime automáticamente)
+      const result = await uploadProfileImage(currentUser.id, file, 'avatar');
+
+      if (result.success && result.url) {
+        setProfile({ ...profile, avatarUrl: result.url });
+
+        // También actualizar en localStorage
+        const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+        const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+        if (userIndex !== -1) {
+          users[userIndex].avatarUrl = result.url;
+          localStorage.setItem('tribu_users', JSON.stringify(users));
         }
-      } catch (err) {
-        console.log('⚠️ Contraseña guardada localmente (Firebase no disponible):', err);
+
+        setSaveMessage('✅ Foto subida correctamente');
+      } else {
+        setSaveMessage(`❌ ${result.error || 'Error al subir foto'}`);
       }
-      
-      setPasswordSuccess(true);
-      setTimeout(() => {
-        setShowPasswordModal(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setPasswordSuccess(false);
-      }, 1500);
+
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err) {
+      console.error('Error upload foto:', err);
+      setSaveMessage('❌ Error al subir imagen');
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
+
+  // Manejar upload de banner/cover - SUBE A FIREBASE STORAGE
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setSaveMessage('🖼️ Subiendo banner a la nube...');
+
+      const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+
+      // Validar archivo
+      const validation = validateImageFile(file);
+      if (!validation.valid) {
+        setSaveMessage(`❌ ${validation.error}`);
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Subir a Firebase Storage
+      const result = await uploadProfileImage(currentUser.id, file, 'cover');
+
+      if (result.success && result.url) {
+        setProfile({ ...profile, coverUrl: result.url });
+
+        // También actualizar en localStorage
+        const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+        const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+        if (userIndex !== -1) {
+          users[userIndex].coverUrl = result.url;
+          localStorage.setItem('tribu_users', JSON.stringify(users));
+        }
+
+        setSaveMessage('✅ Banner subido correctamente');
+      } else {
+        setSaveMessage(`❌ ${result.error || 'Error al subir banner'}`);
+      }
+
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err) {
+      console.error('Error upload banner:', err);
+      setSaveMessage('❌ Error al subir banner');
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
+
+  // Agregar etiqueta
+  const handleAddTag = () => {
+    if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
+      setProfile({ ...profile, tags: [...profile.tags, newTag.trim()] });
+      setNewTag('');
+      setShowTagInput(false);
+    }
+  };
+
+  // Eliminar etiqueta
+  const handleRemoveTag = (tagToRemove: string) => {
+    setProfile({ ...profile, tags: profile.tags.filter(t => t !== tagToRemove) });
+  };
+
+  const handleSave = async () => {
+    if (!currentUser) return;
+    setIsSaving(true);
+    setSaveMessage('💾 Guardando cambios...');
+
+    // Datos a guardar (incluye campos de matching y redes sociales)
+    const profileData = {
+      name: profile.name,
+      companyName: profile.companyName,
+      bio: profile.bio,
+      phone: profile.phone || profile.whatsapp || '',
+      whatsapp: profile.whatsapp || profile.phone || '',
+      // Redes sociales
+      instagram: profile.instagram,
+      tiktok: (profile as any).tiktok || '',
+      facebook: (profile as any).facebook || '',
+      twitter: (profile as any).twitter || '',
+      website: profile.website,
+      // Ubicación
+      city: profile.location?.split(',')[0]?.trim() || '',
+      location: profile.location,
+      avatarUrl: profile.avatarUrl,
+      coverUrl: profile.coverUrl,
+      tags: profile.tags,
+      // Campos de MATCHING - usando los selectores
+      category: editCategory || profile.category,
+      affinity: editAffinity || (profile as any).affinity || profile.category,
+      scope: editScope,
+      comuna: editComuna,
+      selectedRegions: editSelectedRegions,
+      revenue: editRevenue,
     };
 
-    // Manejar upload de foto de perfil - SUBE A FIREBASE STORAGE
-    const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !currentUser) return;
-      
-      try {
-        setSaveMessage('📷 Subiendo foto a la nube...');
-        
-        const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
-        
-        // Validar archivo
-        const validation = validateImageFile(file);
-        if (!validation.valid) {
-          setSaveMessage(`❌ ${validation.error}`);
-          setTimeout(() => setSaveMessage(null), 3000);
-          return;
-        }
-        
-        // Subir a Firebase Storage (ya comprime automáticamente)
-        const result = await uploadProfileImage(currentUser.id, file, 'avatar');
-        
-        if (result.success && result.url) {
-          setProfile({...profile, avatarUrl: result.url});
-          
-          // También actualizar en localStorage
-          const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-          const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
-          if (userIndex !== -1) {
-            users[userIndex].avatarUrl = result.url;
-            localStorage.setItem('tribu_users', JSON.stringify(users));
+    // Guardar cambios localmente
+    const updated = updateUser(currentUser.id, profileData);
+
+    if (updated) {
+      // Sincronizar con Firebase - OBLIGATORIO, con reintentos
+      let firebaseSaved = false;
+      let retries = 3;
+
+      while (!firebaseSaved && retries > 0) {
+        try {
+          const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('./services/firebaseService');
+
+          setSaveMessage(`☁️ Guardando en la nube... (intento ${4 - retries}/3)`);
+
+          // Sincronizar a la colección users (PRINCIPAL)
+          await syncUserToFirebase(currentUser.id, profileData);
+
+          // Sincronizar perfil completo
+          await syncProfileToCloud({
+            id: currentUser.id,
+            ...profileData,
+            subCategory: profile.subCategory,
+          });
+
+          // Registrar la interacción
+          await logInteraction(currentUser.id, 'profile_updated', {
+            fields: Object.keys(profileData),
+            timestamp: new Date().toISOString()
+          });
+
+          firebaseSaved = true;
+          setSaveMessage('✅ Perfil guardado y sincronizado');
+        } catch (error) {
+          retries--;
+          console.error(`❌ Error guardando en Firebase (quedan ${retries} intentos):`, error);
+          if (retries > 0) {
+            await new Promise(r => setTimeout(r, 1000)); // Esperar 1s antes de reintentar
           }
-          
-          setSaveMessage('✅ Foto subida correctamente');
-        } else {
-          setSaveMessage(`❌ ${result.error || 'Error al subir foto'}`);
         }
-        
-        setTimeout(() => setSaveMessage(null), 3000);
-      } catch (err) {
-        console.error('Error upload foto:', err);
-        setSaveMessage('❌ Error al subir imagen');
-        setTimeout(() => setSaveMessage(null), 3000);
       }
-    };
 
-    // Manejar upload de banner/cover - SUBE A FIREBASE STORAGE
-    const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file || !currentUser) return;
-      
-      try {
-        setSaveMessage('🖼️ Subiendo banner a la nube...');
-        
-        const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
-        
-        // Validar archivo
-        const validation = validateImageFile(file);
-        if (!validation.valid) {
-          setSaveMessage(`❌ ${validation.error}`);
-          setTimeout(() => setSaveMessage(null), 3000);
-          return;
-        }
-        
-        // Subir a Firebase Storage
-        const result = await uploadProfileImage(currentUser.id, file, 'cover');
-        
-        if (result.success && result.url) {
-          setProfile({...profile, coverUrl: result.url});
-          
-          // También actualizar en localStorage
-          const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-          const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
-          if (userIndex !== -1) {
-            users[userIndex].coverUrl = result.url;
-            localStorage.setItem('tribu_users', JSON.stringify(users));
-          }
-          
-          setSaveMessage('✅ Banner subido correctamente');
-        } else {
-          setSaveMessage(`❌ ${result.error || 'Error al subir banner'}`);
-        }
-        
-        setTimeout(() => setSaveMessage(null), 3000);
-      } catch (err) {
-        console.error('Error upload banner:', err);
-        setSaveMessage('❌ Error al subir banner');
-        setTimeout(() => setSaveMessage(null), 3000);
+      if (!firebaseSaved) {
+        // Si después de 3 intentos no se guardó, mostrar advertencia CLARA
+        setSaveMessage('⚠️ Guardado local. Presiona Sincronizar para subir a la nube.');
       }
-    };
+    } else {
+      setSaveMessage('❌ Error al guardar');
+    }
 
-    // Agregar etiqueta
-    const handleAddTag = () => {
-      if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
-        setProfile({...profile, tags: [...profile.tags, newTag.trim()]});
-        setNewTag('');
-        setShowTagInput(false);
-      }
-    };
+    setTimeout(() => setSaveMessage(null), 3000);
+    setIsSaving(false);
+    setIsEditing(false);
+  };
 
-    // Eliminar etiqueta
-    const handleRemoveTag = (tagToRemove: string) => {
-      setProfile({...profile, tags: profile.tags.filter(t => t !== tagToRemove)});
-    };
+  return (
+    <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
+      {/* Header with Cover */}
+      <div className="h-72 w-full relative group">
+        <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
 
-    const handleSave = async () => {
-        if (!currentUser) return;
-        setIsSaving(true);
-        setSaveMessage('💾 Guardando cambios...');
-        
-        // Datos a guardar (incluye campos de matching y redes sociales)
-        const profileData = {
-            name: profile.name,
-            companyName: profile.companyName,
-            bio: profile.bio,
-            phone: profile.phone || profile.whatsapp || '',
-            whatsapp: profile.whatsapp || profile.phone || '',
-            // Redes sociales
-            instagram: profile.instagram,
-            tiktok: (profile as any).tiktok || '',
-            facebook: (profile as any).facebook || '',
-            twitter: (profile as any).twitter || '',
-            website: profile.website,
-            // Ubicación
-            city: profile.location?.split(',')[0]?.trim() || '',
-            location: profile.location,
-            avatarUrl: profile.avatarUrl,
-            coverUrl: profile.coverUrl,
-            tags: profile.tags,
-            // Campos de MATCHING - usando los selectores
-            category: editCategory || profile.category,
-            affinity: editAffinity || (profile as any).affinity || profile.category,
-            scope: editScope,
-            comuna: editComuna,
-            selectedRegions: editSelectedRegions,
-            revenue: editRevenue,
-        };
-        
-        // Guardar cambios localmente
-        const updated = updateUser(currentUser.id, profileData);
-        
-        if (updated) {
-            // Sincronizar con Firebase - OBLIGATORIO, con reintentos
-            let firebaseSaved = false;
-            let retries = 3;
-            
-            while (!firebaseSaved && retries > 0) {
-                try {
-                    const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('./services/firebaseService');
-                    
-                    setSaveMessage(`☁️ Guardando en la nube... (intento ${4 - retries}/3)`);
-                    
-                    // Sincronizar a la colección users (PRINCIPAL)
-                    await syncUserToFirebase(currentUser.id, profileData);
-                    
-                    // Sincronizar perfil completo
-                    await syncProfileToCloud({
-                        id: currentUser.id,
-                        ...profileData,
-                        subCategory: profile.subCategory,
-                    });
-                    
-                    // Registrar la interacción
-                    await logInteraction(currentUser.id, 'profile_updated', {
-                        fields: Object.keys(profileData),
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    firebaseSaved = true;
-                    setSaveMessage('✅ Perfil guardado y sincronizado');
-                } catch (error) {
-                    retries--;
-                    console.error(`❌ Error guardando en Firebase (quedan ${retries} intentos):`, error);
-                    if (retries > 0) {
-                        await new Promise(r => setTimeout(r, 1000)); // Esperar 1s antes de reintentar
-                    }
-                }
-            }
-            
-            if (!firebaseSaved) {
-                // Si después de 3 intentos no se guardó, mostrar advertencia CLARA
-                setSaveMessage('⚠️ Guardado local. Presiona Sincronizar para subir a la nube.');
-            }
-        } else {
-            setSaveMessage('❌ Error al guardar');
-        }
-        
-        setTimeout(() => setSaveMessage(null), 3000);
-        setIsSaving(false);
-        setIsEditing(false);
-    };
-
-    return (
-        <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
-            {/* Header with Cover */}
-            <div className="h-72 w-full relative group">
-                <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
-                
-                {/* Botón editar banner - Arriba a la derecha del cover (con safe-area para iPhone) */}
-                {isEditing && (
-                  <button 
-                    onClick={() => bannerInputRef.current?.click()}
-                    className="absolute top-14 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-40 text-sm"
-                  >
-                    <Edit2 size={16} />
-                    <span className="font-medium">Cambiar banner</span>
-                  </button>
-                )}
-                <input 
-                  ref={bannerInputRef}
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
-                  onChange={handleBannerUpload}
-                  className="hidden"
-                />
-                
-                {/* Top Navigation Actions (con safe-area para iPhone) */}
-                <div className="absolute top-14 left-4 right-4 z-30 flex items-center justify-between">
-                    <button 
-                        onClick={() => navigate('/dashboard')}
-                        className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
-                    >
-                        <ArrowLeft size={18} />
-                        <span className="text-sm font-medium">Volver</span>
-                    </button>
-                    <button 
-                        onClick={async () => {
-                          setSaveMessage('☁️ Sincronizando con la nube...');
-                          try {
-                            const { syncUserToFirebase } = await import('./services/firebaseService');
-                            const localUser = getCurrentUser();
-                            
-                            // PASO 1: PRIMERO subir datos locales a Firebase (para no perderlos)
-                            if (localUser) {
-                              setSaveMessage('⬆️ Subiendo datos locales a la nube...');
-                              await syncUserToFirebase(localUser.id, {
-                                name: localUser.name,
-                                companyName: localUser.companyName,
-                                bio: localUser.bio,
-                                phone: localUser.phone,
-                                whatsapp: localUser.whatsapp,
-                                instagram: localUser.instagram,
-                                website: localUser.website,
-                                city: localUser.city,
-                                category: localUser.category,
-                                affinity: localUser.affinity,
-                                scope: localUser.scope,
-                                comuna: localUser.comuna,
-                                selectedRegions: localUser.selectedRegions,
-                                revenue: localUser.revenue,
-                                avatarUrl: localUser.avatarUrl,
-                                coverUrl: localUser.coverUrl,
-                              });
-                              console.log('✅ Datos locales subidos a Firebase');
-                            }
-                            
-                            // PASO 2: Luego descargar datos frescos de Firebase
-                            setSaveMessage('⬇️ Descargando datos de la nube...');
-                            const session = getStoredSession();
-                            if (session?.email) {
-                              const freshUser = await getUserFromFirebaseByEmail(session.email);
-                              if (freshUser) {
-                                setCurrentUser(freshUser.id);
-                                setProfile(getMyProfile());
-                                const user = getCurrentUser();
-                                if (user) {
-                                  setEditScope(user.scope || 'NACIONAL');
-                                  setEditSelectedRegions(user.selectedRegions || []);
-                                  setEditComuna(user.comuna || '');
-                                  setEditCategory(user.category || '');
-                                  setEditAffinity(user.affinity || '');
-                                  setEditRevenue(user.revenue || '');
-                                }
-                                setSaveMessage('✅ Sincronización completa');
-                              } else {
-                                setSaveMessage('⚠️ No se encontró usuario en la nube');
-                              }
-                            }
-                          } catch (error) {
-                            console.error('Error sincronizando:', error);
-                            setSaveMessage('❌ Error al sincronizar');
-                          }
-                          setTimeout(() => setSaveMessage(null), 3000);
-                        }}
-                        className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
-                    >
-                        <RefreshCw size={18} />
-                        <span className="text-sm font-medium">Sincronizar</span>
-                    </button>
-                </div>
-            </div>
-
-            <div className="px-4 -mt-24 relative z-10">
-                <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
-                    
-                    {/* Avatar - Simple, sin círculo extra */}
-                    <div className="relative -mt-20 mb-4 z-20">
-                        <img 
-                            src={profile.avatarUrl} 
-                            alt={profile.name}
-                            className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
-                        />
-                        {isEditing && (
-                          <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white"
-                          >
-                            <div className="text-center">
-                              <Edit2 size={20} className="mx-auto mb-1" />
-                              <span className="text-xs">Cambiar foto</span>
-                            </div>
-                          </button>
-                        )}
-                        <input 
-                          ref={fileInputRef}
-                          type="file"
-                          accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                    </div>
-
-                    {/* Main Info */}
-                    <div className="text-center mb-4 w-full">
-                        {isEditing ? (
-                            <div className="space-y-2">
-                                <input 
-                                    value={profile.companyName} 
-                                    onChange={(e) => setProfile({...profile, companyName: e.target.value})}
-                                    className="bg-[#F5F7FB] text-center text-2xl font-bold text-[#181B34] rounded-lg p-2 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
-                                />
-                                <input 
-                                    value={profile.name} 
-                                    onChange={(e) => setProfile({...profile, name: e.target.value})}
-                                    className="bg-[#F5F7FB] text-center text-[#434343] font-medium text-lg rounded-lg p-2 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
-                                />
-                            </div>
-                        ) : (
-                            <>
-                                <h2 className="text-3xl font-bold text-[#181B34] mb-1 tracking-tight">{profile.companyName}</h2>
-                                <p className="text-[#7C8193] font-medium text-lg">{profile.name}</p>
-                            </>
-                        )}
-                        
-                        {/* Badge de categoría (solo lectura) - mostrar giro principal limpio */}
-                        {!isEditing && (
-                          <div className="flex justify-center gap-2 mt-4 flex-wrap">
-                            {/* Giro principal */}
-                            <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-3 py-1.5 rounded-full">
-                                {(editCategory || profile.category || '').split(' - ')[0].split('  ')[0] || 'Emprendimiento'}
-                            </span>
-                            {/* Subcategoría si existe */}
-                            {((editCategory || profile.category || '').includes(' - ') || (editCategory || profile.category || '').includes('  ')) && (
-                              <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 text-[#00CA72] px-3 py-1.5 rounded-full">
-                                {(editCategory || profile.category || '').split(' - ')[1]?.split('  ')[0] || 
-                                 (editCategory || profile.category || '').split('  ')[1] || ''}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        
-                        {/* Botón Editar Perfil - Centrado debajo de categoría */}
-                        <div className="mt-4">
-                          {isEditing ? (
-                            <div className="flex justify-center gap-3">
-                              <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-medium">
-                                <X size={16}/> Cancelar
-                              </button>
-                              <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-medium disabled:opacity-50">
-                                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16}/>} Guardar
-                              </button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-full border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 flex items-center gap-2 text-sm font-medium mx-auto">
-                              <Edit2 size={14} /> Editar Perfil
-                            </button>
-                          )}
-                        </div>
-                    </div>
-
-                    {/* Mensaje de guardado */}
-                    {saveMessage && (
-                        <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${
-                            saveMessage.includes('✅') || saveMessage.includes('📷')
-                                ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30' 
-                                : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
-                        }`}>
-                            {saveMessage}
-                        </div>
-                    )}
-
-        {/* Campos editables del perfil */}
+        {/* Botón editar banner - Arriba a la derecha del cover (con safe-area para iPhone) */}
         {isEditing && (
-          <div className="w-full mb-6 space-y-4">
-            {/* Datos básicos */}
-            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Datos Básicos</h4>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Nombre del Emprendimiento</label>
-                <input 
+          <button
+            onClick={() => bannerInputRef.current?.click()}
+            className="absolute top-14 right-4 bg-black/60 hover:bg-black/80 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all z-40 text-sm"
+          >
+            <Edit2 size={16} />
+            <span className="font-medium">Cambiar banner</span>
+          </button>
+        )}
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+          onChange={handleBannerUpload}
+          className="hidden"
+        />
+
+        {/* Top Navigation Actions (con safe-area para iPhone) */}
+        <div className="absolute top-14 left-4 right-4 z-30 flex items-center justify-between">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
+          >
+            <ArrowLeft size={18} />
+            <span className="text-sm font-medium">Volver</span>
+          </button>
+          <button
+            onClick={async () => {
+              setSaveMessage('☁️ Sincronizando con la nube...');
+              try {
+                const { syncUserToFirebase } = await import('./services/firebaseService');
+                const localUser = getCurrentUser();
+
+                // PASO 1: PRIMERO subir datos locales a Firebase (para no perderlos)
+                if (localUser) {
+                  setSaveMessage('⬆️ Subiendo datos locales a la nube...');
+                  await syncUserToFirebase(localUser.id, {
+                    name: localUser.name,
+                    companyName: localUser.companyName,
+                    bio: localUser.bio,
+                    phone: localUser.phone,
+                    whatsapp: localUser.whatsapp,
+                    instagram: localUser.instagram,
+                    website: localUser.website,
+                    city: localUser.city,
+                    category: localUser.category,
+                    affinity: localUser.affinity,
+                    scope: localUser.scope,
+                    comuna: localUser.comuna,
+                    selectedRegions: localUser.selectedRegions,
+                    revenue: localUser.revenue,
+                    avatarUrl: localUser.avatarUrl,
+                    coverUrl: localUser.coverUrl,
+                  });
+                  console.log('✅ Datos locales subidos a Firebase');
+                }
+
+                // PASO 2: Luego descargar datos frescos de Firebase
+                setSaveMessage('⬇️ Descargando datos de la nube...');
+                const session = getStoredSession();
+                if (session?.email) {
+                  const freshUser = await getUserFromFirebaseByEmail(session.email);
+                  if (freshUser) {
+                    setCurrentUser(freshUser.id);
+                    setProfile(getMyProfile());
+                    const user = getCurrentUser();
+                    if (user) {
+                      setEditScope(user.scope || 'NACIONAL');
+                      setEditSelectedRegions(user.selectedRegions || []);
+                      setEditComuna(user.comuna || '');
+                      setEditCategory(user.category || '');
+                      setEditAffinity(user.affinity || '');
+                      setEditRevenue(user.revenue || '');
+                    }
+                    setSaveMessage('✅ Sincronización completa');
+                  } else {
+                    setSaveMessage('⚠️ No se encontró usuario en la nube');
+                  }
+                }
+              } catch (error) {
+                console.error('Error sincronizando:', error);
+                setSaveMessage('❌ Error al sincronizar');
+              }
+              setTimeout(() => setSaveMessage(null), 3000);
+            }}
+            className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
+          >
+            <RefreshCw size={18} />
+            <span className="text-sm font-medium">Sincronizar</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="px-4 -mt-24 relative z-10">
+        <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
+
+          {/* Avatar - Simple, sin círculo extra */}
+          <div className="relative -mt-20 mb-4 z-20">
+            <img
+              src={profile.avatarUrl}
+              alt={profile.name}
+              className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+            />
+            {isEditing && (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white"
+              >
+                <div className="text-center">
+                  <Edit2 size={20} className="mx-auto mb-1" />
+                  <span className="text-xs">Cambiar foto</span>
+                </div>
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
+          </div>
+
+          {/* Main Info */}
+          <div className="text-center mb-4 w-full">
+            {isEditing ? (
+              <div className="space-y-2">
+                <input
                   value={profile.companyName}
-                  onChange={(e) => setProfile({...profile, companyName: e.target.value})}
-                  placeholder="Mi Empresa"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
+                  className="bg-[#F5F7FB] text-center text-2xl font-bold text-[#181B34] rounded-lg p-2 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Tu Nombre</label>
-                <input 
+                <input
                   value={profile.name}
-                  onChange={(e) => setProfile({...profile, name: e.target.value})}
-                  placeholder="Tu nombre"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                  className="bg-[#F5F7FB] text-center text-[#434343] font-medium text-lg rounded-lg p-2 w-full outline-none border border-[#E4E7EF] focus:border-[#6161FF] focus:ring-2 focus:ring-[#6161FF]/20"
                 />
               </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">WhatsApp</label>
-                <input 
-                  value={profile.whatsapp || profile.phone || ''}
-                  onChange={(e) => setProfile({...profile, whatsapp: e.target.value, phone: e.target.value})}
-                  placeholder="+56 9 1234 5678"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Descripción del Negocio</label>
-                <textarea 
-                  value={profile.bio}
-                  onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                  placeholder="Describe tu emprendimiento..."
-                  rows={3}
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF] resize-none"
-                />
-              </div>
-            </div>
+            ) : (
+              <>
+                <h2 className="text-3xl font-bold text-[#181B34] mb-1 tracking-tight">{profile.companyName}</h2>
+                <p className="text-[#7C8193] font-medium text-lg">{profile.name}</p>
+              </>
+            )}
 
-            {/* Categoría y Afinidad - SELECTORES para matching */}
-            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">🎯 Categoría e Intereses (para Matching)</h4>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/Categoría del Negocio</label>
-                <select
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                >
-                  <option value="">Selecciona tu giro...</option>
-                  {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
-                    <option key={idx} value={cat}>{cat}</option>
-                  ))}
-                </select>
+            {/* Badge de categoría (solo lectura) - mostrar giro principal limpio */}
+            {!isEditing && (
+              <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                {/* Giro principal */}
+                <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-3 py-1.5 rounded-full">
+                  {(editCategory || profile.category || '').split(' - ')[0].split('  ')[0] || 'Emprendimiento'}
+                </span>
+                {/* Subcategoría si existe */}
+                {((editCategory || profile.category || '').includes(' - ') || (editCategory || profile.category || '').includes('  ')) && (
+                  <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 text-[#00CA72] px-3 py-1.5 rounded-full">
+                    {(editCategory || profile.category || '').split(' - ')[1]?.split('  ')[0] ||
+                      (editCategory || profile.category || '').split('  ')[1] || ''}
+                  </span>
+                )}
               </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Afinidad/Intereses</label>
-                <select
-                  value={editAffinity}
-                  onChange={(e) => setEditAffinity(e.target.value)}
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                >
-                  <option value="">Selecciona tu afinidad...</option>
-                  {[...AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((aff, idx) => (
-                    <option key={idx} value={aff}>{aff}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual</label>
-                <select
-                  value={editRevenue}
-                  onChange={(e) => setEditRevenue(e.target.value)}
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                >
-                  <option value="">Selecciona rango...</option>
-                  <option value="Menos de $500.000">Menos de $500.000</option>
-                  <option value="$500.000 - $2.000.000">$500.000 - $2.000.000</option>
-                  <option value="$2.000.000 - $5.000.000">$2.000.000 - $5.000.000</option>
-                  <option value="$5.000.000 - $10.000.000">$5.000.000 - $10.000.000</option>
-                  <option value="Más de $10.000.000">Más de $10.000.000</option>
-                </select>
-              </div>
-            </div>
+            )}
 
-            {/* Geografía - SELECTORES para matching */}
-            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">📍 Alcance Geográfico (para Matching)</h4>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {['LOCAL', 'REGIONAL', 'NACIONAL'].map(scope => (
-                    <button
-                      key={scope}
-                      type="button"
-                      onClick={() => setEditScope(scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL')}
-                      className={`py-2 rounded-lg text-sm font-medium transition-all ${editScope === scope ? 'bg-[#6161FF] text-white' : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'}`}
-                    >
-                      {scope}
-                    </button>
-                  ))}
+            {/* Botón Editar Perfil - Centrado debajo de categoría */}
+            <div className="mt-4">
+              {isEditing ? (
+                <div className="flex justify-center gap-3">
+                  <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-medium">
+                    <X size={16} /> Cancelar
+                  </button>
+                  <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-medium disabled:opacity-50">
+                    {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />} Guardar
+                  </button>
                 </div>
-              </div>
-              
-              {/* LOCAL: Selector Región -> Comuna */}
-              {editScope === 'LOCAL' && (
-                <div className="space-y-3 animate-fadeIn">
-                  <div>
-                    <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Región</label>
-                    <select
-                      value={editSelectedRegionForComuna}
-                      onChange={(e) => {
-                        setEditSelectedRegionForComuna(e.target.value);
-                        setEditComuna(''); // Reset comuna al cambiar región
-                      }}
-                      className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                    >
-                      <option value="">Selecciona región...</option>
-                      {REGIONS.map(region => (
-                        <option key={region.id} value={region.id}>{region.shortName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {editSelectedRegionForComuna && (
-                    <div>
-                      <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Comuna</label>
-                      <select
-                        value={editComuna}
-                        onChange={(e) => setEditComuna(e.target.value)}
-                        className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                      >
-                        <option value="">Selecciona comuna...</option>
-                        {editComunasDeRegion.map(comuna => (
-                          <option key={comuna} value={comuna}>{comuna}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                </div>
+              ) : (
+                <button onClick={() => setIsEditing(true)} className="px-4 py-2 rounded-full border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 flex items-center gap-2 text-sm font-medium mx-auto">
+                  <Edit2 size={14} /> Editar Perfil
+                </button>
               )}
-              
-              {/* REGIONAL: Multi-select de regiones */}
-              {editScope === 'REGIONAL' && (
-                <div className="animate-fadeIn">
-                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Regiones donde operas</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                    {REGIONS.map(region => (
+            </div>
+          </div>
+
+          {/* Mensaje de guardado */}
+          {saveMessage && (
+            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('✅') || saveMessage.includes('📷')
+              ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30'
+              : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
+              }`}>
+              {saveMessage}
+            </div>
+          )}
+
+          {/* Campos editables del perfil */}
+          {isEditing && (
+            <div className="w-full mb-6 space-y-4">
+              {/* Datos básicos */}
+              <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Datos Básicos</h4>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Nombre del Emprendimiento</label>
+                  <input
+                    value={profile.companyName}
+                    onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
+                    placeholder="Mi Empresa"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Tu Nombre</label>
+                  <input
+                    value={profile.name}
+                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    placeholder="Tu nombre"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">WhatsApp</label>
+                  <input
+                    value={profile.whatsapp || profile.phone || ''}
+                    onChange={(e) => setProfile({ ...profile, whatsapp: e.target.value, phone: e.target.value })}
+                    placeholder="+56 9 1234 5678"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Descripción del Negocio</label>
+                  <textarea
+                    value={profile.bio}
+                    onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                    placeholder="Describe tu emprendimiento..."
+                    rows={3}
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF] resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Categoría y Afinidad - SELECTORES para matching */}
+              <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">🎯 Categoría e Intereses (para Matching)</h4>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/Categoría del Negocio</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  >
+                    <option value="">Selecciona tu giro...</option>
+                    {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Afinidad/Intereses</label>
+                  <select
+                    value={editAffinity}
+                    onChange={(e) => setEditAffinity(e.target.value)}
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  >
+                    <option value="">Selecciona tu afinidad...</option>
+                    {[...AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((aff, idx) => (
+                      <option key={idx} value={aff}>{aff}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual</label>
+                  <select
+                    value={editRevenue}
+                    onChange={(e) => setEditRevenue(e.target.value)}
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  >
+                    <option value="">Selecciona rango...</option>
+                    <option value="Menos de $500.000">Menos de $500.000</option>
+                    <option value="$500.000 - $2.000.000">$500.000 - $2.000.000</option>
+                    <option value="$2.000.000 - $5.000.000">$2.000.000 - $5.000.000</option>
+                    <option value="$5.000.000 - $10.000.000">$5.000.000 - $10.000.000</option>
+                    <option value="Más de $10.000.000">Más de $10.000.000</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Geografía - SELECTORES para matching */}
+              <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">📍 Alcance Geográfico (para Matching)</h4>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['LOCAL', 'REGIONAL', 'NACIONAL'].map(scope => (
                       <button
-                        key={region.id}
+                        key={scope}
                         type="button"
-                        onClick={() => {
-                          if (editSelectedRegions.includes(region.id)) {
-                            setEditSelectedRegions(editSelectedRegions.filter(r => r !== region.id));
-                          } else {
-                            setEditSelectedRegions([...editSelectedRegions, region.id]);
-                          }
-                        }}
-                        className={`py-2 px-3 rounded-lg text-xs font-medium transition-all text-left ${
-                          editSelectedRegions.includes(region.id) 
-                            ? 'bg-[#6161FF] text-white' 
-                            : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'
-                        }`}
+                        onClick={() => setEditScope(scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL')}
+                        className={`py-2 rounded-lg text-sm font-medium transition-all ${editScope === scope ? 'bg-[#6161FF] text-white' : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'}`}
                       >
-                        {editSelectedRegions.includes(region.id) ? '✓ ' : ''}{region.shortName}
+                        {scope}
                       </button>
                     ))}
                   </div>
-                  {editSelectedRegions.length > 0 && (
-                    <p className="text-xs text-[#6161FF] mt-2">{editSelectedRegions.length} región(es) seleccionada(s)</p>
+                </div>
+
+                {/* LOCAL: Selector Región -> Comuna */}
+                {editScope === 'LOCAL' && (
+                  <div className="space-y-3 animate-fadeIn">
+                    <div>
+                      <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Región</label>
+                      <select
+                        value={editSelectedRegionForComuna}
+                        onChange={(e) => {
+                          setEditSelectedRegionForComuna(e.target.value);
+                          setEditComuna(''); // Reset comuna al cambiar región
+                        }}
+                        className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                      >
+                        <option value="">Selecciona región...</option>
+                        {REGIONS.map(region => (
+                          <option key={region.id} value={region.id}>{region.shortName}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {editSelectedRegionForComuna && (
+                      <div>
+                        <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Comuna</label>
+                        <select
+                          value={editComuna}
+                          onChange={(e) => setEditComuna(e.target.value)}
+                          className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                        >
+                          <option value="">Selecciona comuna...</option>
+                          {editComunasDeRegion.map(comuna => (
+                            <option key={comuna} value={comuna}>{comuna}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* REGIONAL: Multi-select de regiones */}
+                {editScope === 'REGIONAL' && (
+                  <div className="animate-fadeIn">
+                    <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Regiones donde operas</label>
+                    <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                      {REGIONS.map(region => (
+                        <button
+                          key={region.id}
+                          type="button"
+                          onClick={() => {
+                            if (editSelectedRegions.includes(region.id)) {
+                              setEditSelectedRegions(editSelectedRegions.filter(r => r !== region.id));
+                            } else {
+                              setEditSelectedRegions([...editSelectedRegions, region.id]);
+                            }
+                          }}
+                          className={`py-2 px-3 rounded-lg text-xs font-medium transition-all text-left ${editSelectedRegions.includes(region.id)
+                            ? 'bg-[#6161FF] text-white'
+                            : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'
+                            }`}
+                        >
+                          {editSelectedRegions.includes(region.id) ? '✓ ' : ''}{region.shortName}
+                        </button>
+                      ))}
+                    </div>
+                    {editSelectedRegions.length > 0 && (
+                      <p className="text-xs text-[#6161FF] mt-2">{editSelectedRegions.length} región(es) seleccionada(s)</p>
+                    )}
+                  </div>
+                )}
+
+                {editScope === 'NACIONAL' && (
+                  <p className="text-sm text-[#7C8193] italic">Operación a nivel nacional - matchearás con todos</p>
+                )}
+              </div>
+
+              {/* Redes sociales */}
+              <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Redes Sociales</h4>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Instagram</label>
+                  <input
+                    value={profile.instagram}
+                    onChange={(e) => setProfile({ ...profile, instagram: e.target.value })}
+                    placeholder="@tu_instagram"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">TikTok</label>
+                  <input
+                    value={(profile as any).tiktok || ''}
+                    onChange={(e) => setProfile({ ...profile, tiktok: e.target.value } as any)}
+                    placeholder="@tu_tiktok"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facebook</label>
+                  <input
+                    value={(profile as any).facebook || ''}
+                    onChange={(e) => setProfile({ ...profile, facebook: e.target.value } as any)}
+                    placeholder="facebook.com/tu_pagina"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">X (Twitter)</label>
+                  <input
+                    value={(profile as any).twitter || ''}
+                    onChange={(e) => setProfile({ ...profile, twitter: e.target.value } as any)}
+                    placeholder="@tu_usuario"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
+                  <input
+                    value={profile.website}
+                    onChange={(e) => setProfile({ ...profile, website: e.target.value })}
+                    placeholder="www.tusitio.cl"
+                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
+                  />
+                </div>
+              </div>
+
+              {/* Botones Cancelar/Guardar al final del formulario */}
+              <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-[#E4E7EF] p-4 -mx-4 mt-4 flex justify-center gap-3">
+                <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-semibold">
+                  <X size={16} /> Cancelar
+                </button>
+                <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-semibold disabled:opacity-50 shadow-lg">
+                  {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />} Guardar Cambios
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isEditing && profile && (
+            <div className="flex flex-wrap gap-3 w-full mb-6">
+              <a
+                href={`https://www.instagram.com/${profile.instagram.replace('@', '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E91E63] via-[#C13584] to-[#F77737] text-white font-semibold hover:opacity-90 transition shadow-md"
+              >
+                <Instagram size={16} /> Instagram
+              </a>
+              {(profile as any).tiktok && (
+                <a
+                  href={`https://www.tiktok.com/@${(profile as any).tiktok.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#000000] text-white font-semibold hover:bg-[#1a1a1a] transition shadow-md"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" /></svg>
+                  TikTok
+                </a>
+              )}
+              {(profile as any).facebook && (
+                <a
+                  href={`https://facebook.com/${(profile as any).facebook.replace('facebook.com/', '').replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1877F2] text-white font-semibold hover:bg-[#166FE5] transition shadow-md"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                  Facebook
+                </a>
+              )}
+              {(profile as any).twitter && (
+                <a
+                  href={`https://x.com/${(profile as any).twitter.replace('@', '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#000000] text-white font-semibold hover:bg-[#1a1a1a] transition shadow-md"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                  X
+                </a>
+              )}
+              <a
+                href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"
+              >
+                <Share2 size={16} /> WhatsApp
+              </a>
+            </div>
+          )}
+
+          {/* Details - Solo visible cuando NO estamos editando */}
+          {!isEditing && (
+            <div className="space-y-8 w-full text-left">
+              <div>
+                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Biografía</h3>
+                <p className="text-[#434343] leading-relaxed text-lg">
+                  {profile.bio}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
+                  <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF] shrink-0"><MapPin size={20} /></div>
+                  <div className="text-sm min-w-0">
+                    <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
+                    <span className="font-medium text-[#181B34]">{profile.location}</span>
+                  </div>
+                </div>
+                <a
+                  href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF] hover:border-[#00CA72] transition-colors"
+                >
+                  <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72] shrink-0"><Globe size={20} /></div>
+                  <div className="text-sm min-w-0 flex-1">
+                    <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Sitio Web</span>
+                    <span className="font-medium text-[#181B34] block truncate">{profile.website}</span>
+                  </div>
+                  <ArrowRight size={16} className="text-[#7C8193] shrink-0" />
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Secciones siempre visibles */}
+          <div className="space-y-8 w-full text-left">
+            <div>
+              <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Etiquetas</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.tags.map((tag, idx) => (
+                  <span key={`${tag}-${idx}`} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors flex items-center gap-2">
+                    #{tag}
+                    {isEditing && (
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="text-[#FB275D] hover:text-[#FB275D] ml-1"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </span>
+                ))}
+                {isEditing && !showTagInput && (
+                  <button
+                    onClick={() => setShowTagInput(true)}
+                    className="text-sm border border-dashed border-[#6161FF]/40 px-4 py-2 rounded-lg text-[#6161FF] hover:bg-[#6161FF]/10"
+                  >
+                    + Agregar
+                  </button>
+                )}
+                {isEditing && showTagInput && (
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={newTag}
+                      onChange={(e) => setNewTag(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+                      placeholder="Nueva etiqueta"
+                      className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-3 py-2 rounded-lg outline-none focus:border-[#6161FF] w-32"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleAddTag}
+                      className="text-[#00CA72] hover:text-[#00B366]"
+                    >
+                      <CheckCircle size={20} />
+                    </button>
+                    <button
+                      onClick={() => { setShowTagInput(false); setNewTag(''); }}
+                      className="text-[#7C8193] hover:text-[#FB275D]"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SECCIÓN MEMBRESÍA */}
+            <MembershipSection userId={currentUser?.id || ''} />
+
+            {/* Botón de Notificaciones Push */}
+            <NotificationButton />
+
+            {/* Opciones de cuenta */}
+            <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
+              {/* Tamaño de letra (Accesibilidad) */}
+              <button
+                onClick={() => setShowFontSizeModal(true)}
+                className="w-full py-3 rounded-xl border border-[#00CA72]/30 text-[#00CA72] hover:bg-[#00CA72]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+              >
+                <Type size={16} /> Tamaño de Letra: {fontSize === 'small' ? 'Pequeño' : fontSize === 'medium' ? 'Mediano' : 'Grande'}
+              </button>
+
+              {/* Cambiar contraseña */}
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="w-full py-3 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+              >
+                <Lock size={16} /> Cambiar Contraseña
+              </button>
+
+              {/* Cerrar sesión */}
+              <button
+                onClick={() => {
+                  clearStoredSession();
+                  localStorage.removeItem('tribu_session');
+                  localStorage.removeItem('algorithm_seen');
+                  navigate('/');
+                }}
+                className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
+              >
+                <LogOut size={16} /> Cerrar Sesión
+              </button>
+
+              {/* Acceso secreto a Red/Directorio - Solo visible en desarrollo */}
+              {import.meta.env.DEV && (
+                <div className="pt-4 border-t border-dashed border-[#E4E7EF]">
+                  <button
+                    onClick={() => setShowSecretInput(!showSecretInput)}
+                    className="text-xs text-[#B3B8C6] hover:text-[#7C8193] transition-colors"
+                  >
+                    🔐 Acceso administrador
+                  </button>
+                  {showSecretInput && (
+                    <div className="mt-2 space-y-2 animate-fadeIn">
+                      <input
+                        type="password"
+                        value={secretCode}
+                        onChange={(e) => setSecretCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSecretAccess()}
+                        placeholder="Código de acceso..."
+                        className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-sm"
+                      />
+                      {secretCodeError && (
+                        <p className="text-xs text-[#FB275D]">{secretCodeError}</p>
+                      )}
+                      <button
+                        onClick={handleSecretAccess}
+                        className="w-full py-2 rounded-lg bg-[#181B34] text-white text-sm"
+                      >
+                        Acceder a Red Completa
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
-              
-              {editScope === 'NACIONAL' && (
-                <p className="text-sm text-[#7C8193] italic">Operación a nivel nacional - matchearás con todos</p>
-              )}
             </div>
 
-            {/* Redes sociales */}
-            <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-              <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Redes Sociales</h4>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Instagram</label>
-                <input 
-                  value={profile.instagram}
-                  onChange={(e) => setProfile({...profile, instagram: e.target.value})}
-                  placeholder="@tu_instagram"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">TikTok</label>
-                <input 
-                  value={(profile as any).tiktok || ''}
-                  onChange={(e) => setProfile({...profile, tiktok: e.target.value} as any)}
-                  placeholder="@tu_tiktok"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facebook</label>
-                <input 
-                  value={(profile as any).facebook || ''}
-                  onChange={(e) => setProfile({...profile, facebook: e.target.value} as any)}
-                  placeholder="facebook.com/tu_pagina"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">X (Twitter)</label>
-                <input 
-                  value={(profile as any).twitter || ''}
-                  onChange={(e) => setProfile({...profile, twitter: e.target.value} as any)}
-                  placeholder="@tu_usuario"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Sitio Web</label>
-                <input 
-                  value={profile.website}
-                  onChange={(e) => setProfile({...profile, website: e.target.value})}
-                  placeholder="www.tusitio.cl"
-                  className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                />
-              </div>
-            </div>
-
-            {/* Botones Cancelar/Guardar al final del formulario */}
-            <div className="sticky bottom-0 bg-white/95 backdrop-blur-sm border-t border-[#E4E7EF] p-4 -mx-4 mt-4 flex justify-center gap-3">
-              <button onClick={() => setIsEditing(false)} className="px-6 py-3 rounded-full bg-[#FB275D]/10 text-[#FB275D] hover:bg-[#FB275D]/20 flex items-center gap-2 text-sm font-semibold">
-                <X size={16}/> Cancelar
-              </button>
-              <button onClick={handleSave} disabled={isSaving} className="px-6 py-3 rounded-full bg-[#00CA72] text-white hover:bg-[#00B366] flex items-center gap-2 text-sm font-semibold disabled:opacity-50 shadow-lg">
-                {isSaving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16}/>} Guardar Cambios
-              </button>
-            </div>
-          </div>
-        )}
-
-        {!isEditing && profile && (
-          <div className="flex flex-wrap gap-3 w-full mb-6">
-            <a
-              href={`https://www.instagram.com/${profile.instagram.replace('@', '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#E91E63] via-[#C13584] to-[#F77737] text-white font-semibold hover:opacity-90 transition shadow-md"
-            >
-              <Instagram size={16} /> Instagram
-            </a>
-            {(profile as any).tiktok && (
-              <a
-                href={`https://www.tiktok.com/@${(profile as any).tiktok.replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#000000] text-white font-semibold hover:bg-[#1a1a1a] transition shadow-md"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
-                TikTok
-              </a>
-            )}
-            {(profile as any).facebook && (
-              <a
-                href={`https://facebook.com/${(profile as any).facebook.replace('facebook.com/', '').replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1877F2] text-white font-semibold hover:bg-[#166FE5] transition shadow-md"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                Facebook
-              </a>
-            )}
-            {(profile as any).twitter && (
-              <a
-                href={`https://x.com/${(profile as any).twitter.replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#000000] text-white font-semibold hover:bg-[#1a1a1a] transition shadow-md"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                X
-              </a>
-            )}
-            <a
-              href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"
-            >
-              <Share2 size={16} /> WhatsApp
-            </a>
-          </div>
-        )}
-
-        {/* Details - Solo visible cuando NO estamos editando */}
-        {!isEditing && (
-        <div className="space-y-8 w-full text-left">
-                        <div>
-                            <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Biografía</h3>
-                            <p className="text-[#434343] leading-relaxed text-lg">
-                                {profile.bio}
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3">
-                            <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
-                              <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF] shrink-0"><MapPin size={20} /></div>
-                              <div className="text-sm min-w-0">
-                                <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
-                                <span className="font-medium text-[#181B34]">{profile.location}</span>
-                              </div>
-                            </div>
-                            <a 
-                              href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF] hover:border-[#00CA72] transition-colors"
-                            >
-                              <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72] shrink-0"><Globe size={20} /></div>
-                              <div className="text-sm min-w-0 flex-1">
-                                <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Sitio Web</span>
-                                <span className="font-medium text-[#181B34] block truncate">{profile.website}</span>
-                              </div>
-                              <ArrowRight size={16} className="text-[#7C8193] shrink-0" />
-                            </a>
-                        </div>
-        </div>
-        )}
-
-        {/* Secciones siempre visibles */}
-        <div className="space-y-8 w-full text-left">
-                        <div>
-                            <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Etiquetas</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {profile.tags.map((tag, idx) => (
-                                <span key={`${tag}-${idx}`} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors flex items-center gap-2">
-                                    #{tag}
-                                    {isEditing && (
-                                      <button 
-                                        onClick={() => handleRemoveTag(tag)}
-                                        className="text-[#FB275D] hover:text-[#FB275D] ml-1"
-                                      >
-                                        <X size={14} />
-                                      </button>
-                                    )}
-                                </span>
-                                ))}
-                                {isEditing && !showTagInput && (
-                                    <button 
-                                      onClick={() => setShowTagInput(true)}
-                                      className="text-sm border border-dashed border-[#6161FF]/40 px-4 py-2 rounded-lg text-[#6161FF] hover:bg-[#6161FF]/10"
-                                    >
-                                        + Agregar
-                                    </button>
-                                )}
-                                {isEditing && showTagInput && (
-                                  <div className="flex gap-2 items-center">
-                                    <input
-                                      type="text"
-                                      value={newTag}
-                                      onChange={(e) => setNewTag(e.target.value)}
-                                      onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-                                      placeholder="Nueva etiqueta"
-                                      className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-3 py-2 rounded-lg outline-none focus:border-[#6161FF] w-32"
-                                      autoFocus
-                                    />
-                                    <button 
-                                      onClick={handleAddTag}
-                                      className="text-[#00CA72] hover:text-[#00B366]"
-                                    >
-                                      <CheckCircle size={20} />
-                                    </button>
-                                    <button 
-                                      onClick={() => { setShowTagInput(false); setNewTag(''); }}
-                                      className="text-[#7C8193] hover:text-[#FB275D]"
-                                    >
-                                      <X size={20} />
-                                    </button>
-                                  </div>
-                                )}
-                            </div>
-                        </div>
-                        
-                        {/* SECCIÓN MEMBRESÍA */}
-                        <MembershipSection userId={currentUser?.id || ''} />
-                        
-                        {/* Botón de Notificaciones Push */}
-                        <NotificationButton />
-                        
-                        {/* Opciones de cuenta */}
-                        <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
-                            {/* Tamaño de letra (Accesibilidad) */}
-                            <button 
-                                onClick={() => setShowFontSizeModal(true)}
-                                className="w-full py-3 rounded-xl border border-[#00CA72]/30 text-[#00CA72] hover:bg-[#00CA72]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-                            >
-                                <Type size={16} /> Tamaño de Letra: {fontSize === 'small' ? 'Pequeño' : fontSize === 'medium' ? 'Mediano' : 'Grande'}
-                            </button>
-                            
-                            {/* Cambiar contraseña */}
-                            <button 
-                                onClick={() => setShowPasswordModal(true)}
-                                className="w-full py-3 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-                            >
-                                <Lock size={16} /> Cambiar Contraseña
-                            </button>
-                            
-                            {/* Cerrar sesión */}
-                            <button 
-                                onClick={() => {
-                                  clearStoredSession();
-                                  localStorage.removeItem('tribu_session');
-                                  localStorage.removeItem('algorithm_seen');
-                                  navigate('/');
-                                }} 
-                                className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
-                            >
-                                <LogOut size={16} /> Cerrar Sesión
-                            </button>
-                            
-                            {/* Acceso secreto a Red/Directorio */}
-                            <div className="pt-4 border-t border-dashed border-[#E4E7EF]">
-                              <button
-                                onClick={() => setShowSecretInput(!showSecretInput)}
-                                className="text-xs text-[#B3B8C6] hover:text-[#7C8193] transition-colors"
-                              >
-                                🔐 Acceso administrador
-                              </button>
-                              {showSecretInput && (
-                                <div className="mt-2 space-y-2 animate-fadeIn">
-                                  <input
-                                    type="password"
-                                    value={secretCode}
-                                    onChange={(e) => setSecretCode(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSecretAccess()}
-                                    placeholder="Código de acceso..."
-                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-sm"
-                                  />
-                                  {secretCodeError && (
-                                    <p className="text-xs text-[#FB275D]">{secretCodeError}</p>
-                                  )}
-                                  <button
-                                    onClick={handleSecretAccess}
-                                    className="w-full py-2 rounded-lg bg-[#181B34] text-white text-sm"
-                                  >
-                                    Acceder a Red Completa
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                        </div>
-                        
-                        {/* Modal cambio de contraseña */}
-                        {showPasswordModal && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
-                              <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
-                                <Lock size={20} className="text-[#6161FF]" />
-                                Cambiar Contraseña
-                              </h3>
-                              <div className="space-y-4">
-                                <div>
-                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Contraseña actual</label>
-                                  <input
-                                    type="password"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                                    placeholder="TRIBU2026"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Nueva contraseña</label>
-                                  <input
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                                    placeholder="Mínimo 6 caracteres"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Confirmar nueva contraseña</label>
-                                  <input
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                                    placeholder="Repetir contraseña"
-                                  />
-                                </div>
-                                {passwordError && (
-                                  <p className="text-[#FB275D] text-sm">{passwordError}</p>
-                                )}
-                                {passwordSuccess && (
-                                  <p className="text-[#00CA72] text-sm">✅ Contraseña actualizada correctamente</p>
-                                )}
-                                <div className="flex gap-3 pt-2">
-                                  <button
-                                    onClick={() => {
-                                      setShowPasswordModal(false);
-                                      setCurrentPassword('');
-                                      setNewPassword('');
-                                      setConfirmPassword('');
-                                      setPasswordError('');
-                                      setPasswordSuccess(false);
-                                    }}
-                                    className="flex-1 py-2.5 rounded-xl border border-[#E4E7EF] text-[#7C8193] hover:bg-[#F5F7FB]"
-                                  >
-                                    Cancelar
-                                  </button>
-                                  <button
-                                    onClick={handleChangePassword}
-                                    className="flex-1 py-2.5 rounded-xl bg-[#6161FF] text-white hover:bg-[#5151EE]"
-                                  >
-                                    Guardar
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        {/* Modal tamaño de letra */}
-                        {showFontSizeModal && (
-                          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
-                            <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
-                              <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
-                                <Type size={20} className="text-[#00CA72]" />
-                                Tamaño de Letra
-                              </h3>
-                              <p className="text-sm text-[#7C8193] mb-4">Ajusta el tamaño del texto para mejor legibilidad</p>
-                              <div className="space-y-3">
-                                <button
-                                  onClick={() => setFontSize('small')}
-                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                                    fontSize === 'small' 
-                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
-                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
-                                  }`}
-                                >
-                                  <span className="text-sm font-medium">Pequeño</span>
-                                  <span className="text-xs text-[#7C8193]">16px</span>
-                                </button>
-                                <button
-                                  onClick={() => setFontSize('medium')}
-                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                                    fontSize === 'medium' 
-                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
-                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
-                                  }`}
-                                >
-                                  <span className="text-base font-medium">Mediano</span>
-                                  <span className="text-xs text-[#7C8193]">20px</span>
-                                </button>
-                                <button
-                                  onClick={() => setFontSize('large')}
-                                  className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${
-                                    fontSize === 'large' 
-                                      ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]' 
-                                      : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
-                                  }`}
-                                >
-                                  <span className="text-lg font-medium">Grande</span>
-                                  <span className="text-xs text-[#7C8193]">24px</span>
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => setShowFontSizeModal(false)}
-                                className="w-full mt-4 py-2.5 rounded-xl bg-[#00CA72] text-white hover:bg-[#00B366] font-medium"
-                              >
-                                Listo
-                              </button>
-                            </div>
-                          </div>
-                        )}
+            {/* Modal cambio de contraseña */}
+            {showPasswordModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
+                  <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
+                    <Lock size={20} className="text-[#6161FF]" />
+                    Cambiar Contraseña
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Contraseña actual</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                        placeholder="Tu contraseña actual"
+                      />
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Nueva contraseña</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                        placeholder="Mínimo 6 caracteres"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Confirmar nueva contraseña</label>
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
+                        placeholder="Repetir contraseña"
+                      />
+                    </div>
+                    {passwordError && (
+                      <p className="text-[#FB275D] text-sm">{passwordError}</p>
+                    )}
+                    {passwordSuccess && (
+                      <p className="text-[#00CA72] text-sm">✅ Contraseña actualizada correctamente</p>
+                    )}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={() => {
+                          setShowPasswordModal(false);
+                          setCurrentPassword('');
+                          setNewPassword('');
+                          setConfirmPassword('');
+                          setPasswordError('');
+                          setPasswordSuccess(false);
+                        }}
+                        className="flex-1 py-2.5 rounded-xl border border-[#E4E7EF] text-[#7C8193] hover:bg-[#F5F7FB]"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleChangePassword}
+                        className="flex-1 py-2.5 rounded-xl bg-[#6161FF] text-white hover:bg-[#5151EE]"
+                      >
+                        Guardar
+                      </button>
+                    </div>
+                  </div>
                 </div>
-            </div>
+              </div>
+            )}
+
+            {/* Modal tamaño de letra */}
+            {showFontSizeModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
+                  <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
+                    <Type size={20} className="text-[#00CA72]" />
+                    Tamaño de Letra
+                  </h3>
+                  <p className="text-sm text-[#7C8193] mb-4">Ajusta el tamaño del texto para mejor legibilidad</p>
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => setFontSize('small')}
+                      className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${fontSize === 'small'
+                        ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]'
+                        : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                        }`}
+                    >
+                      <span className="text-sm font-medium">Pequeño</span>
+                      <span className="text-xs text-[#7C8193]">16px</span>
+                    </button>
+                    <button
+                      onClick={() => setFontSize('medium')}
+                      className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${fontSize === 'medium'
+                        ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]'
+                        : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                        }`}
+                    >
+                      <span className="text-base font-medium">Mediano</span>
+                      <span className="text-xs text-[#7C8193]">20px</span>
+                    </button>
+                    <button
+                      onClick={() => setFontSize('large')}
+                      className={`w-full py-3 px-4 rounded-xl border-2 transition-all flex items-center justify-between ${fontSize === 'large'
+                        ? 'border-[#00CA72] bg-[#00CA72]/10 text-[#00CA72]'
+                        : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
+                        }`}
+                    >
+                      <span className="text-lg font-medium">Grande</span>
+                      <span className="text-xs text-[#7C8193]">24px</span>
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setShowFontSizeModal(false)}
+                    className="w-full mt-4 py-2.5 rounded-xl bg-[#00CA72] text-white hover:bg-[#00B366] font-medium"
+                  >
+                    Listo
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 // Componente de Sección de Membresía
@@ -4417,16 +4993,25 @@ const MembershipSection = ({ userId }: { userId: string }) => {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Cargar datos de membresía
+  const mapMembership = (data: CloudMembership | null, statusFallback?: string) => {
+    if (!data) return null;
+    return {
+      status: data.status || statusFallback || 'invitado',
+      paymentDate: data.paymentDate || data.trialStartDate,
+      expiresAt: data.expiresAt || data.trialEndDate,
+      paymentMethod: data.paymentMethod,
+      amount: data.amount
+    };
+  };
+
   useEffect(() => {
-    const loadMembership = async () => {
-      if (!userId) return;
-      
-      // Primero buscar en localStorage
+    if (!userId) return;
+    let mounted = true;
+
+    const hydrate = async () => {
       const localStatus = localStorage.getItem(`membership_status_${userId}`);
       const localPayment = localStorage.getItem(`membership_payment_${userId}`);
-      
-      if (localStatus) {
+      if (localStatus && mounted) {
         const paymentData = localPayment ? JSON.parse(localPayment) : {};
         setMembership({
           status: localStatus,
@@ -4436,48 +5021,27 @@ const MembershipSection = ({ userId }: { userId: string }) => {
           expiresAt: paymentData.expiresAt
         });
       }
-      
-      // Luego intentar obtener de Firebase (fuente de verdad)
+
       try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
-        const { doc, getDoc } = await import('firebase/firestore');
-        const db = getFirestoreInstance();
-        if (db) {
-          const membershipDoc = await getDoc(doc(db, 'memberships', userId));
-          if (membershipDoc.exists()) {
-            const data = membershipDoc.data();
-            setMembership({
-              status: data.status,
-              paymentDate: data.paymentDate,
-              expiresAt: data.expiresAt,
-              paymentMethod: data.paymentMethod,
-              amount: data.amount
-            });
-            // Sincronizar con localStorage (Firebase es fuente de verdad)
-            localStorage.setItem(`membership_status_${userId}`, data.status || 'invitado');
-            
-            // Si es miembro/admin, guardar datos de pago. Si no, limpiar
-            if (data.status === 'miembro' || data.status === 'admin') {
-              localStorage.setItem(`membership_payment_${userId}`, JSON.stringify({
-                method: data.paymentMethod,
-                amount: data.amount,
-                date: data.paymentDate,
-                expiresAt: data.expiresAt
-              }));
-            } else {
-              // Limpiar datos de pago si fue revocado
-              localStorage.removeItem(`membership_payment_${userId}`);
-            }
-          }
+        const membershipData = await fetchMembershipFromCloud(userId);
+        if (!mounted) return;
+        if (membershipData) {
+          syncMembershipToLocalCache(userId, membershipData);
+          setMembership(mapMembership(membershipData));
+        } else {
+          setMembership(localStatus ? { status: localStatus } : null);
         }
-      } catch (err) {
-        console.log('Error cargando membresía:', err);
+      } catch (error) {
+        console.log('Error cargando membresía:', error);
+      } finally {
+        if (mounted) setIsLoading(false);
       }
-      
-      setIsLoading(false);
     };
-    
-    loadMembership();
+
+    hydrate();
+    return () => {
+      mounted = false;
+    };
   }, [userId]);
 
   // Formatear fecha
@@ -4519,12 +5083,13 @@ const MembershipSection = ({ userId }: { userId: string }) => {
   }
 
   const isMember = membership?.status === 'miembro' || membership?.status === 'admin';
+  const isTrial = membership?.status === 'trial';
   const daysRemaining = getDaysRemaining();
 
   return (
     <div className="pt-4 border-t border-[#E4E7EF]">
       <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Membresía</h3>
-      
+
       <div className={`rounded-2xl p-4 border ${isMember ? 'bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 border-[#6161FF]/20' : 'bg-[#F5F7FB] border-[#E4E7EF]'}`}>
         {/* Estado */}
         <div className="flex items-center justify-between mb-4">
@@ -4541,10 +5106,9 @@ const MembershipSection = ({ userId }: { userId: string }) => {
               </p>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#B38F00]' :
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#B38F00]' :
             isMember ? 'bg-[#00CA72]/20 text-[#008A4E]' : 'bg-[#7C8193]/20 text-[#7C8193]'
-          }`}>
+            }`}>
             {membership?.status === 'admin' ? 'ADMIN' : isMember ? 'ACTIVO' : 'PENDIENTE'}
           </span>
         </div>
@@ -4627,10 +5191,10 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [selectedTrialPlan, setSelectedTrialPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const config = getAppConfig();
-  
+
   // Verificar si el usuario ya usó el trial de $1 (oportunidad única)
   const hasUsedTrial = localStorage.getItem(`trial_used_${userId}`) === 'true' || currentPlan === 'trial' || currentPlan === 'promo_trial';
-  
+
   // Fecha límite para trial: 31 dic 2025
   const TRIAL_END_DATE = new Date('2025-12-31T23:59:59');
   const isTrialAvailable = new Date() <= TRIAL_END_DATE && !hasUsedTrial;
@@ -4691,7 +5255,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       // Obtener email del usuario actual
       const currentUser = getCurrentUser();
       const userEmail = currentUser?.email || '';
-      
+
       if (!userEmail) {
         alert('Error: No se pudo obtener tu email. Por favor recarga la página.');
         setIsProcessing(false);
@@ -4699,6 +5263,12 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       }
 
       // Llamar al endpoint de crear preferencia
+      console.log('🔍 Iniciando pago MercadoPago (PaywallScreen):', {
+        userId,
+        userEmail,
+        planId: plan.id
+      });
+
       const response = await fetch('/api/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4709,16 +5279,23 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         })
       });
 
+      console.log('📥 Response status:', response.status, response.statusText);
       const data = await response.json();
+      console.log('📦 Response data:', data);
+
+      if (!response.ok) {
+        console.error('❌ Error en respuesta:', data);
+        alert(`Error: ${data.error || 'Error desconocido'}\n${data.details ? JSON.stringify(data.details, null, 2) : ''}`);
+        return;
+      }
 
       if (data.initPoint) {
+        console.log('✅ Redirigiendo a MercadoPago:', data.initPoint);
         // Redirigir a MercadoPago
         window.location.href = data.initPoint;
-      } else if (data.error) {
-        console.error('Error MP:', data);
-        alert(`Error: ${data.error}${data.details ? ' - ' + JSON.stringify(data.details) : ''}`);
       } else {
-        alert('Error al crear el pago. Intenta de nuevo.');
+        console.error('❌ No se recibió initPoint:', data);
+        alert('Error: No se pudo crear el pago. Intenta de nuevo o contacta soporte.');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -4731,7 +5308,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   // Procesar trial de $1
   const handleTrialSubscription = async () => {
     setIsProcessing(true);
-    
+
     try {
       const currentUser = getCurrentUser();
       if (!currentUser?.email) {
@@ -4771,28 +5348,28 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   // Cancelar suscripción
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
-    
+
     try {
       const { getFirestoreInstance } = await import('./services/firebaseService');
       const { doc, updateDoc } = await import('firebase/firestore');
       const db = getFirestoreInstance();
-      
+
       if (db) {
         await updateDoc(doc(db, 'memberships', userId), {
           autoRenew: false,
           cancelledAt: new Date().toISOString(),
           status: 'cancelled_pending' // Mantiene acceso hasta que expire
         });
-        
+
         localStorage.setItem(`membership_autorenew_${userId}`, 'false');
-        alert('Tu suscripción no se renovará automáticamente. Tendrás acceso hasta ' + 
+        alert('Tu suscripción no se renovará automáticamente. Tendrás acceso hasta ' +
           (expiresAt ? new Date(expiresAt).toLocaleDateString('es-CL') : 'el fin del período'));
       }
     } catch (error) {
       console.error('Error cancelando:', error);
       alert('Error al cancelar. Contacta soporte.');
     }
-    
+
     setIsProcessing(false);
     setShowCancelConfirm(false);
   };
@@ -4809,7 +5386,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
 
       {showPlans && (
         <div className="mt-4 space-y-3 animate-fadeIn">
-          
+
           {/* Oferta Trial $1 - Solo si está disponible */}
           {isTrialAvailable && (
             <div className="relative rounded-xl border-2 border-[#00CA72] bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 p-4 mb-4">
@@ -4821,24 +5398,23 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
                 <p className="text-sm text-[#434343] font-medium">1 mes completo de Tribu Impulsa</p>
                 <p className="text-xs text-[#7C8193]">Después continúa con el plan que elijas</p>
               </div>
-              
+
               {/* Selector de plan futuro */}
               <div className="flex gap-1 mb-3">
                 {(['mensual', 'semestral', 'anual'] as const).map(planId => (
                   <button
                     key={planId}
                     onClick={() => setSelectedTrialPlan(planId)}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      selectedTrialPlan === planId 
-                        ? 'bg-[#6161FF] text-white' 
-                        : 'bg-white border border-[#E4E7EF] text-[#7C8193]'
-                    }`}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedTrialPlan === planId
+                      ? 'bg-[#6161FF] text-white'
+                      : 'bg-white border border-[#E4E7EF] text-[#7C8193]'
+                      }`}
                   >
                     {planId === 'mensual' ? 'Mensual' : planId === 'semestral' ? '6 meses' : 'Anual'}
                   </button>
                 ))}
               </div>
-              
+
               <button
                 onClick={handleTrialSubscription}
                 disabled={isProcessing}
@@ -4858,15 +5434,14 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
           <h4 className="text-xs font-bold uppercase text-[#7C8193] tracking-wide">
             {isTrialAvailable ? 'O paga el plan completo' : 'Renovar o Cambiar Plan'}
           </h4>
-          
+
           {/* Planes */}
           <div className="space-y-2">
             {PLANS.map(plan => (
               <div
                 key={plan.id}
-                className={`relative rounded-xl border p-3 transition-all ${
-                  plan.badge ? 'border-[#6161FF] bg-[#6161FF]/5' : 'border-[#E4E7EF] bg-white'
-                }`}
+                className={`relative rounded-xl border p-3 transition-all ${plan.badge ? 'border-[#6161FF] bg-[#6161FF]/5' : 'border-[#E4E7EF] bg-white'
+                  }`}
               >
                 {plan.badge && (
                   <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
@@ -4944,7 +5519,7 @@ const NotificationButton = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showToast, setShowToast] = useState<string | null>(null);
   const currentUser = getCurrentUser();
-  
+
   const isEnabled = status.permission === 'granted' && status.hasToken;
 
   const handleToggle = async () => {
@@ -4994,16 +5569,14 @@ const NotificationButton = () => {
           {showToast}
         </div>
       )}
-      
-      <div className={`p-4 rounded-xl border flex items-center justify-between ${
-        isEnabled 
-          ? 'bg-[#E6FFF3] border-[#00CA72]/30' 
-          : 'bg-[#F5F7FB] border-[#E4E7EF]'
-      }`}>
+
+      <div className={`p-4 rounded-xl border flex items-center justify-between ${isEnabled
+        ? 'bg-[#E6FFF3] border-[#00CA72]/30'
+        : 'bg-[#F5F7FB] border-[#E4E7EF]'
+        }`}>
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isEnabled ? 'bg-[#00CA72] text-white' : 'bg-[#E4E7EF] text-[#7C8193]'
-          }`}>
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isEnabled ? 'bg-[#00CA72] text-white' : 'bg-[#E4E7EF] text-[#7C8193]'
+            }`}>
             <Bell size={20} />
           </div>
           <div>
@@ -5015,18 +5588,16 @@ const NotificationButton = () => {
             </p>
           </div>
         </div>
-        
+
         {/* Toggle Switch */}
         <button
           onClick={handleToggle}
           disabled={isLoading}
-          className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${
-            isEnabled ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'
-          } ${isLoading ? 'opacity-50' : ''}`}
+          className={`relative w-12 h-7 rounded-full transition-colors duration-300 ${isEnabled ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'
+            } ${isLoading ? 'opacity-50' : ''}`}
         >
-          <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${
-            isEnabled ? 'translate-x-6' : 'translate-x-1'
-          }`} />
+          <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${isEnabled ? 'translate-x-6' : 'translate-x-1'
+            }`} />
         </button>
       </div>
     </div>
@@ -5047,14 +5618,14 @@ interface MatchAnalysis {
 const getStoredAnalysis = (profileId: string): MatchAnalysis | null => {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const storedMonth = localStorage.getItem(MATCH_ANALYSIS_MONTH_KEY);
-  
+
   // Si cambió el mes, limpiar análisis antiguos
   if (storedMonth !== currentMonth) {
     localStorage.removeItem(MATCH_ANALYSIS_STORAGE_KEY);
     localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
     return null;
   }
-  
+
   const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
   return allAnalysis[profileId] || null;
 };
@@ -5062,14 +5633,14 @@ const getStoredAnalysis = (profileId: string): MatchAnalysis | null => {
 const saveAnalysis = (profileId: string, analysis: string) => {
   const currentMonth = new Date().toISOString().slice(0, 7);
   const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
-  
+
   allAnalysis[profileId] = {
     profileId,
     analysis,
     generatedAt: new Date().toISOString(),
     month: currentMonth
   };
-  
+
   localStorage.setItem(MATCH_ANALYSIS_STORAGE_KEY, JSON.stringify(allAnalysis));
   localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
 };
@@ -5115,15 +5686,15 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   const [isLoading, setIsLoading] = useState(false);
   const [hasGenerated, setHasGenerated] = useState(false);
   const myProfile = getMyProfile();
-  
+
   // Verificar si ya existe análisis guardado al montar
   useEffect(() => {
     const stored = getStoredAnalysis(profileId);
     if (stored) {
       try {
         // Intentar parsear como objeto enriquecido
-        const parsed = typeof stored.analysis === 'string' && stored.analysis.startsWith('{') 
-          ? JSON.parse(stored.analysis) 
+        const parsed = typeof stored.analysis === 'string' && stored.analysis.startsWith('{')
+          ? JSON.parse(stored.analysis)
           : null;
         if (parsed && parsed.insight) {
           setAnalysis(parsed);
@@ -5141,7 +5712,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       }
     }
   }, [profileId]);
-  
+
   // Generar análisis inteligente local - ESPECÍFICO para cada match
   const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
     const sameLocation = me.location === target.location;
@@ -5149,10 +5720,10 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     const targetCategory = target.category || 'emprendimiento';
     const meName = me.companyName || me.name;
     const targetName = target.companyName || target.name;
-    
+
     // Insight ÚNICO basado en la combinación específica de categorías
     let insight = '';
-    
+
     // Análisis específico por tipo de negocio
     if (targetCategory.includes('Paisajismo') || targetCategory.includes('Jardín')) {
       insight = `${targetName} puede atraer clientes que valoran el bienestar y la naturaleza - exactamente el perfil que busca servicios como los de ${meName}. Una colaboración donde ${targetName} recomiende tus servicios a sus clientes (y viceversa) podría generar leads de alta calidad para ambos.`;
@@ -5169,22 +5740,22 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     } else {
       insight = `${targetName} en ${targetCategory} y ${meName} en ${meCategory} tienen audiencias complementarias sin competir directamente. Sus clientes podrían beneficiarse de ambos servicios, creando oportunidades de referidos mutuos.`;
     }
-    
+
     if (sameLocation) {
       insight += ` Al estar ambos en ${me.location}, pueden coordinar eventos presenciales o activaciones conjuntas.`;
     }
-    
+
     // Oportunidades ESPECÍFICAS para este match
     const opportunities = [
       `Sorteo conjunto: ${meName} regala un servicio/producto de ${targetName} a sus seguidores (y viceversa)`,
       `Contenido colaborativo: Live de Instagram donde ambos comparten tips de sus industrias`,
       `Pack especial: Clientes de ${targetName} reciben descuento exclusivo en ${meName}`
     ];
-    
+
     // Mensaje rompehielos personalizado
     const firstName = target.name?.split(' ')[0] || 'Hola';
     const icebreaker = `¡Hola ${firstName}! 👋 Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! 🚀`;
-    
+
     return {
       insight,
       opportunities,
@@ -5195,11 +5766,11 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   // Función para generar análisis con delay realista
   const handleGenerateAnalysis = async () => {
     setIsLoading(true);
-    
+
     // Delay variable de 3-5 segundos para simular "pensando"
     const thinkingTime = 3000 + Math.random() * 2000;
     await new Promise(resolve => setTimeout(resolve, thinkingTime));
-    
+
     try {
       // Intentar usar Azure OpenAI primero
       const { analyzeCompatibility } = await import('./services/aiMatchingService');
@@ -5207,19 +5778,19 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
         { id: myProfile.id, name: myProfile.name, companyName: myProfile.companyName, city: myProfile.location || '', category: myProfile.category, affinity: myProfile.category },
         { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }
       );
-      
+
       // Verificar que el resultado sea válido y no sea el mensaje de error genérico
-      const isValidResult = result && 
-        result.analysis && 
+      const isValidResult = result &&
+        result.analysis &&
         result.analysis !== 'Análisis no disponible' &&
-        result.opportunities && 
+        result.opportunities &&
         result.opportunities.length > 0;
-      
+
       if (isValidResult) {
         // Usar icebreaker del LLM si existe, o generar uno básico
-        const llmIcebreaker = result.icebreaker || 
+        const llmIcebreaker = result.icebreaker ||
           `¡Hola ${profileData.name.split(' ')[0]}! 👋 Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? 🤝`;
-        
+
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
           opportunities: result.opportunities,
@@ -5243,7 +5814,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       setHasGenerated(true);
     }
   };
-  
+
   // Generar URL de WhatsApp con mensaje pre-escrito
   const getWhatsAppUrl = () => {
     if (!analysis) return '#';
@@ -5251,7 +5822,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     const message = encodeURIComponent(analysis.icebreaker);
     return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
   };
-  
+
   // Estado de carga con animación épica
   if (isLoading) {
     return (
@@ -5260,7 +5831,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       </div>
     );
   }
-  
+
   // Mostrar análisis enriquecido
   if (analysis) {
     return (
@@ -5275,13 +5846,13 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
             <span className="text-xs text-[#7C8193]">Generado por Tribu X</span>
           </div>
         </div>
-        
+
         {/* Insight principal */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
           <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">💡 Insight</h4>
           <p className="text-sm text-[#434343] leading-relaxed">{analysis.insight}</p>
         </div>
-        
+
         {/* Oportunidades */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
           <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2">🎯 Oportunidades concretas</h4>
@@ -5294,7 +5865,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
             ))}
           </ul>
         </div>
-        
+
         {/* Romper el hielo */}
         <div className="bg-[#25D366]/10 rounded-xl p-4 border border-[#25D366]/30">
           <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">💬 Rompe el hielo</h4>
@@ -5305,14 +5876,14 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-[#25D366] text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-[#20BA5C] transition"
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
             Enviar mensaje
           </a>
         </div>
       </div>
     );
   }
-  
+
   // Botón para generar análisis
   return (
     <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
@@ -5342,7 +5913,7 @@ const ProfileDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<MatchProfile | undefined>(undefined);
-  
+
   const instagramHandle = profile?.instagram?.replace('@', '') || '';
   const shareMessage = profile ? encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`) : '';
 
@@ -5359,156 +5930,156 @@ const ProfileDetail = () => {
     <div className="pb-24 animate-slideUp bg-[#F5F7FB] min-h-screen">
       {/* Header / Cover Image */}
       <div className="h-72 w-full relative">
-         <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
-         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#F5F7FB]"></div>
-         
-         <button 
+        <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#F5F7FB]"></div>
+
+        <button
           onClick={() => navigate(-1)}
           className="absolute top-6 left-6 bg-white/90 backdrop-blur-md p-3 rounded-full text-[#181B34] hover:bg-white transition-colors z-20 border border-[#E4E7EF] shadow-md"
         >
           <ArrowLeft size={20} />
         </button>
       </div>
-      
+
       <div className="px-4 -mt-20 relative z-10">
         <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
-           
-           {/* Avatar simple sin logo overlay */}
-           <div className="-mt-20 mb-6 z-20">
-              <img 
-                  src={profile.avatarUrl} 
-                  alt={profile.name}
-                  className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
-              />
-           </div>
 
-           {/* Main Info - Flows naturally */}
-           <div className="text-center mb-8 w-full">
-             <h2 className="text-3xl font-bold text-[#181B34] mb-1 tracking-tight">{profile.companyName}</h2>
-             <p className="text-[#7C8193] font-medium text-lg">{profile.name}</p>
-             <div className="flex justify-center gap-2 mt-4 flex-wrap">
-               <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 px-4 py-1.5 rounded-full text-[#6161FF]">
-                 {profile.category}
-               </span>
-               <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 px-4 py-1.5 rounded-full text-[#00CA72]">
-                 {profile.subCategory}
-               </span>
-             </div>
-           </div>
+          {/* Avatar simple sin logo overlay */}
+          <div className="-mt-20 mb-6 z-20">
+            <img
+              src={profile.avatarUrl}
+              alt={profile.name}
+              className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"
+            />
+          </div>
 
-           <div className="space-y-8 w-full text-left">
-             <div>
-               <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Sobre Nosotros</h3>
-               <p className="text-[#434343] leading-relaxed text-lg">
-                 {profile.bio}
-               </p>
-             </div>
+          {/* Main Info - Flows naturally */}
+          <div className="text-center mb-8 w-full">
+            <h2 className="text-3xl font-bold text-[#181B34] mb-1 tracking-tight">{profile.companyName}</h2>
+            <p className="text-[#7C8193] font-medium text-lg">{profile.name}</p>
+            <div className="flex justify-center gap-2 mt-4 flex-wrap">
+              <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 px-4 py-1.5 rounded-full text-[#6161FF]">
+                {profile.category}
+              </span>
+              <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 px-4 py-1.5 rounded-full text-[#00CA72]">
+                {profile.subCategory}
+              </span>
+            </div>
+          </div>
 
-             <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
-                   <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF]"><MapPin size={20} /></div>
-                   <div className="text-sm">
-                      <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
-                      <span className="font-medium text-[#181B34]">{profile.location}</span>
-                   </div>
+          <div className="space-y-8 w-full text-left">
+            <div>
+              <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Sobre Nosotros</h3>
+              <p className="text-[#434343] leading-relaxed text-lg">
+                {profile.bio}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
+                <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF]"><MapPin size={20} /></div>
+                <div className="text-sm">
+                  <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
+                  <span className="font-medium text-[#181B34]">{profile.location}</span>
                 </div>
-                <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
-                   <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72]"><Calendar size={20} /></div>
-                   <div className="text-sm">
-                      <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Fundada</span>
-                      <span className="font-medium text-[#181B34]">{profile.foundingYear}</span>
-                   </div>
+              </div>
+              <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
+                <div className="bg-[#00CA72]/10 p-2 rounded-lg text-[#00CA72]"><Calendar size={20} /></div>
+                <div className="text-sm">
+                  <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Fundada</span>
+                  <span className="font-medium text-[#181B34]">{profile.foundingYear}</span>
                 </div>
-             </div>
+              </div>
+            </div>
 
-             <div>
-                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Enlaces</h3>
-                <div className="flex flex-col gap-3">
-                  {/* Sitio Web - siempre visible */}
-                  {profile.website ? (
-                    <a 
-                      href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
-                    >
-                      <Globe size={20} className="text-[#6161FF] group-hover:scale-110 transition-transform"/> 
-                      <span className="font-medium text-sm truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
-                      <Globe size={20} className="text-[#B3B8C6]"/> 
-                      <span className="font-medium text-sm italic">Sitio web no registrado</span>
+            <div>
+              <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Enlaces</h3>
+              <div className="flex flex-col gap-3">
+                {/* Sitio Web - siempre visible */}
+                {profile.website ? (
+                  <a
+                    href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
+                  >
+                    <Globe size={20} className="text-[#6161FF] group-hover:scale-110 transition-transform" />
+                    <span className="font-medium text-sm truncate">{profile.website.replace(/^https?:\/\//, '')}</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                    <Globe size={20} className="text-[#B3B8C6]" />
+                    <span className="font-medium text-sm italic">Sitio web no registrado</span>
+                  </div>
+                )}
+
+                {/* Instagram - siempre visible */}
+                {profile.instagram ? (
+                  <a
+                    href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-gradient-to-r from-[#F5F7FB] to-[#FFF0F5] p-4 rounded-2xl border border-[#E91E63]/30 group hover:border-[#E91E63]"
+                  >
+                    <div className="bg-gradient-to-br from-[#E91E63] via-[#C13584] to-[#F77737] p-2 rounded-lg">
+                      <Instagram size={18} className="text-white group-hover:scale-110 transition-transform" />
                     </div>
-                  )}
-                  
-                  {/* Instagram - siempre visible */}
-                  {profile.instagram ? (
-                    <a 
-                      href={`https://instagram.com/${profile.instagram.replace('@', '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 text-[#434343] hover:text-[#E91E63] transition-colors bg-gradient-to-r from-[#F5F7FB] to-[#FFF0F5] p-4 rounded-2xl border border-[#E91E63]/30 group hover:border-[#E91E63]"
-                    >
-                      <div className="bg-gradient-to-br from-[#E91E63] via-[#C13584] to-[#F77737] p-2 rounded-lg">
-                        <Instagram size={18} className="text-white group-hover:scale-110 transition-transform"/> 
-                      </div>
-                      <span className="font-medium text-sm">{profile.instagram}</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
-                      <div className="bg-[#E4E7EF] p-2 rounded-lg">
-                        <Instagram size={18} className="text-[#B3B8C6]"/> 
-                      </div>
-                      <span className="font-medium text-sm italic">Instagram no registrado</span>
+                    <span className="font-medium text-sm">{profile.instagram}</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                    <div className="bg-[#E4E7EF] p-2 rounded-lg">
+                      <Instagram size={18} className="text-[#B3B8C6]" />
                     </div>
-                  )}
-                  
-                  {/* Email de contacto - siempre visible */}
-                  {profile.email ? (
-                    <a 
-                      href={`mailto:${profile.email}`}
-                      className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
-                    >
-                      <div className="bg-[#6161FF]/10 p-2 rounded-lg">
-                        <svg className="w-5 h-5 text-[#6161FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span className="font-medium text-sm truncate">{profile.email}</span>
-                    </a>
-                  ) : (
-                    <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
-                      <div className="bg-[#E4E7EF] p-2 rounded-lg">
-                        <svg className="w-5 h-5 text-[#B3B8C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span className="font-medium text-sm italic">Email no registrado</span>
+                    <span className="font-medium text-sm italic">Instagram no registrado</span>
+                  </div>
+                )}
+
+                {/* Email de contacto - siempre visible */}
+                {profile.email ? (
+                  <a
+                    href={`mailto:${profile.email}`}
+                    className="flex items-center gap-4 text-[#434343] hover:text-[#6161FF] transition-colors bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF] group hover:border-[#6161FF]"
+                  >
+                    <div className="bg-[#6161FF]/10 p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-[#6161FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
                     </div>
-                  )}
-                </div>
-             </div>
+                    <span className="font-medium text-sm truncate">{profile.email}</span>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-4 text-[#7C8193] bg-[#F5F7FB] p-4 rounded-2xl border border-[#E4E7EF]">
+                    <div className="bg-[#E4E7EF] p-2 rounded-lg">
+                      <svg className="w-5 h-5 text-[#B3B8C6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <span className="font-medium text-sm italic">Email no registrado</span>
+                  </div>
+                )}
+              </div>
+            </div>
 
-             <div>
-               <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Tags</h3>
-               <div className="flex flex-wrap gap-2">
-                 {profile.tags.map(tag => (
-                   <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
-                     #{tag}
-                   </span>
-                 ))}
-               </div>
-             </div>
+            <div>
+              <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Tags</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.tags.map(tag => (
+                  <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-             {/* Sección de Análisis de Match - Tribu X */}
-             <MatchAnalysisSection profileId={profile.id} profileData={profile} />
+            {/* Sección de Análisis de Match - Tribu X */}
+            <MatchAnalysisSection profileId={profile.id} profileData={profile} />
 
-             <button className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]">
-               <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-6 h-6 filter invert brightness-200" alt="ws"/>
-               Contactar por WhatsApp
-             </button>
-           </div>
+            <button className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-6 h-6 filter invert brightness-200" alt="ws" />
+              Contactar por WhatsApp
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -5636,7 +6207,7 @@ const restoreActivity = (id: string): ActivityItem | null => {
 const generateInitialActivities = (): ActivityItem[] => {
   const currentUser = getCurrentUser();
   const userName = currentUser?.name?.split(' ')[0] || 'Emprendedor';
-  
+
   return [
     {
       id: `act_${Date.now()}_1`,
@@ -5687,12 +6258,12 @@ const createActivity = (type: string, title: string, description: string, action
     color: config.color,
     actionUrl
   };
-  
+
   // Persistir inmediatamente
   const activities = getStoredActivities();
   activities.unshift(activity);
   persistActivities(activities);
-  
+
   return activity;
 };
 
@@ -5704,28 +6275,28 @@ const ActivityView = () => {
   const [filter, setFilter] = useState<'all' | 'unread' | 'archived'>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [expandedItem, setExpandedItem] = useState<ActivityItem | null>(null);
-  
+
   // Persistir cambios
   useEffect(() => {
     persistActivities(activities);
   }, [activities]);
-  
-  const filteredActivities = filter === 'unread' 
+
+  const filteredActivities = filter === 'unread'
     ? activities.filter(a => !a.isRead)
     : filter === 'archived'
-    ? archivedActivities
-    : activities;
-  
+      ? archivedActivities
+      : activities;
+
   const unreadCount = activities.filter(a => !a.isRead).length;
-  
+
   const markAsRead = (id: string) => {
     setActivities(prev => prev.map(a => a.id === id ? { ...a, isRead: true } : a));
   };
-  
+
   const markAllAsRead = () => {
     setActivities(prev => prev.map(a => ({ ...a, isRead: true })));
   };
-  
+
   // Archivar en vez de borrar
   const handleArchive = (id: string) => {
     const activity = activities.find(a => a.id === id);
@@ -5735,7 +6306,7 @@ const ActivityView = () => {
       setArchivedActivities(getArchivedActivities());
     }
   };
-  
+
   // Restaurar actividad archivada
   const handleRestore = (id: string) => {
     const activity = restoreActivity(id);
@@ -5759,7 +6330,7 @@ const ActivityView = () => {
           </h1>
           <div className="flex gap-2">
             {unreadCount > 0 && (
-              <button 
+              <button
                 onClick={markAllAsRead}
                 className="text-xs text-[#6161FF] hover:underline"
               >
@@ -5768,38 +6339,35 @@ const ActivityView = () => {
             )}
           </div>
         </div>
-        
+
         {/* Filtros */}
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-              filter === 'all' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
-            }`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${filter === 'all' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+              }`}
           >
             Todas
           </button>
           <button
             onClick={() => setFilter('unread')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-              filter === 'unread' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
-            }`}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${filter === 'unread' ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+              }`}
           >
             Sin leer ({unreadCount})
           </button>
           {archivedActivities.length > 0 && (
             <button
               onClick={() => setFilter('archived')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                filter === 'archived' ? 'bg-[#7C8193] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
-              }`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${filter === 'archived' ? 'bg-[#7C8193] text-white' : 'bg-[#F5F7FB] text-[#7C8193]'
+                }`}
             >
               Archivadas ({archivedActivities.length})
             </button>
           )}
         </div>
       </header>
-      
+
       <div className="px-4 py-4 space-y-3">
         {filteredActivities.length === 0 ? (
           <div className="text-center py-12">
@@ -5808,11 +6376,10 @@ const ActivityView = () => {
           </div>
         ) : (
           filteredActivities.map((item) => (
-            <div 
-              key={item.id} 
-              className={`bg-white p-4 rounded-2xl flex gap-4 items-start group hover:shadow-md transition-all border cursor-pointer ${
-                item.isRead ? 'border-[#E4E7EF]' : 'border-[#6161FF]/30 bg-[#6161FF]/5'
-              }`}
+            <div
+              key={item.id}
+              className={`bg-white p-4 rounded-2xl flex gap-4 items-start group hover:shadow-md transition-all border cursor-pointer ${item.isRead ? 'border-[#E4E7EF]' : 'border-[#6161FF]/30 bg-[#6161FF]/5'
+                }`}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -5834,14 +6401,14 @@ const ActivityView = () => {
                 <span className="text-[0.625rem] text-[#6161FF] mt-1 inline-block">Tocar para ver más →</span>
               </div>
               {filter === 'archived' ? (
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); handleRestore(item.id); }}
                   className="text-[#00CA72] hover:text-[#008A4E] transition p-1 text-xs"
                 >
                   Restaurar
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); handleArchive(item.id); }}
                   className="opacity-0 group-hover:opacity-100 text-[#7C8193] hover:text-[#FB275D] transition p-1"
                 >
@@ -5852,17 +6419,17 @@ const ActivityView = () => {
           ))
         )}
       </div>
-      
+
       {/* Modal para ver actividad completa */}
       {expandedItem && ReactDOM.createPortal(
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-[99999] flex items-end justify-center animate-fadeIn backdrop-blur-sm"
           onClick={() => {
             markAsRead(expandedItem.id);
             setExpandedItem(null);
           }}
         >
-          <div 
+          <div
             className="bg-white w-full max-w-lg rounded-t-3xl p-6 animate-slideUp max-h-[80vh] overflow-y-auto"
             style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))' }}
             onClick={(e) => e.stopPropagation()}
@@ -5876,7 +6443,7 @@ const ActivityView = () => {
                 <h2 className="text-lg font-bold text-[#181B34]">{expandedItem.title}</h2>
                 <p className="text-xs text-[#7C8193]">{expandedItem.timestamp}</p>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   markAsRead(expandedItem.id);
                   setExpandedItem(null);
@@ -5886,12 +6453,12 @@ const ActivityView = () => {
                 <X size={24} />
               </button>
             </div>
-            
+
             {/* Content */}
             <div className="text-sm text-[#434343] leading-relaxed whitespace-pre-wrap mb-6">
               {expandedItem.description}
             </div>
-            
+
             {/* Actions */}
             <div className="flex gap-3">
               {expandedItem.actionUrl && (
@@ -5931,14 +6498,14 @@ const DirectoryView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const allUsers = getAllUsers().filter(u => u.email !== 'admin@tribuimpulsa.cl');
   const myProfile = getMyProfile();
-  
+
   // Obtener matches recomendados
   const matches = useMemo(() => {
     if (!myProfile) return [];
     return generateMockMatches(myProfile.category, myProfile.id).slice(0, 8);
   }, [myProfile]);
-  
-  const filteredUsers = allUsers.filter(user => 
+
+  const filteredUsers = allUsers.filter(user =>
     user.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.category?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -5954,7 +6521,7 @@ const DirectoryView = () => {
       >
         <h1 className="text-xl font-bold text-[#181B34]">Red de Emprendedores</h1>
         <p className="text-sm text-[#7C8193]">{allUsers.length} emprendimientos activos</p>
-        
+
         {/* Search with glass effect */}
         <div className="mt-3 relative">
           <input
@@ -5967,7 +6534,7 @@ const DirectoryView = () => {
           <Globe size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7C8193]" />
         </div>
       </header>
-      
+
       {/* Recomendados para ti - Al inicio */}
       {matches.length > 0 && !searchQuery && (
         <div className="px-4 pt-4">
@@ -5975,20 +6542,20 @@ const DirectoryView = () => {
             <h2 className="text-base font-semibold text-[#181B34]">⭐ Recomendados para ti</h2>
             <span className="text-xs text-[#7C8193]">{matches.length} matches</span>
           </div>
-          
+
           <div className="space-y-2 mb-4">
             {matches.map((match) => (
-              <div 
-                key={match.id} 
+              <div
+                key={match.id}
                 className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl p-4 border border-[#6161FF]/20 hover:border-[#6161FF] transition-colors"
               >
                 <div className="flex gap-3 items-center">
-                  <img 
-                    src={match.targetProfile.avatarUrl} 
-                    alt={match.targetProfile.name} 
+                  <img
+                    src={match.targetProfile.avatarUrl}
+                    alt={match.targetProfile.name}
                     className="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-[#6161FF]/30"
                   />
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                       <div className="min-w-0">
@@ -6000,7 +6567,7 @@ const DirectoryView = () => {
                       </span>
                     </div>
                     <p className="text-[0.6875rem] text-[#7C8193] mt-1 truncate">{match.reason}</p>
-                    
+
                     <button
                       onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
                       className="mt-2 text-[0.625rem] font-semibold text-[#E91E63] bg-[#E91E63]/10 px-3 py-1 rounded-full hover:bg-[#E91E63]/20 transition-colors"
@@ -6012,33 +6579,56 @@ const DirectoryView = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="border-b border-[#E4E7EF] mb-4"></div>
           <h2 className="text-base font-semibold text-[#181B34] mb-3">Todos los emprendimientos</h2>
         </div>
       )}
-      
-      <div className={`px-4 ${matches.length > 0 && !searchQuery ? '' : 'py-4'} space-y-2`}>
+
+      <div className={`px-4 ${matches.length > 0 && !searchQuery ? '' : 'py-4'} space-y-3`}>
         {filteredUsers.map(user => (
-          <div 
+          <div
             key={user.id}
             onClick={() => navigate(`/profile/${user.id}`)}
-            className="bg-white rounded-xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] transition-colors cursor-pointer flex items-center gap-3"
+            className="bg-white rounded-2xl p-4 border border-[#E4E7EF] hover:border-[#6161FF] hover:shadow-md transition-all cursor-pointer group"
           >
-            <img 
-              src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&background=6161FF&color=fff`}
-              alt={user.name}
-              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-sm text-[#181B34] truncate">{user.companyName || user.name}</h3>
-              <p className="text-xs text-[#7C8193] truncate">{user.name}</p>
-              <span className="text-[0.625rem] text-[#6161FF]">{user.category}</span>
+            <div className="flex items-start gap-4">
+              {/* Avatar con borde de marca */}
+              <div className="relative flex-shrink-0">
+                <img
+                  src={user.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.companyName || user.name || 'User')}&background=6161FF&color=fff&bold=true`}
+                  alt={user.companyName || user.name}
+                  className="w-14 h-14 rounded-xl object-cover ring-2 ring-indigo-100 group-hover:ring-indigo-300 transition-all"
+                />
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white" />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                {/* MARCA/EMPRESA PROMINENTE */}
+                <h3 className="font-black text-base text-[#181B34] truncate leading-tight group-hover:text-[#6161FF] transition-colors">
+                  {user.companyName || user.name}
+                </h3>
+                <p className="text-xs text-[#7C8193] truncate">por {user.name}</p>
+                
+                {/* Categoría y afinidad */}
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="inline-flex items-center gap-1 text-[0.625rem] font-medium bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
+                    <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    {user.category}
+                  </span>
+                  {user.affinity && (
+                    <span className="text-[0.625rem] font-medium bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full">
+                      🎯 {user.affinity}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <ChevronRight size={20} className="text-[#B3B8C6] flex-shrink-0 group-hover:text-[#6161FF] group-hover:translate-x-1 transition-all" />
             </div>
-            <ChevronRight size={18} className="text-[#7C8193] flex-shrink-0" />
           </div>
         ))}
-        
+
         {filteredUsers.length === 0 && (
           <div className="text-center py-12">
             <p className="text-[#7C8193]">No se encontraron emprendimientos</p>
@@ -6131,7 +6721,7 @@ interface OnboardingModalProps {
 const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const step = TUTORIAL_STEPS[currentStep];
-  
+
   const handleNext = () => {
     if (currentStep < TUTORIAL_STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -6139,15 +6729,15 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
       onComplete();
     }
   };
-  
+
   const handleSkip = () => {
     onComplete();
   };
-  
+
   // Usar portal para renderizar fuera del contenedor scrolleable
   // Estilos completamente inline para máxima prioridad
   return ReactDOM.createPortal(
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 0,
@@ -6164,7 +6754,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
         overflow: 'hidden',
       }}
     >
-      <div 
+      <div
         style={{
           backgroundColor: 'white',
           borderRadius: '24px',
@@ -6178,36 +6768,35 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
         {/* Progress */}
         <div className="flex gap-1 p-4">
           {TUTORIAL_STEPS.map((_, i) => (
-            <div 
-              key={i} 
-              className={`flex-1 h-1 rounded-full transition-all ${
-                i <= currentStep ? 'bg-gradient-to-r from-[#6161FF] to-[#00CA72]' : 'bg-[#E4E7EF]'
-              }`}
+            <div
+              key={i}
+              className={`flex-1 h-1 rounded-full transition-all ${i <= currentStep ? 'bg-gradient-to-r from-[#6161FF] to-[#00CA72]' : 'bg-[#E4E7EF]'
+                }`}
             />
           ))}
         </div>
-        
+
         {/* Content */}
         <div className="px-6 pb-6">
           <div className={`w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center shadow-lg`}>
             <OnboardingIcon type={step.iconType} />
           </div>
-          
+
           <h2 className="text-2xl font-bold text-[#181B34] text-center mb-1">{step.title}</h2>
           <p className="text-[#7C8193] text-center text-sm mb-4">{step.subtitle}</p>
-          
+
           <div className="bg-[#F5F7FB] rounded-xl p-4 mb-6">
             <p className="text-[#434343] text-sm whitespace-pre-line">{step.content}</p>
           </div>
-          
+
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={handleSkip}
               className="flex-1 py-3 text-[#7C8193] hover:text-[#181B34] transition text-sm"
             >
               Saltar tutorial
             </button>
-            <button 
+            <button
               onClick={handleNext}
               className="flex-1 py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition"
             >
@@ -6240,7 +6829,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
   };
 
   return ReactDOM.createPortal(
-    <div 
+    <div
       style={{
         position: 'fixed',
         top: 0,
@@ -6256,7 +6845,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
         zIndex: 999999,
       }}
     >
-      <div 
+      <div
         style={{
           backgroundColor: 'white',
           borderRadius: '24px',
@@ -6298,7 +6887,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
                 placeholder="Repite tu contraseña"
               />
             </div>
-            
+
             {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
 
             <button
@@ -6311,7 +6900,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
               onClick={onSkip}
               className="w-full py-2 text-[#7C8193] hover:text-[#181B34] text-sm transition"
             >
-              Mantener TRIBU2026 por ahora
+              Omitir por ahora
             </button>
           </div>
         </div>
@@ -6330,20 +6919,33 @@ const Dashboard = () => {
   // Generar matches usando usuarios REALES
   const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
+
+  // 🎉 Confeti para nuevos registros
+  const { triggerConfetti, ConfettiComponent } = useConfetti();
   
-  
+  // Detectar si es un registro reciente (dentro de los últimos 30 segundos)
+  useEffect(() => {
+    const isNewRegistration = localStorage.getItem('tribu_new_registration');
+    if (isNewRegistration) {
+      // Disparar confeti
+      setTimeout(() => triggerConfetti(), 500);
+      // Limpiar el flag
+      localStorage.removeItem('tribu_new_registration');
+    }
+  }, [triggerConfetti]);
+
   // Onboarding state
   const currentUser = getCurrentUser();
   const [showOnboarding, setShowOnboarding] = useState(() => {
     if (!currentUser) return false;
     return !isOnboardingComplete(currentUser.id);
   });
-  
+
   // Password change modal for first login
   const [showPasswordChange, setShowPasswordChange] = useState(() => {
     return localStorage.getItem('show_password_change') === 'true';
   });
-  
+
   const handleOnboardingComplete = () => {
     if (currentUser) {
       updateOnboardingProgress(currentUser.id, 'viewedWelcome');
@@ -6354,13 +6956,13 @@ const Dashboard = () => {
     }
     setShowOnboarding(false);
   };
-  
+
   const handlePasswordChange = async (newPassword: string) => {
     if (currentUser) {
       changeUserPassword(currentUser.id, newPassword);
       // Marcar que ya cambió su contraseña (nunca más mostrar el popup)
       localStorage.setItem(`password_changed_${currentUser.id}`, 'true');
-      
+
       // Sincronizar con Firebase
       try {
         const { updateUserPassword } = await import('./services/firebaseService');
@@ -6372,7 +6974,7 @@ const Dashboard = () => {
     localStorage.removeItem('show_password_change');
     setShowPasswordChange(false);
   };
-  
+
   const handleSkipPasswordChange = () => {
     if (currentUser) {
       markFirstLoginComplete(currentUser.id);
@@ -6383,14 +6985,17 @@ const Dashboard = () => {
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
+      {/* 🎉 Confeti de bienvenida para nuevos registros */}
+      <ConfettiComponent />
+
       {/* Password Change Modal (first login) */}
       {showPasswordChange && !showOnboarding && (
         <PasswordChangeModal onComplete={handlePasswordChange} onSkip={handleSkipPasswordChange} />
       )}
-      
+
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
-      
+
       {/* Banner de perfil incompleto */}
       {!showOnboarding && !showPasswordChange && (!currentUser?.scope || (!currentUser?.comuna && currentUser?.scope === 'LOCAL') || (!currentUser?.selectedRegions?.length && currentUser?.scope === 'REGIONAL')) && (
         <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#FF9500] to-[#FF6B00] rounded-xl shadow-lg">
@@ -6401,7 +7006,7 @@ const Dashboard = () => {
               <p className="text-white/80 text-xs mt-1">
                 Completa tu ubicación para que el algoritmo encuentre matches cercanos a ti.
               </p>
-              <button 
+              <button
                 onClick={() => navigate('/my-profile')}
                 className="mt-3 px-4 py-2 bg-white text-[#FF6B00] rounded-lg text-xs font-bold hover:bg-white/90 transition"
               >
@@ -6420,23 +7025,26 @@ const Dashboard = () => {
         }}
       >
         <div className="w-10 h-10" />
-        
+
         <div className="flex-1 text-center">
           <h1 className="text-xl font-bold text-[#181B34]">Hola, {myProfile.name.split(' ')[0]}</h1>
           <p className="text-[#7C8193] text-sm">Tu comunidad de impulso</p>
         </div>
-        
-        <button 
+
+        <button
           onClick={() => navigate('/my-profile')}
           className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#E4E7EF] hover:border-[#6161FF] transition-colors"
         >
-           <img 
-            src={myProfile.avatarUrl} 
+          <img
+            src={myProfile.avatarUrl}
             alt="Me"
             className="w-full h-full object-cover"
-           />
+          />
         </button>
       </header>
+
+      {/* Progreso global hacia 1.000 perfiles */}
+      <ProgressBanner tone="light" />
 
       {/* Banner de recordatorio si perfil incompleto */}
       <ProfileReminderBanner />
@@ -6539,7 +7147,7 @@ const Dashboard = () => {
           <h2 className="text-base font-semibold text-[#181B34]">Tus Logros</h2>
           <span className="text-xs text-[#7C8193]">Nivel {Math.min(5, Math.floor(tribeStats.completed / 4) + 1)}</span>
         </div>
-        
+
         {/* Progress Bar */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF] mb-3">
           <div className="flex items-center justify-between mb-2">
@@ -6547,13 +7155,13 @@ const Dashboard = () => {
             <span className="text-xs font-semibold text-[#6161FF]">{Math.round((tribeStats.completed / Math.max(tribeStats.total, 1)) * 100)}%</span>
           </div>
           <div className="h-2 bg-[#E4E7EF] rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-full transition-all duration-500"
               style={{ width: `${(tribeStats.completed / Math.max(tribeStats.total, 1)) * 100}%` }}
             />
           </div>
           <p className="text-[0.625rem] text-[#7C8193] mt-2">
-            {tribeStats.total - tribeStats.completed > 0 
+            {tribeStats.total - tribeStats.completed > 0
               ? `${tribeStats.total - tribeStats.completed} acciones más para completar este mes`
               : '¡Felicidades! Completaste todas las acciones'}
           </p>
@@ -6570,7 +7178,7 @@ const Dashboard = () => {
               Primera acción
             </span>
           </div>
-          
+
           {/* Badge 2: 5 shares */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 5 ? 'bg-[#6161FF]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 5 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`}>
@@ -6580,7 +7188,7 @@ const Dashboard = () => {
               5 shares
             </span>
           </div>
-          
+
           {/* Badge 3: 10 shares */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 10 ? 'bg-[#E91E63]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 10 ? 'bg-[#E91E63]' : 'bg-[#E4E7EF]'}`}>
@@ -6590,7 +7198,7 @@ const Dashboard = () => {
               En llamas
             </span>
           </div>
-          
+
           {/* Badge 4: Tribu perfecta */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]' : 'bg-[#E4E7EF]'}`}>
@@ -6608,11 +7216,11 @@ const Dashboard = () => {
 };
 
 // Componente de Administración de Membresías
-const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string; email: string; companyName: string}> }) => {
-  const [memberships, setMemberships] = useState<Record<string, {status: string; paymentDate?: string; expiresAt?: string; amount?: number}>>({});
+const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string; email: string; companyName: string }> }) => {
+  const [memberships, setMemberships] = useState<Record<string, { status: string; paymentDate?: string; expiresAt?: string; amount?: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'miembro' | 'invitado'>('all');
-  
+
   // Obtener precio desde configuración
   const config = getAppConfig();
   const MEMBERSHIP_PRICE = config.membershipPrice;
@@ -6620,8 +7228,8 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
   // Cargar membresías - PRIORIDAD: Firebase > localStorage
   useEffect(() => {
     const loadMemberships = async () => {
-      const membershipData: Record<string, {status: string; paymentDate?: string; expiresAt?: string; amount?: number}> = {};
-      
+      const membershipData: Record<string, { status: string; paymentDate?: string; expiresAt?: string; amount?: number }> = {};
+
       // Primero intentar cargar desde Firebase (fuente de verdad)
       let loadedFromFirebase = false;
       try {
@@ -6658,14 +7266,14 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
       } catch (err) {
         console.log('⚠️ Error cargando desde Firebase, usando localStorage:', err);
       }
-      
+
       // Si no se pudo cargar desde Firebase, usar localStorage
       if (!loadedFromFirebase) {
         users.forEach(user => {
           const status = localStorage.getItem(`membership_status_${user.id}`);
           const paymentStr = localStorage.getItem(`membership_payment_${user.id}`);
           const payment = paymentStr ? JSON.parse(paymentStr) : {};
-          
+
           membershipData[user.id] = {
             status: status || 'invitado',
             paymentDate: payment.date,
@@ -6674,18 +7282,18 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
           };
         });
       }
-      
+
       // Asegurar que todos los usuarios tengan entrada
       users.forEach(user => {
         if (!membershipData[user.id]) {
           membershipData[user.id] = { status: 'invitado' };
         }
       });
-      
+
       setMemberships(membershipData);
       setIsLoading(false);
     };
-    
+
     loadMemberships();
   }, [users]);
 
@@ -6693,13 +7301,13 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
   const changeMembershipStatus = async (userId: string, newStatus: 'miembro' | 'invitado' | 'admin') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
-    
+
     const now = new Date().toISOString();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
     // 1. ACTUALIZAR LOCALSTORAGE
     localStorage.setItem(`membership_status_${userId}`, newStatus);
-    
+
     if (newStatus === 'miembro' || newStatus === 'admin') {
       const paymentData = {
         method: 'manual_admin',
@@ -6739,7 +7347,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
           })
         };
         await setDoc(doc(db, 'memberships', userId), membershipDoc);
-        
+
         // REGISTRAR EN HISTORIAL DE PAGOS
         await addDoc(collection(db, 'payment_history'), {
           userId,
@@ -6752,7 +7360,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
           timestamp: now,
           adminAction: true
         });
-        
+
         console.log(`✅ Firebase actualizado + historial: ${user.name} → ${newStatus}`);
       }
     } catch (err) {
@@ -6780,7 +7388,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
   };
 
   // Estadísticas - USAR PRECIO DE CONFIGURACIÓN
-  type MembershipData = {status: string; paymentDate?: string; expiresAt?: string; amount?: number};
+  type MembershipData = { status: string; paymentDate?: string; expiresAt?: string; amount?: number };
   const membershipValues = Object.values(memberships) as MembershipData[];
   const stats = {
     total: users.length,
@@ -6798,7 +7406,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
     return membership?.status === 'invitado' || !membership?.status;
   });
 
-  const formatPrice = (amount: number) => 
+  const formatPrice = (amount: number) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', minimumFractionDigits: 0 }).format(amount);
 
   if (isLoading) {
@@ -6814,7 +7422,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#181B34]">Gestión de Membresías</h1>
         <div className="flex gap-2">
-          <select 
+          <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as 'all' | 'miembro' | 'invitado')}
             className="bg-white border border-[#E4E7EF] rounded-lg px-3 py-2 text-sm"
@@ -6896,7 +7504,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
             {filteredUsers.map(user => {
               const membership = memberships[user.id];
               const isMember = membership?.status === 'miembro' || membership?.status === 'admin';
-              
+
               return (
                 <tr key={user.id} className="hover:bg-[#F5F7FB]/50">
                   <td className="px-4 py-3">
@@ -6907,15 +7515,14 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
                   </td>
                   <td className="px-4 py-3 text-sm text-[#434343]">{user.email}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#9D6B00]' :
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#9D6B00]' :
                       isMember ? 'bg-[#00CA72]/10 text-[#00CA72]' : 'bg-[#7C8193]/10 text-[#7C8193]'
-                    }`}>
+                      }`}>
                       {membership?.status === 'admin' ? '👑 Admin' : isMember ? '✓ Miembro' : 'Invitado'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center text-sm text-[#434343]">
-                    {membership?.paymentDate 
+                    {membership?.paymentDate
                       ? new Date(membership.paymentDate).toLocaleDateString('es-CL')
                       : '-'
                     }
@@ -6970,7 +7577,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{id: string; name: string;
 const AdminSettingsTab = () => {
   // Cargar configuración guardada
   const savedConfig = JSON.parse(localStorage.getItem('tribu_admin_config') || '{}');
-  
+
   const [config, setConfig] = useState({
     membershipPrice: savedConfig.membershipPrice || 20000,
     matchesPerUser: savedConfig.matchesPerUser || 10,
@@ -6990,7 +7597,7 @@ const AdminSettingsTab = () => {
 
     // Sincronizar con Firebase usando función centralizada
     const synced = await syncAdminConfig(config);
-    
+
     if (synced) {
       setSaveMessage('✅ Configuración guardada y sincronizada con Firebase');
     } else {
@@ -7004,7 +7611,7 @@ const AdminSettingsTab = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-[#181B34]">Configuración</h1>
-      
+
       {/* Configuración de Membresía */}
       <div className="bg-white rounded-xl p-6 border border-[#E4E7EF] shadow-sm space-y-4">
         <h3 className="text-lg font-semibold text-[#181B34] flex items-center gap-2">
@@ -7013,19 +7620,19 @@ const AdminSettingsTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-[#434343] mb-1 font-medium">Precio mensual (CLP)</label>
-            <input 
-              type="number" 
+            <input
+              type="number"
               value={config.membershipPrice}
-              onChange={(e) => setConfig({...config, membershipPrice: parseInt(e.target.value) || 0})}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30" 
+              onChange={(e) => setConfig({ ...config, membershipPrice: parseInt(e.target.value) || 0 })}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
             />
             <p className="text-xs text-[#7C8193] mt-1">Este precio se mostrará en la pantalla de pago</p>
           </div>
           <div>
             <label className="block text-sm text-[#434343] mb-1 font-medium">Modo MercadoPago</label>
-            <select 
+            <select
               value={config.mercadopagoMode}
-              onChange={(e) => setConfig({...config, mercadopagoMode: e.target.value})}
+              onChange={(e) => setConfig({ ...config, mercadopagoMode: e.target.value })}
               className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
             >
               <option value="sandbox">🧪 Sandbox (Pruebas)</option>
@@ -7042,11 +7649,11 @@ const AdminSettingsTab = () => {
         </h3>
         <div>
           <label className="block text-sm text-[#434343] mb-1 font-medium">Matches por usuario (10+10)</label>
-          <input 
-            type="number" 
+          <input
+            type="number"
             value={config.matchesPerUser}
-            onChange={(e) => setConfig({...config, matchesPerUser: parseInt(e.target.value) || 10})}
-            className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30" 
+            onChange={(e) => setConfig({ ...config, matchesPerUser: parseInt(e.target.value) || 10 })}
+            className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
           />
           <p className="text-xs text-[#7C8193] mt-1">Cuántas cuentas se asignan para compartir y recibir</p>
         </div>
@@ -7060,22 +7667,22 @@ const AdminSettingsTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-[#434343] mb-1 font-medium">WhatsApp soporte</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={config.whatsappSupport}
-              onChange={(e) => setConfig({...config, whatsappSupport: e.target.value})}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30" 
+              onChange={(e) => setConfig({ ...config, whatsappSupport: e.target.value })}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
               placeholder="+56912345678"
             />
             <p className="text-xs text-[#7C8193] mt-1">Número que aparece en el botón de WhatsApp</p>
           </div>
           <div>
             <label className="block text-sm text-[#434343] mb-1 font-medium">Nombre de la App</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={config.appName}
-              onChange={(e) => setConfig({...config, appName: e.target.value})}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30" 
+              onChange={(e) => setConfig({ ...config, appName: e.target.value })}
+              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
             />
           </div>
         </div>
@@ -7083,7 +7690,7 @@ const AdminSettingsTab = () => {
 
       {/* Botón guardar */}
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={handleSave}
           disabled={isSaving}
           className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white px-6 py-3 rounded-lg hover:opacity-90 font-semibold transition disabled:opacity-50 flex items-center gap-2"
@@ -7199,9 +7806,9 @@ const ClubBienestarView = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [filtroActivo, setFiltroActivo] = useState('todos');
-  
+
   const categorias = ['todos', 'Educación', 'Legal', 'Gastronomía', 'Espacios', 'Bienestar'];
-  
+
   // Imágenes stock para cada alianza
   const alianzaImages: Record<string, string> = {
     'santander': 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80',
@@ -7211,7 +7818,7 @@ const ClubBienestarView = () => {
     'cowork': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80',
     'bienestar': 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&q=80',
   };
-  
+
   const handleLinkClick = (alianza: typeof ALIANZAS_BENEFICIOS[0]) => {
     if (currentUser) {
       const key = `alianza_click_${currentUser.id}_${alianza.id}`;
@@ -7224,8 +7831,8 @@ const ClubBienestarView = () => {
     }
   };
 
-  const alianzasFiltradas = filtroActivo === 'todos' 
-    ? ALIANZAS_BENEFICIOS 
+  const alianzasFiltradas = filtroActivo === 'todos'
+    ? ALIANZAS_BENEFICIOS
     : ALIANZAS_BENEFICIOS.filter(a => a.tipo.includes(filtroActivo));
 
   const alianzasDestacadas = ALIANZAS_BENEFICIOS.filter(a => a.destacado);
@@ -7238,17 +7845,17 @@ const ClubBienestarView = () => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtNi42MjcgMC0xMiA1LjM3My0xMiAxMnM1LjM3MyAxMiAxMiAxMiAxMi01LjM3MyAxMi0xMi01LjM3My0xMi0xMi0xMnoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLW9wYWNpdHk9Ii4xIi8+PC9nPjwvc3ZnPg==')] opacity-30" />
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl -mr-40 -mt-40" />
         <div className="absolute bottom-0 left-0 w-60 h-60 bg-[#A855F7]/20 rounded-full blur-3xl -ml-30 -mb-30" />
-        
+
         <div className="relative px-4 pt-12 pb-8">
           <div className="max-w-5xl mx-auto">
-            <button 
+            <button
               onClick={() => navigate('/dashboard')}
               className="mb-6 flex items-center gap-2 text-white/80 hover:text-white transition group"
             >
               <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm font-medium">Volver al dashboard</span>
             </button>
-            
+
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-2xl">
@@ -7259,7 +7866,7 @@ const ClubBienestarView = () => {
                   <p className="text-white/80 mt-1">Alianzas exclusivas para miembros de la Tribu</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <div className="bg-white/15 backdrop-blur-xl rounded-2xl px-5 py-3 border border-white/20">
                   <p className="text-white/60 text-xs">Alianzas activas</p>
@@ -7283,11 +7890,10 @@ const ClubBienestarView = () => {
               <button
                 key={cat}
                 onClick={() => setFiltroActivo(cat)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
-                  filtroActivo === cat 
-                    ? 'bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] text-white shadow-lg' 
-                    : 'text-[#666] hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${filtroActivo === cat
+                  ? 'bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] text-white shadow-lg'
+                  : 'text-[#666] hover:bg-gray-100'
+                  }`}
               >
                 {cat === 'todos' ? '✨ Todos' : cat}
               </button>
@@ -7304,33 +7910,33 @@ const ClubBienestarView = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {alianzasDestacadas.map((alianza) => (
-                <div 
+                <div
                   key={alianza.id}
                   className="group relative overflow-hidden rounded-2xl bg-white shadow-xl border border-gray-100 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300"
                 >
                   {/* Imagen de fondo */}
                   <div className="relative h-40 overflow-hidden">
-                    <img 
-                      src={alianzaImages[alianza.id]} 
+                    <img
+                      src={alianzaImages[alianza.id]}
                       alt={alianza.nombre}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                    
+
                     {/* Badge destacado */}
                     <div className="absolute top-3 left-3 flex gap-2">
                       <span className="px-3 py-1 bg-[#f59e0b] text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
                         <Star className="w-3 h-3" /> DESTACADO
                       </span>
                     </div>
-                    
+
                     {/* Descuento */}
                     <div className="absolute top-3 right-3">
                       <span className="px-3 py-1.5 bg-white text-[#181B34] text-sm font-black rounded-full shadow-lg">
                         {alianza.descuento}
                       </span>
                     </div>
-                    
+
                     {/* Info sobre imagen */}
                     <div className="absolute bottom-3 left-3 right-3">
                       <span className="text-white/80 text-xs font-medium bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full">
@@ -7338,7 +7944,7 @@ const ClubBienestarView = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   {/* Contenido */}
                   <div className="p-5">
                     <h3 className="text-lg font-bold text-[#181B34] mb-1 group-hover:text-[#6161FF] transition-colors">
@@ -7347,7 +7953,7 @@ const ClubBienestarView = () => {
                     <p className="text-sm text-[#666] mb-4 line-clamp-2">
                       {alianza.descripcion}
                     </p>
-                    
+
                     {alianza.url ? (
                       <button
                         onClick={() => handleLinkClick(alianza)}
@@ -7383,29 +7989,29 @@ const ClubBienestarView = () => {
               {alianzasFiltradas.length}
             </span>
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {alianzasFiltradas.map((alianza) => (
-              <div 
+              <div
                 key={alianza.id}
                 className={`group relative overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 ${alianza.proximamente ? 'opacity-60' : ''}`}
               >
                 {/* Imagen */}
                 <div className="relative h-32 overflow-hidden">
-                  <img 
-                    src={alianzaImages[alianza.id]} 
+                  <img
+                    src={alianzaImages[alianza.id]}
                     alt={alianza.nombre}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                  
+
                   {/* Tags */}
                   <div className="absolute top-3 left-3">
                     <span className="text-xs px-2 py-1 rounded-full font-medium bg-white/90 text-[#666]">
                       {alianza.tipo}
                     </span>
                   </div>
-                  
+
                   {alianza.proximamente && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                       <span className="px-4 py-2 bg-white/90 rounded-full text-sm font-bold text-[#666]">
@@ -7413,19 +8019,18 @@ const ClubBienestarView = () => {
                       </span>
                     </div>
                   )}
-                  
+
                   {/* Descuento */}
                   <div className="absolute bottom-3 right-3">
-                    <span className={`px-3 py-1 text-sm font-bold rounded-full shadow-lg ${
-                      alianza.descuento === 'GRATIS' 
-                        ? 'bg-[#00CA72] text-white' 
-                        : 'bg-white text-[#181B34]'
-                    }`}>
+                    <span className={`px-3 py-1 text-sm font-bold rounded-full shadow-lg ${alianza.descuento === 'GRATIS'
+                      ? 'bg-[#00CA72] text-white'
+                      : 'bg-white text-[#181B34]'
+                      }`}>
                       {alianza.descuento}
                     </span>
                   </div>
                 </div>
-                
+
                 {/* Contenido */}
                 <div className="p-4">
                   <h3 className="font-bold text-[#181B34] mb-1 group-hover:text-[#6161FF] transition-colors line-clamp-1">
@@ -7434,7 +8039,7 @@ const ClubBienestarView = () => {
                   <p className="text-sm text-[#666] mb-4 line-clamp-2">
                     {alianza.descripcion}
                   </p>
-                  
+
                   {alianza.proximamente ? (
                     <div className="w-full py-2.5 rounded-xl bg-gray-100 text-[#666] text-sm text-center font-medium">
                       Avisaremos cuando esté disponible
@@ -7477,7 +8082,7 @@ const ClubBienestarView = () => {
                 <p className="text-white/80 text-sm">Únete como aliado y llega a cientos de emprendedores</p>
               </div>
             </div>
-            <a 
+            <a
               href="https://wa.me/56951776005?text=Hola!%20Quiero%20ser%20aliado%20del%20Club%20de%20Beneficios%20de%20Tribu%20Impulsa"
               target="_blank"
               rel="noopener noreferrer"
@@ -7503,7 +8108,7 @@ const AdminPanelInline = () => {
   const [error, setError] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   const refreshData = () => setRefreshKey(k => k + 1);
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -7535,27 +8140,27 @@ const AdminPanelInline = () => {
 
   // Stats REALES desde la base de datos
   const realStats = getDashboardStats();
-  const stats = { 
-    users: realStats.totalUsers, 
-    active: realStats.activeUsers, 
-    reports: realStats.pendingReports, 
-    matches: realStats.completedShares 
+  const stats = {
+    users: realStats.totalUsers,
+    active: realStats.activeUsers,
+    reports: realStats.pendingReports,
+    matches: realStats.completedShares
   };
-  
+
   // Usuarios REALES
   const realUsers = getAllUsers();
-  
+
   // Reportes REALES (nuevo sistema mejorado + legacy) - se refresca con refreshKey
   const legacyReports = JSON.parse(localStorage.getItem('tribeReportsLog') || '[]');
   const newReports = getAllReports();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _refresh = refreshKey; // Trigger re-render when reports change
   const realReports = newReports.length > 0 ? newReports : legacyReports;
-  
+
   // Cumplimiento
   const complianceData = getAllUsersCompliance();
   const complianceStats = getComplianceStats();
-  
+
   // Distribución por rubro
   const categoryDist = getCategoryDistribution();
 
@@ -7570,7 +8175,7 @@ const AdminPanelInline = () => {
           </div>
           <h1 className="text-2xl font-bold text-[#181B34] text-center mb-2">Admin Panel</h1>
           <p className="text-[#7C8193] text-center mb-6 text-sm">Tribu Impulsa - Acceso Administrativo</p>
-          
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-sm text-[#434343] mb-1 font-medium">Email</label>
@@ -7641,11 +8246,10 @@ const AdminPanelInline = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                activeTab === item.id 
-                  ? 'bg-[#6161FF]/10 text-[#6161FF]' 
-                  : 'text-[#7C8193] hover:bg-[#F5F7FB] hover:text-[#181B34]'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${activeTab === item.id
+                ? 'bg-[#6161FF]/10 text-[#6161FF]'
+                : 'text-[#7C8193] hover:bg-[#F5F7FB] hover:text-[#181B34]'
+                }`}
             >
               <item.icon size={18} />
               <span className="text-sm font-medium">{item.label}</span>
@@ -7662,19 +8266,19 @@ const AdminPanelInline = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Main Content */}
       <main className="flex-1 p-6 overflow-auto">
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <h1 className="text-2xl font-bold text-[#181B34]">Dashboard Overview</h1>
-            
+
             {/* Stats principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Usuarios Totales', value: stats.users, color: 'bg-[#6161FF]' },
                 { label: 'Usuarios Activos', value: stats.active, color: 'bg-[#00CA72]' },
-                { label: 'Reportes Pendientes', value: realReports.filter((r: Report | {status?: string}) => !r.status || r.status === 'pending').length, color: 'bg-[#FFCC00]' },
+                { label: 'Reportes Pendientes', value: realReports.filter((r: Report | { status?: string }) => !r.status || r.status === 'pending').length, color: 'bg-[#FFCC00]' },
                 { label: 'Cumplimiento Promedio', value: `${complianceStats.averageCompliance}%`, color: 'bg-[#A78BFA]' },
               ].map(stat => (
                 <div key={stat.label} className="bg-white rounded-xl p-5 border border-[#E4E7EF] shadow-sm">
@@ -7686,7 +8290,7 @@ const AdminPanelInline = () => {
                 </div>
               ))}
             </div>
-            
+
             {/* Distribución de cumplimiento */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="bg-white rounded-xl p-5 border border-[#E4E7EF] shadow-sm">
@@ -7710,7 +8314,7 @@ const AdminPanelInline = () => {
                   ))}
                 </div>
               </div>
-              
+
               {/* Distribución por rubro */}
               <div className="bg-white rounded-xl p-5 border border-[#E4E7EF] shadow-sm">
                 <h3 className="text-[#181B34] font-semibold mb-4 flex items-center gap-2">
@@ -7725,9 +8329,9 @@ const AdminPanelInline = () => {
                           <span className="text-[#7C8193]">{cat.count} ({cat.percentage}%)</span>
                         </div>
                         <div className="h-2 bg-[#F5F7FB] rounded-full overflow-hidden">
-                          <div 
+                          <div
                             className="h-full rounded-full"
-                            style={{ 
+                            style={{
                               width: `${cat.percentage}%`,
                               backgroundColor: ['#6161FF', '#00CA72', '#FFCC00', '#FB275D', '#A78BFA', '#EC4899'][i % 6]
                             }}
@@ -7739,7 +8343,7 @@ const AdminPanelInline = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Acciones rápidas */}
             <div className="bg-white rounded-xl p-5 border border-[#E4E7EF] shadow-sm">
               <h3 className="text-[#181B34] font-semibold mb-4">Acciones Rápidas</h3>
@@ -7747,7 +8351,7 @@ const AdminPanelInline = () => {
                 <button className="bg-[#6161FF]/10 text-[#6161FF] p-3 rounded-lg hover:bg-[#6161FF]/20 text-sm font-medium transition">
                   Regenerar Tómbola
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     const result = exportForGoogleDrive();
                     alert(result.instructions);
@@ -7756,13 +8360,13 @@ const AdminPanelInline = () => {
                 >
                   <Download size={16} /> Exportar Drive
                 </button>
-                <button 
+                <button
                   onClick={() => setActiveTab('compliance')}
                   className="bg-[#A78BFA]/10 text-[#7C3AED] p-3 rounded-lg hover:bg-[#A78BFA]/20 text-sm font-medium transition"
                 >
                   Ver Cumplimiento
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     const count = sendBulkReminder('mid_month');
                     alert(`✅ Recordatorio enviado a ${count} usuarios activos`);
@@ -7773,7 +8377,7 @@ const AdminPanelInline = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Google Drive */}
             <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl p-5 border border-[#E4E7EF]">
               <h3 className="text-[#181B34] font-semibold mb-3 flex items-center gap-2">
@@ -7782,9 +8386,9 @@ const AdminPanelInline = () => {
               <p className="text-sm text-[#7C8193] mb-3">
                 Los datos se exportan como CSV y JSON. Sube los archivos a Google Drive y comparte la carpeta con el equipo.
               </p>
-              <a 
-                href="https://drive.google.com/drive/my-drive" 
-                target="_blank" 
+              <a
+                href="https://drive.google.com/drive/my-drive"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-[#6161FF] hover:underline"
               >
@@ -7793,19 +8397,19 @@ const AdminPanelInline = () => {
             </div>
           </div>
         )}
-        
+
         {/* TAB DE MEMBRESÍAS */}
         {activeTab === 'memberships' && (
           <MembershipAdminTab users={realUsers} />
         )}
-        
+
         {/* TAB DE CUMPLIMIENTO */}
         {activeTab === 'compliance' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-[#181B34]">Dashboard de Cumplimiento</h1>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => {
                     const pushCount = countUsersWithPush();
                     if (pushCount === 0) {
@@ -7819,7 +8423,7 @@ const AdminPanelInline = () => {
                 >
                   <Zap size={16} /> Push Masivo ({countUsersWithPush()})
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     const count = sendBulkReminder('mid_month');
                     alert(`✅ Recordatorio in-app enviado a ${count} usuarios`);
@@ -7830,7 +8434,7 @@ const AdminPanelInline = () => {
                 </button>
               </div>
             </div>
-            
+
             {/* Resumen visual */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-[#00CA72]/10 to-[#00CA72]/5 rounded-xl p-4 border border-[#00CA72]/20">
@@ -7854,7 +8458,7 @@ const AdminPanelInline = () => {
                 <p className="text-xs text-[#7C8193]">&lt;30% completado</p>
               </div>
             </div>
-            
+
             {/* Tabla de cumplimiento */}
             <div className="bg-white rounded-xl border border-[#E4E7EF] overflow-hidden shadow-sm">
               <table className="w-full">
@@ -7893,12 +8497,11 @@ const AdminPanelInline = () => {
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <div className="w-16 h-2 bg-[#E4E7EF] rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full ${
-                                  c.status === 'excellent' ? 'bg-[#00CA72]' :
+                              <div
+                                className={`h-full rounded-full ${c.status === 'excellent' ? 'bg-[#00CA72]' :
                                   c.status === 'good' ? 'bg-[#6161FF]' :
-                                  c.status === 'warning' ? 'bg-[#FFCC00]' : 'bg-[#FB275D]'
-                                }`}
+                                    c.status === 'warning' ? 'bg-[#FFCC00]' : 'bg-[#FB275D]'
+                                  }`}
                                 style={{ width: `${c.percentageComplete}%` }}
                               ></div>
                             </div>
@@ -7906,19 +8509,18 @@ const AdminPanelInline = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            c.status === 'excellent' ? 'bg-[#00CA72]/10 text-[#00CA72]' :
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${c.status === 'excellent' ? 'bg-[#00CA72]/10 text-[#00CA72]' :
                             c.status === 'good' ? 'bg-[#6161FF]/10 text-[#6161FF]' :
-                            c.status === 'warning' ? 'bg-[#FFCC00]/10 text-[#9D6B00]' :
-                            'bg-[#FB275D]/10 text-[#FB275D]'
-                          }`}>
+                              c.status === 'warning' ? 'bg-[#FFCC00]/10 text-[#9D6B00]' :
+                                'bg-[#FB275D]/10 text-[#FB275D]'
+                            }`}>
                             {c.status === 'excellent' ? '⭐ Excelente' :
-                             c.status === 'good' ? '👍 Bueno' :
-                             c.status === 'warning' ? '⚠️ Advertencia' : '🚨 Crítico'}
+                              c.status === 'good' ? '👍 Bueno' :
+                                c.status === 'warning' ? '⚠️ Advertencia' : '🚨 Crítico'}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button 
+                          <button
                             onClick={() => {
                               createReminder(c.userId, 'mid_month');
                               alert(`Recordatorio enviado a ${c.userName}`);
@@ -7936,7 +8538,7 @@ const AdminPanelInline = () => {
             </div>
           </div>
         )}
-        
+
         {/* TAB DE REGISTROS DE SHARES */}
         {activeTab === 'shares' && (
           <div className="space-y-6">
@@ -7944,12 +8546,12 @@ const AdminPanelInline = () => {
               <h1 className="text-2xl font-bold text-[#181B34]">Registros de Compartidos</h1>
               <span className="text-sm text-[#7C8193]">{getShareRecords().length} registros totales</span>
             </div>
-            
+
             <p className="text-sm text-[#7C8193] bg-[#F5F7FB] p-4 rounded-xl border border-[#E4E7EF]">
               Aquí puedes ver todos los enlaces registrados por los usuarios cuando reportan haber compartido contenido o haberlo recibido.
               Estos datos sirven para verificar el cumplimiento real de las asignaciones.
             </p>
-            
+
             <div className="bg-white rounded-xl border border-[#E4E7EF] overflow-hidden shadow-sm">
               <table className="w-full">
                 <thead className="bg-[#F5F7FB]">
@@ -7981,11 +8583,10 @@ const AdminPanelInline = () => {
                               })}
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                record.type === 'shared_to' 
-                                  ? 'bg-[#6161FF]/10 text-[#6161FF]' 
-                                  : 'bg-[#00CA72]/10 text-[#00CA72]'
-                              }`}>
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${record.type === 'shared_to'
+                                ? 'bg-[#6161FF]/10 text-[#6161FF]'
+                                : 'bg-[#00CA72]/10 text-[#00CA72]'
+                                }`}>
                                 {record.type === 'shared_to' ? '📤 Compartió' : '📥 Recibió'}
                               </span>
                             </td>
@@ -7996,14 +8597,14 @@ const AdminPanelInline = () => {
                               {record.profileName}
                             </td>
                             <td className="px-4 py-3">
-                              <a 
+                              <a
                                 href={record.contentUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[#6161FF] hover:underline text-sm truncate block max-w-[200px]"
                               >
-                                {record.contentUrl.length > 40 
-                                  ? record.contentUrl.substring(0, 40) + '...' 
+                                {record.contentUrl.length > 40
+                                  ? record.contentUrl.substring(0, 40) + '...'
                                   : record.contentUrl}
                               </a>
                             </td>
@@ -8058,16 +8659,15 @@ const AdminPanelInline = () => {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            user.status === 'pending' ? 'bg-[#FFCC00]/10 text-[#9D6B00]' : 
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${user.status === 'pending' ? 'bg-[#FFCC00]/10 text-[#9D6B00]' :
                             user.status === 'suspended' ? 'bg-[#FB275D]/10 text-[#FB275D]' :
-                            'bg-[#00CA72]/10 text-[#00CA72]'
-                          }`}>
+                              'bg-[#00CA72]/10 text-[#00CA72]'
+                            }`}>
                             {user.status === 'pending' ? 'pendiente' : user.status === 'suspended' ? 'suspendido' : 'activo'}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <button 
+                          <button
                             onClick={() => navigate(`/profile/${user.id}`)}
                             className="text-[#6161FF] hover:text-[#5050DD] text-sm font-medium"
                           >
@@ -8089,14 +8689,14 @@ const AdminPanelInline = () => {
               <h1 className="text-2xl font-bold text-[#181B34]">Solicitudes de Ayuda</h1>
               <div className="flex gap-2 text-sm">
                 <span className="px-3 py-1 rounded-full bg-[#FFCC00]/10 text-[#9D6B00]">
-                  {realReports.filter((r: Report | {status?: string}) => !r.status || r.status === 'pending').length} pendientes
+                  {realReports.filter((r: Report | { status?: string }) => !r.status || r.status === 'pending').length} pendientes
                 </span>
                 <span className="px-3 py-1 rounded-full bg-[#A78BFA]/10 text-[#7C3AED]">
-                  {realReports.filter((r: Report | {status?: string}) => r.status === 'in_review').length} en revisión
+                  {realReports.filter((r: Report | { status?: string }) => r.status === 'in_review').length} en revisión
                 </span>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               {realReports.length === 0 ? (
                 <div className="bg-white rounded-xl p-8 border border-[#E4E7EF] shadow-sm text-center">
@@ -8105,14 +8705,14 @@ const AdminPanelInline = () => {
                   <p className="text-xs text-[#7C8193] mt-2">No hay reportes pendientes por revisar</p>
                 </div>
               ) : (
-                realReports.map((report: Report | {targetId?: string; targetUserId?: string; reason: string; timestamp?: string; createdAt?: string; status?: string; fromUserId?: string; id?: string; adminNotes?: string}, i: number) => {
-                  const reportAny = report as {targetId?: string; targetUserId?: string; timestamp?: string; createdAt?: string; [key: string]: unknown};
+                realReports.map((report: Report | { targetId?: string; targetUserId?: string; reason: string; timestamp?: string; createdAt?: string; status?: string; fromUserId?: string; id?: string; adminNotes?: string }, i: number) => {
+                  const reportAny = report as { targetId?: string; targetUserId?: string; timestamp?: string; createdAt?: string;[key: string]: unknown };
                   const targetUser = realUsers.find(u => u.id === (reportAny.targetId || reportAny.targetUserId));
                   const fromUser = realUsers.find(u => u.id === report.fromUserId);
                   const reportId = report.id || `legacy_${i}`;
                   const status = report.status || 'pending';
                   const timestamp = reportAny.timestamp || reportAny.createdAt || new Date().toISOString();
-                  
+
                   const statusStyles: Record<string, string> = {
                     pending: 'bg-[#FFCC00]/10 text-[#9D6B00]',
                     in_review: 'bg-[#A78BFA]/10 text-[#7C3AED]',
@@ -8120,7 +8720,7 @@ const AdminPanelInline = () => {
                     sanctioned: 'bg-[#FB275D]/10 text-[#FB275D]',
                     dismissed: 'bg-[#7C8193]/10 text-[#7C8193]'
                   };
-                  
+
                   const statusLabels: Record<string, string> = {
                     pending: '⏳ Pendiente',
                     in_review: '🔍 En revisión',
@@ -8128,20 +8728,19 @@ const AdminPanelInline = () => {
                     sanctioned: '🚫 Sancionado',
                     dismissed: '❌ Desestimado'
                   };
-                  
+
                   return (
-                    <div key={reportId} className={`bg-white rounded-xl p-5 border shadow-sm ${
-                      status === 'pending' ? 'border-[#FFCC00]/30' : 
+                    <div key={reportId} className={`bg-white rounded-xl p-5 border shadow-sm ${status === 'pending' ? 'border-[#FFCC00]/30' :
                       status === 'in_review' ? 'border-[#A78BFA]/30' : 'border-[#E4E7EF]'
-                    }`}>
+                      }`}>
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <p className="text-[#181B34] font-semibold">
                             {fromUser?.companyName || 'Usuario'} → {targetUser?.name || targetUser?.companyName || 'Usuario'}
                           </p>
                           <p className="text-[#7C8193] text-xs">
-                            {new Date(timestamp).toLocaleDateString('es-CL', { 
-                              day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                            {new Date(timestamp).toLocaleDateString('es-CL', {
+                              day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
                             })}
                           </p>
                         </div>
@@ -8149,20 +8748,20 @@ const AdminPanelInline = () => {
                           {statusLabels[status]}
                         </span>
                       </div>
-                      
+
                       <p className="text-[#434343] mb-3 p-3 bg-[#F5F7FB] rounded-lg text-sm">"{report.reason}"</p>
-                      
+
                       {report.adminNotes && (
                         <div className="mb-3 p-3 bg-[#E8D5FF]/20 rounded-lg border border-[#E8D5FF]">
                           <p className="text-xs text-[#7C3AED] font-medium mb-1">Notas del admin:</p>
                           <p className="text-sm text-[#434343]">{report.adminNotes}</p>
                         </div>
                       )}
-                      
+
                       {(status === 'pending' || status === 'in_review') && (
                         <div className="flex gap-2 flex-wrap">
                           {status === 'pending' && (
-                            <button 
+                            <button
                               onClick={() => {
                                 if (report.id) {
                                   updateReportStatus(report.id, 'in_review');
@@ -8175,7 +8774,7 @@ const AdminPanelInline = () => {
                               <Clock size={14} /> Revisar
                             </button>
                           )}
-                          <button 
+                          <button
                             onClick={() => {
                               const notes = prompt('Notas de resolución (opcional):');
                               if (report.id) {
@@ -8188,7 +8787,7 @@ const AdminPanelInline = () => {
                           >
                             ✓ Resolver
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               if (confirm('¿Sancionar a este usuario? Se suspenderá su cuenta.')) {
                                 const notes = prompt('Motivo de la sanción:');
@@ -8203,7 +8802,7 @@ const AdminPanelInline = () => {
                           >
                             🚫 Sancionar
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               const notes = prompt('Motivo del desestimo:');
                               if (report.id) {
@@ -8239,12 +8838,12 @@ const ProfileReminderBanner = () => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
   const [dismissed, setDismissed] = useState(false);
-  
+
   if (!currentUser || dismissed) return null;
-  
+
   const validation = validateUserProfile(currentUser);
   if (validation.isComplete) return null;
-  
+
   return (
     <div className="profile-reminder-banner animate-slideDown">
       <div className="w-10 h-10 bg-[#FFCC00] rounded-full flex items-center justify-center flex-shrink-0">
@@ -8258,13 +8857,13 @@ const ProfileReminderBanner = () => {
           Faltan: {validation.missingFields.slice(0, 2).join(', ')}{validation.missingFields.length > 2 ? ` y ${validation.missingFields.length - 2} más` : ''}
         </p>
       </div>
-      <button 
+      <button
         onClick={() => navigate('/my-profile')}
         className="px-3 py-1.5 bg-[#FFCC00] text-[#181B34] rounded-lg text-xs font-semibold hover:bg-[#E0A800] transition flex-shrink-0"
       >
         Completar
       </button>
-      <button 
+      <button
         onClick={() => setDismissed(true)}
         className="p-1 text-[#7C8193] hover:text-[#181B34] transition flex-shrink-0"
       >
@@ -8274,29 +8873,44 @@ const ProfileReminderBanner = () => {
   );
 };
 
-// Componente de ruta protegida para miembros - SIN bloqueo por perfil incompleto
+// Componente de ruta protegida para miembros - solo valida sesión + membresía activa
 const MemberRoute = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
-  const [isMember, setIsMember] = useState<boolean | null>(null);
-  
+  const [accessGranted, setAccessGranted] = useState(false);
+
   useEffect(() => {
     const checkAccess = async () => {
       if (!currentUser) {
         navigate('/');
         return;
       }
-      
-      // Ya NO bloqueamos por perfil incompleto - solo mostramos banner
-      // El banner ProfileReminderBanner se muestra en el Dashboard
-      
+
+      setAccessGranted(false);
+
+      // Mantener actualizado el flag de perfil completo (no bloquea navegación)
+      const validation = validateUserProfile(currentUser);
+      await syncProfileCompletionState(currentUser, validation.isComplete);
+
       // Verificar membresía
       const status = localStorage.getItem(`membership_status_${currentUser.id}`);
-      if (status === 'miembro' || status === 'admin') {
-        setIsMember(true);
+      const paymentMetaRaw = localStorage.getItem(`membership_payment_${currentUser.id}`);
+
+      const trialIsValid = () => {
+        if (!paymentMetaRaw) return false;
+        try {
+          const meta = JSON.parse(paymentMetaRaw);
+          return meta.expiresAt ? new Date(meta.expiresAt) > new Date() : false;
+        } catch {
+          return false;
+        }
+      };
+
+      if (status === 'miembro' || status === 'admin' || (status === 'trial' && trialIsValid())) {
+        setAccessGranted(true);
         return;
       }
-      
+
       // Verificar en Firebase
       try {
         const { getFirestoreInstance } = await import('./services/firebaseService');
@@ -8306,9 +8920,15 @@ const MemberRoute = ({ children }: { children: React.ReactNode }) => {
           const membershipDoc = await getDoc(doc(db, 'memberships', currentUser.id));
           if (membershipDoc.exists()) {
             const data = membershipDoc.data();
-            if (data.status === 'miembro' || data.status === 'admin') {
-              localStorage.setItem(`membership_status_${currentUser.id}`, data.status);
-              setIsMember(true);
+            const isActive = data.status === 'miembro' || data.status === 'admin' || (
+              data.status === 'trial' &&
+              data.expiresAt &&
+              new Date(data.expiresAt) > new Date()
+            );
+
+            if (isActive) {
+              syncMembershipToLocalCache(currentUser.id, data as CloudMembership);
+              setAccessGranted(true);
               return;
             }
           }
@@ -8316,453 +8936,23 @@ const MemberRoute = ({ children }: { children: React.ReactNode }) => {
       } catch (err) {
         console.log('Error verificando membresía:', err);
       }
-      
+
       // No es miembro, redirigir a membership
-      setIsMember(false);
       navigate('/membership');
     };
-    
+
     checkAccess();
   }, [currentUser, navigate]);
-  
-  if (isMember === null) {
+
+  if (!accessGranted) {
     return <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center">
       <div className="w-8 h-8 border-4 border-[#6161FF] border-t-transparent rounded-full animate-spin" />
     </div>;
   }
-  
-  return isMember ? <>{children}</> : null;
+
+  return <>{children}</>;
 };
 
-// ============================================
-// PANTALLA DE COMPLETAR PERFIL OBLIGATORIO
-// ============================================
-const CompleteProfileScreen = () => {
-  const navigate = useNavigate();
-  const currentUser = getCurrentUser();
-  const [validation, setValidation] = useState<ProfileValidation>({ isComplete: false, missingFields: [], completionPercent: 0 });
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    name: currentUser?.name || '',
-    companyName: currentUser?.companyName || '',
-    category: currentUser?.category || '',
-    affinity: currentUser?.affinity || '',
-    scope: currentUser?.scope || '',
-    phone: currentUser?.phone || currentUser?.whatsapp || '',
-    comuna: currentUser?.comuna || '',
-    selectedRegions: currentUser?.selectedRegions || [] as string[],
-    revenue: currentUser?.revenue || ''
-  });
-  const [selectedRegionForComuna, setSelectedRegionForComuna] = useState('');
-
-  useEffect(() => {
-    if (currentUser && !isSaved && !isLoading) {
-      const newValidation = validateUserProfile(currentUser);
-      // Solo actualizar si cambió el estado de completado
-      if (newValidation.isComplete !== validation.isComplete) {
-        setValidation(newValidation);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, isSaved, isLoading]);
-
-  // Si el perfil ya está completo Y no estamos en proceso de guardado, redirigir al dashboard
-  useEffect(() => {
-    if (validation.isComplete && !isSaved && !isLoading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [validation.isComplete, navigate, isSaved, isLoading]);
-
-  const comunasDeRegion = selectedRegionForComuna
-    ? REGIONS.find(r => r.id === selectedRegionForComuna)?.comunas || []
-    : [];
-
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  const handleSave = async () => {
-    console.log('🔄 handleSave llamado');
-    setSaveError(null);
-    
-    if (!currentUser) {
-      console.error('❌ No hay usuario actual');
-      setSaveError('Error: No hay sesión activa. Por favor recarga la página.');
-      return;
-    }
-    
-    // Validar campos antes de guardar
-    if (!formData.name?.trim()) {
-      setSaveError('Por favor ingresa tu nombre');
-      return;
-    }
-    if (!formData.companyName?.trim()) {
-      setSaveError('Por favor ingresa el nombre de tu emprendimiento');
-      return;
-    }
-    if (!formData.phone?.trim()) {
-      setSaveError('Por favor ingresa tu teléfono');
-      return;
-    }
-    if (!formData.category) {
-      setSaveError('Por favor selecciona tu giro/rubro');
-      return;
-    }
-    if (!formData.affinity) {
-      setSaveError('Por favor selecciona una afinidad');
-      return;
-    }
-    if (!formData.revenue) {
-      setSaveError('Por favor selecciona tu rango de facturación');
-      return;
-    }
-    if (!formData.scope) {
-      setSaveError('Por favor selecciona tu alcance geográfico');
-      return;
-    }
-    if (formData.scope === 'LOCAL' && !formData.comuna) {
-      setSaveError('Por favor selecciona tu comuna');
-      return;
-    }
-    if (formData.scope === 'REGIONAL' && formData.selectedRegions.length === 0) {
-      setSaveError('Por favor selecciona al menos una región');
-      return;
-    }
-    
-    setIsLoading(true);
-    console.log('📝 Guardando datos:', formData);
-
-    try {
-      const updatedUser = {
-        ...currentUser,
-        name: formData.name.trim(),
-        companyName: formData.companyName.trim(),
-        category: formData.category,
-        affinity: formData.affinity,
-        scope: formData.scope as 'LOCAL' | 'REGIONAL' | 'NACIONAL',
-        phone: formData.phone.trim(),
-        whatsapp: formData.phone.trim(),
-        comuna: formData.scope === 'LOCAL' ? formData.comuna : null,
-        selectedRegions: formData.scope === 'REGIONAL' ? formData.selectedRegions : [],
-        revenue: formData.revenue
-      };
-
-      // Actualizar en localStorage
-      const result = updateUser(currentUser.id, updatedUser);
-      console.log('💾 Usuario actualizado:', result);
-      
-      if (!result) {
-        setSaveError('Error al guardar. Por favor intenta de nuevo.');
-        setIsLoading(false);
-        return;
-      }
-      
-      setCurrentUser(currentUser.id);
-
-      // Sincronizar con Firebase
-      try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
-        const { doc, setDoc } = await import('firebase/firestore');
-        const db = getFirestoreInstance();
-        if (db) {
-          await setDoc(doc(db, 'users', currentUser.id), updatedUser, { merge: true });
-          console.log('✅ Perfil sincronizado con Firebase');
-        }
-      } catch (err) {
-        console.log('⚠️ Error sincronizando:', err);
-      }
-
-      // Guardado exitoso - mostrar estado guardado y countdown
-      console.log('🎉 Perfil guardado exitosamente');
-      setIsLoading(false);
-      setIsSaved(true);
-      
-      // Iniciar countdown 3...2...1...
-      setCountdown(3);
-      setTimeout(() => setCountdown(2), 1000);
-      setTimeout(() => setCountdown(1), 2000);
-      setTimeout(() => {
-        console.log('🚀 Navegando a búsqueda de tribu');
-        window.location.href = '/#/searching';
-      }, 3000);
-      return;
-      
-    } catch (err) {
-      console.error('Error guardando perfil:', err);
-      setSaveError('Error inesperado. Por favor intenta de nuevo.');
-      setIsLoading(false);
-    }
-  };
-
-  const handleRegionToggle = (regionId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedRegions: prev.selectedRegions.includes(regionId)
-        ? prev.selectedRegions.filter(r => r !== regionId)
-        : [...prev.selectedRegions, regionId]
-    }));
-  };
-
-  if (!currentUser) {
-    return <Navigate to="/" replace />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#7B61FF] to-[#9D61FF] flex flex-col">
-      {/* Header */}
-      <div className="pt-12 pb-6 px-6 text-center">
-        <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-xl">
-          <AlertTriangle size={40} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-2">¡Completa tu perfil!</h1>
-        <p className="text-white/80 text-sm">
-          Para poder conectarte con tu Tribu, necesitamos algunos datos obligatorios
-        </p>
-        
-        {/* Barra de progreso */}
-        <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
-          <div 
-            className="h-full bg-[#00CA72] transition-all duration-500"
-            style={{ width: `${validation.completionPercent}%` }}
-          />
-        </div>
-        <p className="text-white/60 text-xs mt-2">{validation.completionPercent}% completado</p>
-      </div>
-
-      {/* Formulario */}
-      <div className="flex-1 bg-white rounded-t-3xl px-6 py-8 overflow-y-auto">
-        <div className="max-w-md mx-auto space-y-5">
-          
-          {/* Campos faltantes destacados */}
-          {validation.missingFields.length > 0 && (
-            <div className="bg-[#FFF3E6] border border-[#FF9500] rounded-xl p-4 mb-6">
-              <p className="text-sm font-semibold text-[#FF6B00] mb-2">📝 Te faltan estos datos:</p>
-              <ul className="text-xs text-[#FF6B00]/80 space-y-1">
-                {validation.missingFields.map((field, i) => (
-                  <li key={i}>• {field}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Nombre */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Tu nombre <span className="text-[#FB275D]">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-              placeholder="Ej: María González"
-            />
-          </div>
-
-          {/* Nombre emprendimiento */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Nombre de tu emprendimiento <span className="text-[#FB275D]">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.companyName}
-              onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-              placeholder="Ej: Dulces María"
-            />
-          </div>
-
-          {/* Teléfono */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Teléfono / WhatsApp <span className="text-[#FB275D]">*</span>
-            </label>
-            <input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-              placeholder="+56 9 1234 5678"
-            />
-          </div>
-
-          {/* Categoría/Giro */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Giro / Rubro <span className="text-[#FB275D]">*</span>
-            </label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-            >
-              <option value="">Selecciona tu rubro</option>
-              {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Afinidad */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Afinidad / Intereses <span className="text-[#FB275D]">*</span>
-            </label>
-            <select
-              value={formData.affinity}
-              onChange={(e) => setFormData(prev => ({ ...prev, affinity: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-            >
-              <option value="">¿Con qué tipo de negocios quieres conectar?</option>
-              {[...SURVEY_AFFINITY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map(aff => (
-                <option key={aff} value={aff}>{aff}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Facturación Mensual */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Facturación mensual aproximada <span className="text-[#FB275D]">*</span>
-            </label>
-            <select
-              value={formData.revenue}
-              onChange={(e) => setFormData(prev => ({ ...prev, revenue: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-            >
-              <option value="">Selecciona un rango</option>
-              {SURVEY_REVENUE_OPTIONS.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Alcance */}
-          <div>
-            <label className="block text-sm font-semibold text-[#181B34] mb-2">
-              Alcance geográfico <span className="text-[#FB275D]">*</span>
-            </label>
-            <select
-              value={formData.scope}
-              onChange={(e) => setFormData(prev => ({ ...prev, scope: e.target.value }))}
-              className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-            >
-              <option value="">¿Dónde operas?</option>
-              {SURVEY_SCOPE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Comuna - solo si LOCAL */}
-          {formData.scope === 'LOCAL' && (
-            <div>
-              <label className="block text-sm font-semibold text-[#181B34] mb-2">
-                Tu comuna <span className="text-[#FB275D]">*</span>
-              </label>
-              <select
-                value={selectedRegionForComuna}
-                onChange={(e) => setSelectedRegionForComuna(e.target.value)}
-                className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF] mb-2"
-              >
-                <option value="">Primero selecciona tu región</option>
-                {REGIONS.map(r => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
-                ))}
-              </select>
-              {selectedRegionForComuna && (
-                <select
-                  value={formData.comuna}
-                  onChange={(e) => setFormData(prev => ({ ...prev, comuna: e.target.value }))}
-                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#6161FF]"
-                >
-                  <option value="">Selecciona tu comuna</option>
-                  {comunasDeRegion.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          )}
-
-          {/* Regiones - solo si REGIONAL */}
-          {formData.scope === 'REGIONAL' && (
-            <div>
-              <label className="block text-sm font-semibold text-[#181B34] mb-2">
-                Regiones donde operas <span className="text-[#FB275D]">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto bg-[#F5F7FB] rounded-xl p-3">
-                {REGIONS.map(r => (
-                  <label key={r.id} className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.selectedRegions.includes(r.id)}
-                      onChange={() => handleRegionToggle(r.id)}
-                      className="rounded border-[#E4E7EF]"
-                    />
-                    <span className="truncate">{r.name}</span>
-                  </label>
-                ))}
-              </div>
-              {formData.selectedRegions.length > 0 && (
-                <p className="text-xs text-[#00CA72] mt-2">
-                  ✓ {formData.selectedRegions.length} región(es) seleccionada(s)
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Mensaje de error */}
-          {saveError && (
-            <div className="bg-[#FFE6E6] border border-[#FB275D] rounded-xl p-4 mt-4">
-              <p className="text-sm text-[#FB275D] font-medium">⚠️ {saveError}</p>
-            </div>
-          )}
-
-          {/* Botón guardar */}
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isLoading || isSaved}
-            className={`w-full py-4 rounded-xl font-bold text-base shadow-lg transition mt-6 ${
-              isSaved 
-                ? 'bg-gradient-to-r from-[#00CA72] to-[#00B865] text-white' 
-                : 'bg-gradient-to-r from-[#6161FF] to-[#7B61FF] text-white hover:shadow-xl disabled:opacity-50'
-            }`}
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Guardando...
-              </span>
-            ) : isSaved ? (
-              <span className="flex items-center justify-center gap-2">
-                <CheckCircle size={20} />
-                {countdown !== null ? `¡Guardado! Redirigiendo en ${countdown}...` : '¡Guardado!'}
-              </span>
-            ) : (
-              '✓ Guardar y continuar'
-            )}
-          </button>
-
-          <p className="text-center text-xs text-[#7C8193] mt-4">
-            Estos datos son necesarios para el algoritmo de matching y para que tu Tribu pueda contactarte
-          </p>
-
-          {/* Botón para ir al perfil sin completar */}
-          <button
-            type="button"
-            onClick={() => window.location.href = '/#/my-profile'}
-            className="w-full py-3 rounded-xl font-medium text-sm text-[#7C8193] hover:text-[#6161FF] hover:bg-[#F5F7FB] transition mt-2"
-          >
-            Ir a mi perfil para editar después →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // Main Layout with Navigation
 const AppLayout = () => {
@@ -8771,7 +8961,7 @@ const AppLayout = () => {
   const currentUser = getCurrentUser();
   const myProfile = getMyProfile();
   const [showMenu, setShowMenu] = useState(false);
-  
+
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(() => {
     const saved = localStorage.getItem('tribu_font_size');
     return saved === 'small' || saved === 'medium' || saved === 'large' ? saved : 'small';
@@ -8791,17 +8981,44 @@ const AppLayout = () => {
   useEffect(() => {
     setShowMenu(false);
   }, [location.pathname]);
-  
+
   // Verificar membresía para mostrar candados en navegación
   const [isMember, setIsMember] = useState(false);
-  
+
   useEffect(() => {
-    if (currentUser) {
+    const checkMemberStatus = async () => {
+      if (!currentUser) {
+        setIsMember(false);
+        return;
+      }
+      
+      // Verificar localStorage (incluir trial!)
       const status = localStorage.getItem(`membership_status_${currentUser.id}`);
-      setIsMember(status === 'miembro' || status === 'admin');
-    }
+      if (status === 'miembro' || status === 'admin' || status === 'trial') {
+        setIsMember(true);
+        return;
+      }
+      
+      // Si no está en localStorage, verificar Firebase
+      try {
+        const membershipData = await fetchMembershipFromCloud(currentUser.id);
+        if (membershipData) {
+          syncMembershipToLocalCache(currentUser.id, membershipData);
+          const isActive = membershipData.status === 'miembro' || membershipData.status === 'admin' || (
+            membershipData.status === 'trial' &&
+            membershipData.expiresAt &&
+            new Date(membershipData.expiresAt) > new Date()
+          );
+          setIsMember(isActive);
+        }
+      } catch (err) {
+        console.log('Error verificando membresía:', err);
+      }
+    };
+    
+    checkMemberStatus();
   }, [currentUser, location.pathname]);
-  
+
   // Hide nav on login, register, survey, admin, membership and complete-profile pages
   const hiddenNavRoutes = ['/', '/register', '/survey', '/admin', '/membership', '/searching', '/complete-profile'];
   const showNav = !hiddenNavRoutes.includes(location.pathname) && !location.pathname.startsWith('/admin');
@@ -8823,183 +9040,177 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen w-full text-[#181B34] font-sans bg-[#F5F7FB]">
-        {/* Menú Hamburguesa Overlay */}
-        {showNav && showMenu && (
-          <div className="fixed inset-0 z-[10000]">
-            <div 
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setShowMenu(false)}
-            />
-            <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
-              <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Menú</h2>
-                  <button 
-                    onClick={() => setShowMenu(false)}
-                    className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
-                  >
-                    <X size={18} className="text-white" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <img 
-                    src={myProfile.avatarUrl} 
-                    alt="Me"
-                    className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
-                  />
-                  <div>
-                    <p className="text-white font-semibold">{myProfile.name}</p>
-                    <p className="text-white/70 text-sm">{myProfile.companyName}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-4 space-y-2">
-                <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas</p>
-                
-                <button 
-                  onClick={() => { setShowMenu(false); navigate('/academia'); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+      {/* Menú Hamburguesa Overlay */}
+      {showNav && showMenu && (
+        <div className="fixed inset-0 z-[10000]">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMenu(false)}
+          />
+          <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
+            <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">Menú</h2>
+                <button
+                  onClick={() => setShowMenu(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
-                    <span className="text-lg">🎓</span>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-[#181B34]">Santander Academia</p>
-                    <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
-                  </div>
-                  <ChevronRight size={16} className="text-[#7C8193]" />
-                </button>
-                
-                <div className="border-t border-[#E4E7EF] my-3" />
-                
-                <button 
-                  onClick={() => { setShowMenu(false); navigateWithCheck('/beneficios', true); }}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-[#00CA72]/10 flex items-center justify-center">
-                    <Gift size={20} className="text-[#00CA72]" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
-                    <p className="text-xs text-[#7C8193]">Descuentos y beneficios exclusivos</p>
-                  </div>
-                  <ChevronRight size={16} className="text-[#7C8193]" />
+                  <X size={18} className="text-white" />
                 </button>
               </div>
+              <div className="flex items-center gap-3">
+                <img
+                  src={myProfile.avatarUrl}
+                  alt="Me"
+                  className="w-12 h-12 rounded-full border-2 border-white/30 object-cover"
+                />
+                <div>
+                  <p className="text-white font-semibold">{myProfile.name}</p>
+                  <p className="text-white/70 text-sm">{myProfile.companyName}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 space-y-2">
+              <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas</p>
+
+              <button
+                onClick={() => { setShowMenu(false); navigate('/academia'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
+                  <span className="text-lg">🎓</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Santander Academia</p>
+                  <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
+                </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
+              </button>
+
+              <div className="border-t border-[#E4E7EF] my-3" />
+
+              <button
+                onClick={() => { setShowMenu(false); navigateWithCheck('/beneficios', true); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#00CA72]/10 flex items-center justify-center">
+                  <Gift size={20} className="text-[#00CA72]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
+                  <p className="text-xs text-[#7C8193]">Descuentos y beneficios exclusivos</p>
+                </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
+              </button>
             </div>
           </div>
-        )}
-        <div>
-            <Routes>
-                <Route path="/" element={<LoginScreen />} />
-                <Route path="/register" element={<RegisterScreen />} />
-                <Route path="/searching" element={<SearchingScreen />} />
-                <Route path="/survey" element={<SurveyScreen />} />
-                <Route path="/membership" element={<MembershipScreen />} />
-                <Route path="/payment-result" element={<PaymentResult />} />
-                <Route path="/complete-profile" element={<CompleteProfileScreen />} />
-                {/* Rutas PROTEGIDAS - solo para MIEMBROS (requiere perfil completo) */}
-                <Route path="/dashboard" element={<MemberRoute><Dashboard /></MemberRoute>} />
-                <Route path="/tribe" element={<MemberRoute><TribeAssignmentsView /></MemberRoute>} />
-                <Route path="/directory" element={<MemberRoute><DirectoryView /></MemberRoute>} />
-                <Route path="/profile/:id" element={<MemberRoute><ProfileDetail /></MemberRoute>} />
-                {/* Rutas LIBRES - para todos */}
-                <Route path="/activity" element={<ActivityView />} />
-                <Route path="/my-profile" element={<MyProfileView fontSize={fontSize} setFontSize={setFontSize} />} />
-                <Route path="/admin" element={<AdminPanelInline />} />
-                <Route path="/academia" element={<AcademiaViewWrapper />} />
-                <Route path="/beneficios" element={<MemberRoute><ClubBienestarView /></MemberRoute>} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
         </div>
+      )}
+      <div>
+        <Routes>
+          <Route path="/" element={<LoginScreen />} />
+          <Route path="/register" element={<RegisterScreen />} />
+          <Route path="/searching" element={<SearchingScreen />} />
+          <Route path="/survey" element={<SurveyScreen />} />
+          <Route path="/membership" element={<MembershipScreen />} />
+          <Route path="/payment-result" element={<PaymentResult />} />
+          {/* Rutas PROTEGIDAS - solo para MIEMBROS */}
+          <Route path="/dashboard" element={<MemberRoute><Dashboard /></MemberRoute>} />
+          <Route path="/tribe" element={<MemberRoute><TribeAssignmentsView /></MemberRoute>} />
+          <Route path="/directory" element={<MemberRoute><DirectoryView /></MemberRoute>} />
+          <Route path="/profile/:id" element={<MemberRoute><ProfileDetail /></MemberRoute>} />
+          {/* Rutas LIBRES - para todos */}
+          <Route path="/activity" element={<ActivityView />} />
+          <Route path="/my-profile" element={<MyProfileView fontSize={fontSize} setFontSize={setFontSize} />} />
+          <Route path="/admin" element={<AdminPanelInline />} />
+          <Route path="/academia" element={<AcademiaViewWrapper />} />
+          <Route path="/beneficios" element={<MemberRoute><ClubBienestarView /></MemberRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
 
-        {showNav && (
-          <nav 
-            className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl bg-white/80 border-t border-white/30" 
-            style={{ 
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-              height: 'calc(70px + env(safe-area-inset-bottom, 0px))',
-              zIndex: 9999,
-              boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
-            }}
-          >
-            <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
-              {/* Menú Hamburguesa */}
-              <button 
-                onClick={() => setShowMenu(true)}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
-                  showMenu ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'
+      {showNav && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 w-full backdrop-blur-xl bg-white/80 border-t border-white/30"
+          style={{
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            height: 'calc(70px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 9999,
+            boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255,255,255,0.8)'
+          }}
+        >
+          <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
+            {/* Menú Hamburguesa */}
+            <button
+              onClick={() => setShowMenu(true)}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${showMenu ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'
                 }`}
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={showMenu ? 2.5 : 1.8} strokeLinecap="round">
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <line x1="3" y1="12" x2="21" y2="12" />
-                  <line x1="3" y1="18" x2="21" y2="18" />
-                </svg>
-                <span className="text-[0.625rem] mt-1 font-medium">Menú</span>
-              </button>
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={showMenu ? 2.5 : 1.8} strokeLinecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+              <span className="text-[0.625rem] mt-1 font-medium">Menú</span>
+            </button>
 
-              {/* Inicio - BLOQUEADO para invitados */}
-              <button 
-                onClick={() => navigateWithCheck('/dashboard', true)}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
-                  isDashboard ? 'text-[#6161FF]' : 
-                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+            {/* Inicio - BLOQUEADO para invitados */}
+            <button
+              onClick={() => navigateWithCheck('/dashboard', true)}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${isDashboard ? 'text-[#6161FF]' :
+                !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
                 }`}
-              >
-                <Home size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
-                <span className="text-[0.625rem] mt-1 font-medium">Inicio</span>
-                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
-              </button>
-              
-              {/* Checklist / Mi Tribu - BLOQUEADO para invitados */}
-              <button 
-                onClick={() => navigateWithCheck('/tribe', true)}
-                className="flex flex-col items-center justify-center -mt-4 relative"
-              >
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${
-                  !isMember ? 'bg-[#7C8193]/60' : 'bg-[#E91E63]/90'
+            >
+              <Home size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
+              <span className="text-[0.625rem] mt-1 font-medium">Inicio</span>
+              {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
+            </button>
+
+            {/* Checklist / Mi Tribu - BLOQUEADO para invitados */}
+            <button
+              onClick={() => navigateWithCheck('/tribe', true)}
+              className="flex flex-col items-center justify-center -mt-4 relative"
+            >
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${!isMember ? 'bg-[#7C8193]/60' : 'bg-[#E91E63]/90'
                 }`}
-                  style={{
-                    boxShadow: !isMember 
-                      ? '0 4px 16px rgba(124, 129, 147, 0.2)'
-                      : '0 8px 32px rgba(233, 30, 99, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
-                  }}
-                >
-                  {!isMember ? <Lock size={24} className="text-white" /> : <CheckCircle size={26} className="text-white" strokeWidth={2} />}
-                </div>
-                <span className={`text-[0.625rem] mt-1 font-semibold ${
-                  !isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
+                style={{
+                  boxShadow: !isMember
+                    ? '0 4px 16px rgba(124, 129, 147, 0.2)'
+                    : '0 8px 32px rgba(233, 30, 99, 0.35), inset 0 1px 1px rgba(255,255,255,0.3)'
+                }}
+              >
+                {!isMember ? <Lock size={24} className="text-white" /> : <CheckCircle size={26} className="text-white" strokeWidth={2} />}
+              </div>
+              <span className={`text-[0.625rem] mt-1 font-semibold ${!isMember ? 'text-[#7C8193]' : 'text-[#E91E63]'
                 }`}>Mi Tribu</span>
-              </button>
+            </button>
 
-              {/* Beneficios - BLOQUEADO para invitados */}
-              <button 
-                onClick={() => navigateWithCheck('/beneficios', true)}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${
-                  isBeneficios ? 'text-[#6161FF]' : 
-                  !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+            {/* Beneficios - BLOQUEADO para invitados */}
+            <button
+              onClick={() => navigateWithCheck('/beneficios', true)}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${isBeneficios ? 'text-[#6161FF]' :
+                !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
                 }`}
-              >
-                <Gift size={22} strokeWidth={isBeneficios ? 2.5 : 1.8} />
-                <span className="text-[0.625rem] mt-1 font-medium">Beneficios</span>
-                {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
-              </button>
+            >
+              <Gift size={22} strokeWidth={isBeneficios ? 2.5 : 1.8} />
+              <span className="text-[0.625rem] mt-1 font-medium">Beneficios</span>
+              {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
+            </button>
 
-              {/* Configuración/Perfil - LIBRE para todos */}
-              <button 
-                onClick={() => navigate('/my-profile')}
-                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
-              >
-                <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
-                <span className="text-[0.625rem] mt-1 font-medium">Ajustes</span>
-              </button>
-            </div>
-          </nav>
-        )}
-        
-        {showNav && <WhatsAppFloat />}
+            {/* Configuración/Perfil - LIBRE para todos */}
+            <button
+              onClick={() => navigate('/my-profile')}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
+            >
+              <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
+              <span className="text-[0.625rem] mt-1 font-medium">Ajustes</span>
+            </button>
+          </div>
+        </nav>
+      )}
+
+      {showNav && <WhatsAppFloat />}
     </div>
   );
 };

@@ -26,12 +26,37 @@ async function syncProfileCount() {
     const usersSnapshot = await db.collection('users').get();
     const totalUsers = usersSnapshot.size;
 
-    // Contar solo usuarios con perfil "completo" (tienen campos mínimos)
+    // Contar solo usuarios con perfil "completo" (según nuevos requisitos)
+    const MIN_BIO_LENGTH = 50;
+    const MIN_BUSINESS_DESC_LENGTH = 60;
+    
     let completeProfiles = 0;
     usersSnapshot.docs.forEach(doc => {
       const data = doc.data();
-      // Verificar campos mínimos para considerar perfil completo
-      if (data.name && data.email && data.category) {
+      
+      // Validación completa según App.tsx
+      const hasChannel = Boolean(data.instagram?.trim() || data.website?.trim());
+      const isComplete = Boolean(
+        data.name?.trim() &&
+        data.companyName?.trim() &&
+        data.category?.trim() &&
+        data.affinity?.trim() &&
+        data.scope &&
+        (data.phone?.trim() || data.whatsapp?.trim()) &&
+        data.city?.trim() &&
+        data.bio?.trim() && data.bio.trim().length >= MIN_BIO_LENGTH &&
+        data.businessDescription?.trim() && data.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH &&
+        hasChannel &&
+        data.revenue?.trim() &&
+        (data.scope === 'LOCAL' ? Boolean(data.comuna?.trim()) : true) &&
+        (data.scope === 'REGIONAL' ? Boolean(Array.isArray(data.selectedRegions) && data.selectedRegions.length > 0) : true) &&
+        data.avatarUrl?.trim() &&
+        data.status === 'active' &&
+        data.onboardingComplete &&
+        data.termsAccepted !== false
+      );
+      
+      if (isComplete) {
         completeProfiles++;
       }
     });

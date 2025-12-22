@@ -501,8 +501,8 @@ const BASE_PROFILE_REQUIREMENTS = [
   'Alcance geográfico',
   'Teléfono / WhatsApp',
   'Ciudad',
-  'Biografía (mín. 140 caracteres)',
-  'Descripción del negocio (mín. 200 caracteres)',
+  'Biografía (mín. 50 caracteres)',
+  'Descripción del negocio (mín. 60 caracteres)',
   'Canal principal (Instagram / sitio / otro)',
   'Facturación mensual',
   'Foto o avatar del perfil',
@@ -511,8 +511,8 @@ const BASE_PROFILE_REQUIREMENTS = [
   'Estado de cuenta activo'
 ];
 
-const MIN_BIO_LENGTH = 140;
-const MIN_BUSINESS_DESC_LENGTH = 200;
+const MIN_BIO_LENGTH = 50;
+const MIN_BUSINESS_DESC_LENGTH = 60;
 
 const validateUserProfile = (user: UserProfile | null): ProfileValidation => {
   if (!user) {
@@ -533,8 +533,8 @@ const validateUserProfile = (user: UserProfile | null): ProfileValidation => {
     { valid: Boolean(user.scope), label: 'Alcance geográfico' },
     { valid: Boolean(user.phone?.trim() || user.whatsapp?.trim()), label: 'Teléfono / WhatsApp' },
     { valid: Boolean(user.city?.trim()), label: 'Ciudad' },
-    { valid: Boolean(user.bio?.trim() && user.bio.trim().length >= MIN_BIO_LENGTH), label: 'Biografía (mín. 140 caracteres)' },
-    { valid: Boolean(user.businessDescription?.trim() && user.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH), label: 'Descripción del negocio (mín. 200 caracteres)' },
+    { valid: Boolean(user.bio?.trim() && user.bio.trim().length >= MIN_BIO_LENGTH), label: 'Biografía (mín. 50 caracteres)' },
+    { valid: Boolean(user.businessDescription?.trim() && user.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH), label: 'Descripción del negocio (mín. 60 caracteres)' },
     { valid: hasChannel, label: 'Canal principal (Instagram / sitio / otro)' },
     { valid: Boolean(user.revenue?.trim()), label: 'Facturación mensual' },
     {
@@ -764,6 +764,7 @@ const LoginScreen = () => {
     scope: '' as '' | 'NACIONAL' | 'REGIONAL' | 'LOCAL',
     city: '',
     comuna: '',
+    selectedRegion: '', // Para LOCAL y REGIONAL
     selectedRegions: [] as string[],
     bio: '',
     businessDescription: '',
@@ -927,13 +928,13 @@ const LoginScreen = () => {
     }
 
     // Validar biografía y descripción
-    if (registerData.bio.length < 140) {
-      setError('Tu biografía debe tener al menos 140 caracteres');
+    if (registerData.bio.length < 50) {
+      setError('Tu biografía debe tener al menos 50 caracteres');
       return;
     }
 
-    if (registerData.businessDescription.length < 200) {
-      setError('La descripción de tu negocio debe tener al menos 200 caracteres');
+    if (registerData.businessDescription.length < 60) {
+      setError('La descripción de tu negocio debe tener al menos 60 caracteres');
       return;
     }
 
@@ -1113,7 +1114,7 @@ const LoginScreen = () => {
             {/* Headline potente */}
             <div className="text-center">
               <h2 className="text-2xl font-black text-[#181B34] leading-tight mb-2">
-                20 emprendedores te <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6161FF] to-[#00CA72]">impulsan cada mes</span>
+                Tu red de <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6161FF] to-[#00CA72]">10 + 10 emprendedores</span> que se impulsan todos los meses
               </h2>
               <p className="text-sm text-gray-500">El sistema de crecimiento colaborativo #1 en Chile</p>
             </div>
@@ -1503,7 +1504,7 @@ const LoginScreen = () => {
                   <button
                     key={scope}
                     type="button"
-                    onClick={() => setRegisterData({ ...registerData, scope, selectedRegions: [], comuna: '' })}
+                    onClick={() => setRegisterData({ ...registerData, scope, selectedRegions: [], selectedRegion: '', city: '', comuna: '' })}
                     className={`p-2.5 rounded-xl border-2 text-xs font-medium transition-all ${
                       registerData.scope === scope
                         ? 'border-[#6161FF] bg-[#6161FF]/10 text-[#6161FF]'
@@ -1518,57 +1519,113 @@ const LoginScreen = () => {
               </div>
             </div>
 
-            {/* Ciudad */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Ciudad *</label>
-                <input
-                  type="text"
-                  value={registerData.city}
-                  onChange={(e) => setRegisterData({ ...registerData, city: e.target.value })}
-                  className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                  placeholder="Santiago"
-                  required
-                />
-              </div>
-              {registerData.scope === 'LOCAL' && (
+            {/* LOCAL: Región + Comuna */}
+            {registerData.scope === 'LOCAL' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Región *</label>
+                  <select
+                    value={registerData.selectedRegion}
+                    onChange={(e) => {
+                      const region = REGIONS.find(r => r.id === e.target.value);
+                      setRegisterData({ 
+                        ...registerData, 
+                        selectedRegion: e.target.value,
+                        city: region?.shortName || '',
+                        comuna: ''
+                      });
+                    }}
+                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                    required
+                  >
+                    <option value="">Selecciona región</option>
+                    {REGIONS.map(region => (
+                      <option key={region.id} value={region.id}>{region.shortName}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Comuna *</label>
-                  <input
-                    type="text"
+                  <select
                     value={registerData.comuna}
                     onChange={(e) => setRegisterData({ ...registerData, comuna: e.target.value })}
-                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                    placeholder="Providencia"
+                    className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                     required
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Regiones (si es REGIONAL) */}
-            {registerData.scope === 'REGIONAL' && (
-              <div>
-                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Regiones donde operas *</label>
-                <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto bg-[#F5F7FB] rounded-xl p-2">
-                  {['Metropolitana', 'Valparaíso', 'Biobío', 'La Araucanía', 'O\'Higgins', 'Maule', 'Los Lagos', 'Coquimbo', 'Antofagasta', 'Los Ríos', 'Atacama', 'Tarapacá', 'Ñuble', 'Arica y Parinacota', 'Magallanes', 'Aysén'].map(region => (
-                    <label key={region} className="flex items-center gap-1.5 text-xs text-[#434343] cursor-pointer hover:text-[#6161FF]">
-                      <input
-                        type="checkbox"
-                        checked={registerData.selectedRegions.includes(region)}
-                        onChange={(e) => {
-                          const newRegions = e.target.checked
-                            ? [...registerData.selectedRegions, region]
-                            : registerData.selectedRegions.filter(r => r !== region);
-                          setRegisterData({ ...registerData, selectedRegions: newRegions });
-                        }}
-                        className="w-3.5 h-3.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
-                      />
-                      {region}
-                    </label>
-                  ))}
+                    disabled={!registerData.selectedRegion}
+                  >
+                    <option value="">Selecciona comuna</option>
+                    {registerData.selectedRegion && REGIONS.find(r => r.id === registerData.selectedRegion)?.comunas.map(comuna => (
+                      <option key={comuna} value={comuna}>{comuna}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+            )}
+
+            {/* REGIONAL: Checkboxes de regiones + Región principal + Comuna */}
+            {registerData.scope === 'REGIONAL' && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Regiones donde operas *</label>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto bg-[#F5F7FB] rounded-xl p-2">
+                    {REGIONS.map(region => (
+                      <label key={region.id} className="flex items-center gap-1.5 text-xs text-[#434343] cursor-pointer hover:text-[#6161FF]">
+                        <input
+                          type="checkbox"
+                          checked={registerData.selectedRegions.includes(region.shortName)}
+                          onChange={(e) => {
+                            const newRegions = e.target.checked
+                              ? [...registerData.selectedRegions, region.shortName]
+                              : registerData.selectedRegions.filter(r => r !== region.shortName);
+                            setRegisterData({ ...registerData, selectedRegions: newRegions });
+                          }}
+                          className="w-3.5 h-3.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
+                        />
+                        {region.shortName}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Región principal *</label>
+                    <select
+                      value={registerData.selectedRegion}
+                      onChange={(e) => {
+                        const region = REGIONS.find(r => r.id === e.target.value);
+                        setRegisterData({ 
+                          ...registerData, 
+                          selectedRegion: e.target.value,
+                          city: region?.shortName || '',
+                          comuna: ''
+                        });
+                      }}
+                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                      required
+                    >
+                      <option value="">Selecciona región</option>
+                      {REGIONS.map(region => (
+                        <option key={region.id} value={region.id}>{region.shortName}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Comuna principal *</label>
+                    <select
+                      value={registerData.comuna}
+                      onChange={(e) => setRegisterData({ ...registerData, comuna: e.target.value })}
+                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
+                      required
+                      disabled={!registerData.selectedRegion}
+                    >
+                      <option value="">Selecciona comuna</option>
+                      {registerData.selectedRegion && REGIONS.find(r => r.id === registerData.selectedRegion)?.comunas.map(comuna => (
+                        <option key={comuna} value={comuna}>{comuna}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Facturación mensual */}
@@ -1594,7 +1651,7 @@ const LoginScreen = () => {
             {/* Biografía */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
-                Tu biografía corta * <span className="text-[#9CA3B3] font-normal">({registerData.bio.length}/140 mín.)</span>
+                Tu biografía corta * <span className="text-[#9CA3B3] font-normal">({registerData.bio.length}/50 mín.)</span>
               </label>
               <textarea
                 value={registerData.bio}
@@ -1603,14 +1660,14 @@ const LoginScreen = () => {
                 placeholder="Cuéntanos brevemente quién eres y qué te apasiona..."
                 rows={2}
                 required
-                minLength={140}
+                minLength={50}
               />
             </div>
 
             {/* Descripción del negocio */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
-                Descripción de tu negocio * <span className="text-[#9CA3B3] font-normal">({registerData.businessDescription.length}/200 mín.)</span>
+                Descripción de tu negocio * <span className="text-[#9CA3B3] font-normal">({registerData.businessDescription.length}/60 mín.)</span>
               </label>
               <textarea
                 value={registerData.businessDescription}
@@ -1619,7 +1676,7 @@ const LoginScreen = () => {
                 placeholder="Describe qué hace tu negocio, qué productos/servicios ofreces y qué te diferencia..."
                 rows={3}
                 required
-                minLength={200}
+                minLength={60}
               />
             </div>
 
@@ -1633,7 +1690,7 @@ const LoginScreen = () => {
                 required
               />
               <span className="text-xs text-[#434343]">
-                Acepto los <a href="#" className="text-[#6161FF] underline">términos y condiciones</a> y la <a href="#" className="text-[#6161FF] underline">política de privacidad</a> de Tribu Impulsa
+                Acepto los <a href="/terminosycondiciones.pdf" target="_blank" rel="noopener noreferrer" className="text-[#6161FF] underline">términos y condiciones</a> y la <a href="/politicasdeprivacidad.pdf" target="_blank" rel="noopener noreferrer" className="text-[#6161FF] underline">política de privacidad</a> de Tribu Impulsa
               </span>
             </label>
 
@@ -1701,12 +1758,11 @@ const LoginScreen = () => {
                 !registerData.instagram || 
                 !registerData.phone || 
                 !registerData.scope ||
-                !registerData.city ||
-                (registerData.scope === 'LOCAL' && !registerData.comuna) ||
-                (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) ||
+                (registerData.scope === 'LOCAL' && (!registerData.selectedRegion || !registerData.comuna)) ||
+                (registerData.scope === 'REGIONAL' && (registerData.selectedRegions.length === 0 || !registerData.selectedRegion || !registerData.comuna)) ||
                 !registerData.revenue ||
-                registerData.bio.length < 140 ||
-                registerData.businessDescription.length < 200 ||
+                registerData.bio.length < 50 ||
+                registerData.businessDescription.length < 60 ||
                 !registerData.termsAccepted ||
                 !registerData.password || 
                 registerData.password !== registerData.confirmPassword ||
@@ -3009,6 +3065,76 @@ const TribeAssignmentsView = () => {
   useSurveyGuard();
   const navigate = useNavigate();
   const myProfile = useMemo(() => getMyProfile(), []);
+  
+  // Verificar si el matching está desbloqueado
+  const [tribeProgress, setTribeProgress] = useState({ current: 0, target: 1000 });
+  
+  useEffect(() => {
+    const checkProgress = async () => {
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (!db) return;
+        
+        const statsRef = doc(db, 'system_stats', 'global');
+        const snapshot = await getDoc(statsRef);
+        const data = snapshot.data() || {};
+        setTribeProgress({
+          current: data.profilesCompleted || 0,
+          target: data.profilesTarget || 1000
+        });
+      } catch (error) {
+        console.error('Error verificando progreso:', error);
+      }
+    };
+    checkProgress();
+  }, []);
+  
+  const tribeUnlocked = tribeProgress.current >= tribeProgress.target;
+  
+  // Si no está desbloqueado, mostrar pantalla de bloqueo
+  if (!tribeUnlocked) {
+    return (
+      <div className="min-h-screen bg-[#F5F7FB] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl">
+          <div className="w-20 h-20 bg-[#6161FF]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Lock size={48} className="text-[#6161FF]" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#181B34] mb-3">
+            ¡Pronto desbloquearemos tu Tribu!
+          </h2>
+          <p className="text-[#7C8193] mb-6">
+            Estamos esperando llegar a <span className="font-bold text-[#6161FF]">1000 perfiles completos</span> para activar el matching inteligente 10+10.
+          </p>
+          <div className="bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-4 border border-indigo-100 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold text-indigo-700">Rally Activo</span>
+              <span className="text-xs text-red-500 font-semibold">⏰ Cierra pronto</span>
+            </div>
+            <div className="h-3 bg-white/80 rounded-full overflow-hidden shadow-inner mb-2">
+              <div 
+                className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-1000"
+                style={{ width: `${Math.max((tribeProgress.current / tribeProgress.target) * 100, 0.5)}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-700">
+              <span className="font-black text-xl text-indigo-600">{tribeProgress.current}</span>
+              <span className="text-gray-400 mx-1">/</span>
+              <span className="font-bold">{tribeProgress.target}</span>
+              <span className="text-xs text-gray-500 ml-2">inscritos</span>
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full bg-[#6161FF] hover:bg-[#5050DD] text-white py-3 rounded-xl font-semibold transition-all"
+          >
+            Volver al Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
   const [assignments, setAssignments] = useState<TribeAssignments>(() => getStoredTribeAssignments(myProfile.category, myProfile.id));
   const [checklist, setChecklist] = useState<AssignmentChecklist>(() => getStoredChecklistState(assignments));
   const [status, setStatus] = useState<TribeStatus>(() => getStoredTribeStatus());
@@ -7743,7 +7869,8 @@ const ALIANZAS_BENEFICIOS = [
     color: 'from-[#EC0000] to-[#CC0000]',
     logo: '🎓',
     url: 'https://www.santanderopenacademy.com/',
-    destacado: true
+    destacado: false,
+    oculto: true
   },
   {
     id: 'lovework',
@@ -7832,10 +7959,10 @@ const ClubBienestarView = () => {
   };
 
   const alianzasFiltradas = filtroActivo === 'todos'
-    ? ALIANZAS_BENEFICIOS
-    : ALIANZAS_BENEFICIOS.filter(a => a.tipo.includes(filtroActivo));
+    ? ALIANZAS_BENEFICIOS.filter(a => !a.oculto)
+    : ALIANZAS_BENEFICIOS.filter(a => a.tipo.includes(filtroActivo) && !a.oculto);
 
-  const alianzasDestacadas = ALIANZAS_BENEFICIOS.filter(a => a.destacado);
+  const alianzasDestacadas = ALIANZAS_BENEFICIOS.filter(a => a.destacado && !a.oculto);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F8F9FF] via-[#FAF5FF] to-[#FDF4FF] pb-32">
@@ -8961,11 +9088,35 @@ const AppLayout = () => {
   const currentUser = getCurrentUser();
   const myProfile = getMyProfile();
   const [showMenu, setShowMenu] = useState(false);
+  const [navGlobalProgress, setNavGlobalProgress] = useState({ current: 0, target: 1000 });
 
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(() => {
     const saved = localStorage.getItem('tribu_font_size');
     return saved === 'small' || saved === 'medium' || saved === 'large' ? saved : 'small';
   });
+  
+  // Cargar progreso global para el bloqueo de Mi Tribu
+  useEffect(() => {
+    const loadProgress = async () => {
+      try {
+        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestoreInstance();
+        if (!db) return;
+        
+        const statsRef = doc(db, 'system_stats', 'global');
+        const snapshot = await getDoc(statsRef);
+        const data = snapshot.data() || {};
+        setNavGlobalProgress({
+          current: data.profilesCompleted || 0,
+          target: data.profilesTarget || 1000
+        });
+      } catch (error) {
+        console.error('Error cargando progreso:', error);
+      }
+    };
+    loadProgress();
+  }, []);
 
   useEffect(() => {
     const sizes = {
@@ -9031,6 +9182,12 @@ const AppLayout = () => {
 
   // Función para navegar con verificación de membresía
   const navigateWithCheck = (path: string, requiresMembership: boolean) => {
+    // Bloquear acceso a Mi Tribu hasta 1000 perfiles
+    if (path === '/tribe' && navGlobalProgress.current < navGlobalProgress.target) {
+      alert('¡Mi Tribu se desbloqueará cuando lleguemos a 1000 perfiles completos!');
+      return;
+    }
+    
     if (requiresMembership && !isMember) {
       navigate('/membership');
     } else {
@@ -9075,17 +9232,17 @@ const AppLayout = () => {
               <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas</p>
 
               <button
-                onClick={() => { setShowMenu(false); navigate('/academia'); }}
-                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+                onClick={() => {}}
+                disabled
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-100 cursor-not-allowed opacity-60"
               >
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#EC0000] to-[#CC0000] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-gray-300 flex items-center justify-center">
                   <span className="text-lg">🎓</span>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-[#181B34]">Santander Academia</p>
-                  <p className="text-xs text-[#7C8193]">Cursos gratuitos para emprendedores</p>
+                  <p className="font-semibold text-gray-500">Santander Academia</p>
+                  <p className="text-xs text-gray-400">Próximamente</p>
                 </div>
-                <ChevronRight size={16} className="text-[#7C8193]" />
               </button>
 
               <div className="border-t border-[#E4E7EF] my-3" />

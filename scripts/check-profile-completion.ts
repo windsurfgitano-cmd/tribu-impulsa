@@ -25,8 +25,8 @@ const BASE_PROFILE_REQUIREMENTS = [
   'Alcance geográfico',
   'Teléfono / WhatsApp',
   'Ciudad',
-  'Biografía (mín. 140 caracteres)',
-  'Descripción del negocio (mín. 200 caracteres)',
+  'Biografía (mín. 50 caracteres)',
+  'Descripción del negocio (mín. 60 caracteres)',
   'Canal principal (Instagram / sitio / otro)',
   'Facturación mensual',
   'Foto o avatar del perfil',
@@ -35,8 +35,8 @@ const BASE_PROFILE_REQUIREMENTS = [
   'Estado de cuenta activo'
 ];
 
-const MIN_BIO_LENGTH = 140;
-const MIN_BUSINESS_DESC_LENGTH = 200;
+const MIN_BIO_LENGTH = 50;
+const MIN_BUSINESS_DESC_LENGTH = 60;
 
 function getServiceAccount(): ServiceAccount {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -65,8 +65,8 @@ function validateUserProfile(user: Record<string, any> | null): ProfileValidatio
     { valid: Boolean(user.scope), label: 'Alcance geográfico' },
     { valid: Boolean(user.phone?.trim() || user.whatsapp?.trim()), label: 'Teléfono / WhatsApp' },
     { valid: Boolean(user.city?.trim()), label: 'Ciudad' },
-    { valid: Boolean(user.bio?.trim() && user.bio.trim().length >= MIN_BIO_LENGTH), label: 'Biografía (mín. 140 caracteres)' },
-    { valid: Boolean(user.businessDescription?.trim() && user.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH), label: 'Descripción del negocio (mín. 200 caracteres)' },
+    { valid: Boolean(user.bio?.trim() && user.bio.trim().length >= MIN_BIO_LENGTH), label: 'Biografía (mín. 50 caracteres)' },
+    { valid: Boolean(user.businessDescription?.trim() && user.businessDescription.trim().length >= MIN_BUSINESS_DESC_LENGTH), label: 'Descripción del negocio (mín. 60 caracteres)' },
     { valid: hasChannel, label: 'Canal principal (Instagram / sitio / otro)' },
     { valid: Boolean(user.revenue?.trim()), label: 'Facturación mensual' },
     {

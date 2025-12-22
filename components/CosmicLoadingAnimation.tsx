@@ -76,7 +76,7 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
         playsInline
         preload="auto"
       >
-        <source src="/tribuvideo.mp4" type="video/mp4" />
+        <source src="/newtribuloading.mp4" type="video/mp4" />
       </video>
       
       {/* UI en la parte inferior */}

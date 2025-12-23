@@ -16,6 +16,7 @@ import { PasswordChangeModal } from '../../components/auth/PasswordChangeModal';
 import { useConfetti } from '../../components/Confetti';
 import { getTribeStatsSnapshot } from '../../services/tribeStorage';
 import { ProgressBanner } from '../../components/ProgressBanner';
+import { ProfileReminderBanner } from '../../components/common/ProfileReminderBanner';
 
 // Helper para verificar si el onboarding está completo
 const isOnboardingComplete = (userId: string): boolean => {

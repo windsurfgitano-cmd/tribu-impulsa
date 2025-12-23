@@ -8,6 +8,20 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 79 | **✅ ESTABILIZACIÓN POST-REFACTORIZACIÓN: Base de datos limpia (9 usuarios), persistencia completa (businessDescription agregado), PDFs legales creados, PIN desarrollo corregido, documentación MercadoPago actualizada** | 23 Dic |
+| 78 | **✅ REFACTORIZACIÓN COMPLETA: Arquitectura modular implementada. App.tsx reducido de 7,700L a 1,501L (-80.5%). Todos los componentes migrados a estructura screens/components/** | 23 Dic |
+| 77 | **Refactorización Fase 4b COMPLETADA: TribeAssignmentsView migrado a screens/tribe/ (3636L eliminadas de App.tsx, -62% del tamaño original)** | 23 Dic |
+| 76 | **Refactorización Fase 4b: LoginScreen migrado a screens/auth/ (1130L eliminadas de App.tsx)** | 23 Dic |
+| 75 | **Refactorización Fase 4b (progreso): SurveyScreen migrado a screens/survey/** | 23 Dic |
+| 74 | **Refactorización Fase 4b (progreso): RegisterScreen migrado a screens/auth/, LoginScreen (~1130L) y TribeAssignmentsView (~2900L) pendientes** | 23 Dic |
+| 73 | **Refactorización Fase 4b (inicio): Migrado MembershipScreen a screens/membership/** | 23 Dic |
+| 72 | **Refactorización Fase 4a: Migradas pantallas medianas (ActivityView, DirectoryView, ClubBienestarView) a estructura modular** | 23 Dic |
+| 71 | **Arquitectura modular: nueva estructura de carpetas (screens/, hooks/, utils/, services/) para refactorización gradual de App.tsx** | 23 Dic |
+| 70 | **Fix contador Rally -20: corregido decremento erróneo en syncProfileCompletionState, solo decrementa cuando profileComplete pasa de true a false** | 23 Dic |
+| 69 | **Fix validación perfil: eliminado "Onboarding completado", logging detallado guardado (bio/businessDescription/revenue), recarga forzada post-save** | 23 Dic |
+| 68 | **Fix banners duplicados: eliminado banner naranja, mensajes user-friendly, logging de diagnóstico** | 23 Dic |
+| 67 | **Fix contador Rally: sincronización automática en tiempo real, solo incrementa con perfiles completos** | 23 Dic |
+| 66 | **Auditoría completa de plataforma: testing exhaustivo, reporte con 85% funcionalidades OK, 2 críticos identificados** | 23 Dic |
 | 65 | **MercadoPago debugging mejorado: logging detallado, endpoint /api/health, guía diagnóstico** | 22 Dic |
 | 64 | **Mi Tribu desbloqueada: muestra contenido con banner de progreso arriba (no bloquea)** | 22 Dic |
 | 63 | **Loading al navegar eliminado: ya no muestra spinner al cambiar de pestaña** | 22 Dic |

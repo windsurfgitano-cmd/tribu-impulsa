@@ -1,0 +1,2 @@
+export { ClubBienestarView } from './ClubBienestarView';
+

@@ -300,19 +300,19 @@ const ENABLE_FIRESTORE_USERS = true; // Feature Flag: E2P2 Step 1.3
 export const forceReloadRealUsers = async (): Promise<void> => {
   console.log('🔄 Sincronizando usuarios desde Firebase...');
 
-  try {
-    const firebaseUsers = await loadUsersFromFirebase();
+    try {
+      const firebaseUsers = await loadUsersFromFirebase();
 
     // Usar Firebase como única fuente de verdad
-    if (firebaseUsers.length > 0) {
+      if (firebaseUsers.length > 0) {
       console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Firestore.`);
-      localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
-    } else {
+        localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
+      } else {
       console.warn('⚠️ No hay usuarios en Firestore. localStorage vacío.');
       localStorage.setItem('tribu_users', JSON.stringify([]));
-    }
-  } catch (error) {
-    console.error('❌ Error leyendo Firestore:', error);
+      }
+    } catch (error) {
+      console.error('❌ Error leyendo Firestore:', error);
     console.warn('⚠️ No se pudo cargar usuarios. localStorage vacío.');
     localStorage.setItem('tribu_users', JSON.stringify([]));
   }
@@ -582,15 +582,24 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
       const statsDoc = await getDoc(statsRef);
       
       if (statsDoc.exists()) {
-        await updateDoc(statsRef, {
-          profilesCompleted: increment(1),
+        // ✅ Solo incrementar profilesCompleted si el perfil está completo
+        const updateData: any = {
           membersActive: increment(1)
-        });
-        console.log('📊 Contador de perfiles actualizado (+1)');
+        };
+        
+        if (newUser.profileComplete === true) {
+          updateData.profilesCompleted = increment(1);
+          console.log('📊 Contador de perfiles completos actualizado (+1)');
+        } else {
+          console.log('📊 Usuario registrado pero perfil incompleto, contador no incrementado');
+        }
+        
+        await updateDoc(statsRef, updateData);
+        console.log('📊 Contador de miembros activos actualizado (+1)');
       } else {
         // Crear documento si no existe
         await setDoc(statsRef, {
-          profilesCompleted: 1,
+          profilesCompleted: newUser.profileComplete === true ? 1 : 0,
           membersActive: 1,
           profilesTarget: 1000
         });

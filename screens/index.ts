@@ -1,23 +1,36 @@
-// Auth screens (placeholders - to be migrated in Fase 4b)
+// ============================================
+// SCREENS INDEX - Exportaciones centralizadas
+// ============================================
+
+// Auth screens
 export * from './auth';
 
-// Tribe screens (placeholders - to be migrated in Fase 4b)
+// Tribe screens
 export * from './tribe';
 
-// Profile screens (placeholders - to be migrated in Fase 5)
+// Profile screens
 export * from './profile';
 
-// Dashboard screens (placeholders - to be migrated in Fase 5)
+// Dashboard screens
 export * from './dashboard';
 
-// Loading screens (already migrated)
+// Loading screens
 export * from './loading';
 
-// Activity screens (migrated in Fase 4a)
+// Activity screens
 export * from './activity';
 
-// Directory screens (migrated in Fase 4a)
+// Directory screens
 export * from './directory';
 
-// Benefits screens (migrated in Fase 4a)
+// Benefits screens
 export * from './benefits';
+
+// Survey screens
+export * from './survey';
+
+// Membership screens
+export * from './membership';
+
+// Admin screens
+export * from './admin';

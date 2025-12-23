@@ -1,98 +1,28 @@
 ﻿
 import React, { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { HashRouter as Router } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star, Eye, EyeOff } from 'lucide-react';
-import { GlassCard } from './components/GlassCard';
-import { ProgressBanner } from './components/ProgressBanner';
-import { AcademiaView } from './components/academia/AcademiaView';
-import { WhatsAppFloat } from './components/WhatsAppFloat';
-import { PaymentResult } from './components/PaymentResult';
-import { TribalLoadingAnimation } from './components/TribalAnimation';
-import { CosmicLoadingAnimation } from './components/CosmicLoadingAnimation';
-import { TermsCheckbox, TermsModal } from './components/TermsAndConditions';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
 import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
 import { AFFINITIES } from './constants/affinities';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
-import {
-  exportForGoogleDrive,
-  getDashboardStats,
-  getAllUsers,
-  createUser,
-  getCurrentUser,
-  setCurrentUser,
-  getUserNotifications,
-  markNotificationAsRead,
-  createInteraction,
-  getAllInteractions,
-  UserProfile,
-  createNotification,
-  updateUser,
-  // Nuevas funciones
-  getAllUsersCompliance,
-  getComplianceStats,
-  getAllReports,
-  createReport,
-  updateReportStatus,
-  sendBulkReminder,
-  createReminder,
-  getOnboardingProgress,
-  updateOnboardingProgress,
-  isOnboardingComplete,
-  getCategoryDistribution,
-  Report,
-  syncNotificationsFromFirebase
-} from './services/databaseService';
-import { loadRealUsers, validateCredentials, getUserByEmail, getUserFromFirebaseByEmail, changeUserPassword, markFirstLoginComplete, UNIVERSAL_PASSWORD, forceReloadRealUsers } from './services/realUsersData';
-import { ensureTribeAssignments, getUserTribeWithProfiles } from './services/tribeAlgorithm';
+import { UserProfile } from './services/databaseService';
+import { forceReloadRealUsers } from './services/realUsersData';
+import { ensureTribeAssignments } from './services/tribeAlgorithm';
 import { enableAutoBackup, downloadBackup, checkDataIntegrity } from './services/dataPersistence';
 import {
   initializeFirebase,
-  requestNotificationPermission,
   onForegroundMessage,
   getNotificationStatus,
   sendLocalNotification,
-  saveUserFCMToken,
-  sendPushToAll,
-  countUsersWithPush,
-  clearFCMToken,
-  // Sincronización con Firestore
   syncProfileToCloud,
-  syncTribeAssignments,
-  loadTribeAssignments,
   getProfileFromCloud,
-  getAllProfilesFromCloud,
-  syncChecklistProgress,
-  loadChecklistFromFirebase,
-  syncAdminConfig,
-  loadAdminConfig,
-  getFirestoreInstance,
-  logInteraction
+  syncChecklistProgress
 } from './services/firebaseService';
-import { activateTrialMembership } from './services/membershipService';
 import { ensureInitialized } from './services/productionInit';
-import { SearchableSelect } from './components/SearchableSelect';
-import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from './utils/selectOptions';
-import { Confetti, useConfetti } from './components/Confetti';
-import { OnboardingTutorial, useOnboardingTutorial } from './components/OnboardingTutorial';
-import { LoginScreen, RegisterScreen } from './screens/auth';
-import { TribeAssignmentsView } from './screens/tribe';
-import { MyProfileView, ProfileDetail } from './screens/profile';
-import { ActivityView } from './screens/activity';
-import { Dashboard } from './screens/dashboard';
-import { AdminSettingsTab } from './screens/admin';
-import { DirectoryView } from './screens/directory';
-import { ClubBienestarView } from './screens/benefits';
-import { MembershipScreen } from './screens/membership';
-import { SurveyScreen } from './screens/survey';
-import { SearchingScreen } from './screens/loading';
-import { MemberRoute } from './components/routing';
-import { ProfileReminderBanner, OnboardingModal, NotificationButton } from './components/common';
-import { PasswordChangeModal } from './components/auth';
 import { AppLayout } from './components/layout';
-import { CloudMembership, syncMembershipToLocalCache, fetchMembershipFromCloud } from './services/membershipCache';
 
 // ============================================
 // INICIALIZACIÓN DE PRODUCCIÓN
@@ -382,12 +312,6 @@ const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
   });
-};
-
-// Wrapper for AcademiaView to use with React Router
-const AcademiaViewWrapper = () => {
-  const navigate = useNavigate();
-  return <AcademiaView onNavigateBack={() => navigate('/dashboard')} />;
 };
 
 const App = () => {

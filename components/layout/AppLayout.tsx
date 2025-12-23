@@ -29,7 +29,13 @@ import { MemberRoute } from '../routing';
 import { PaymentResult } from '../PaymentResult';
 import { WhatsAppFloat } from '../WhatsAppFloat';
 import { ProfileReminderBanner } from '../common';
+import { AcademiaView } from '../academia/AcademiaView';
 
+// Wrapper for AcademiaView to use with React Router
+const AcademiaViewWrapper = () => {
+  const navigate = useNavigate();
+  return <AcademiaView onNavigateBack={() => navigate('/dashboard')} />;
+};
 
 const AppLayout = () => {
   const location = useLocation();
@@ -229,7 +235,7 @@ const AppLayout = () => {
           {/* Rutas LIBRES - para todos */}
           <Route path="/activity" element={<ActivityView />} />
           <Route path="/my-profile" element={<MyProfileView fontSize={fontSize} setFontSize={setFontSize} />} />
-          <Route path="/admin" element={<AdminPanelInline />} />
+          <Route path="/admin" element={<AdminSettingsTab />} />
           <Route path="/academia" element={<AcademiaViewWrapper />} />
           <Route path="/beneficios" element={<MemberRoute><ClubBienestarView /></MemberRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 82 | **✅ FIX PRODUCCIÓN CRÍTICO: Eliminado Tailwind CDN e importmap de desarrollo de index.html que bloqueaban la app completamente** | 23 Dic |
 | 81 | **✅ FIX RUNTIME ERRORS: Corregido AdminPanelInline undefined, movido AcademiaViewWrapper, limpieza 50+ imports innecesarios en App.tsx** | 23 Dic |
 | 80 | **✅ FIX BUILD ERROR: Eliminado código duplicado de App.tsx (1633L→401L, -75%), corregidos imports relativos en módulos, build exitoso en Vercel** | 23 Dic |
 | 79 | **✅ ESTABILIZACIÓN POST-REFACTORIZACIÓN: Base de datos limpia (9 usuarios), persistencia completa (businessDescription agregado), PDFs legales creados, PIN desarrollo corregido, documentación MercadoPago actualizada** | 23 Dic |

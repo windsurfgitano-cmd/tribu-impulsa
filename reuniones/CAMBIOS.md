@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 85 | **✅ LIMPIEZA ESTRUCTURA: Eliminados v3/, tmp_eval/, pages/, archivos duplicados. Agregados exports faltantes (survey, membership, admin). -18,926 líneas legacy** | 23 Dic |
 | 84 | **🔍 DIAGNÓSTICO: Desactivado React.StrictMode temporalmente y agregados logs de diagnóstico para identificar error "Illegal constructor"** | 23 Dic |
 | 83 | **✅ FIX REACT 19 CRÍTICO: Actualizada Portal API (ReactDOM.createPortal → createPortal) en 7 archivos para compatibilidad con React 19.2.0** | 23 Dic |
 | 82 | **✅ FIX PRODUCCIÓN CRÍTICO: Eliminado Tailwind CDN e importmap de desarrollo de index.html que bloqueaban la app completamente** | 23 Dic |

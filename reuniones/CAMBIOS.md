@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 83 | **✅ FIX REACT 19 CRÍTICO: Actualizada Portal API (ReactDOM.createPortal → createPortal) en 7 archivos para compatibilidad con React 19.2.0** | 23 Dic |
 | 82 | **✅ FIX PRODUCCIÓN CRÍTICO: Eliminado Tailwind CDN e importmap de desarrollo de index.html que bloqueaban la app completamente** | 23 Dic |
 | 81 | **✅ FIX RUNTIME ERRORS: Corregido AdminPanelInline undefined, movido AcademiaViewWrapper, limpieza 50+ imports innecesarios en App.tsx** | 23 Dic |
 | 80 | **✅ FIX BUILD ERROR: Eliminado código duplicado de App.tsx (1633L→401L, -75%), corregidos imports relativos en módulos, build exitoso en Vercel** | 23 Dic |

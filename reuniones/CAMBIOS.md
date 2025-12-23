@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 87 | **✅ FIX SERVICE WORKER: Versionado automático con timestamp, Network First para UI, NO cache Firebase. Auto-reload al detectar actualizaciones. Garantiza CSS/JS frescos sin pérdida de datos usuarios** | 23 Dic |
 | 86 | **✅ FIX ARQUITECTURA: Eliminados doble exports (5 archivos). Refactorizado App.tsx: movido syncUserToCloud/syncChecklistToCloud a services/cloudSync.ts, SURVEY_OPTIONS a constants/surveyOptions.ts. App.tsx ahora solo entry point** | 23 Dic |
 | 85 | **✅ LIMPIEZA ESTRUCTURA: Eliminados v3/, tmp_eval/, pages/, archivos duplicados. Agregados exports faltantes (survey, membership, admin). -18,926 líneas legacy** | 23 Dic |
 | 84 | **🔍 DIAGNÓSTICO: Desactivado React.StrictMode temporalmente y agregados logs de diagnóstico para identificar error "Illegal constructor"** | 23 Dic |

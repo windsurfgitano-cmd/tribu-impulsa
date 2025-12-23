@@ -467,7 +467,8 @@ const generateMockProfile = (index: number): MatchProfile => {
   };
 };
 
-const DUMMY_DATABASE: MatchProfile[] = Array.from({ length: 50 }, (_, index) => generateMockProfile(index));
+// ⚠️ DUMMY_DATABASE ELIMINADO - Solo usuarios reales de Firebase
+const DUMMY_DATABASE: MatchProfile[] = [];
 
 // Convierte un UserProfile de la DB real a MatchProfile para la UI
 const userToMatchProfile = (user: UserProfile): MatchProfile => {
@@ -540,11 +541,8 @@ const seededShuffle = <T>(array: T[], seed: string): T[] => {
 };
 
 // IDs de perfiles de relleno (byturquia, terraflor, elevate)
-const FILLER_EMAILS = [
-  'dafnafinkelstein@gmail.com',
-  'doraluz@terraflorpaisajismo.cl',
-  'guille@elevatecreativo.com'
-];
+// ⚠️ FILLER_EMAILS ELIMINADO - No usamos usuarios de relleno
+const FILLER_EMAILS: string[] = [];
 
 export const generateTribeAssignments = (userCategory: string, currentUserId?: string, userAffinity?: string): TribeAssignments => {
   const realUsers = getAllUsers();
@@ -624,29 +622,8 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
         return true;
       });
     
-    // Obtener usuarios de relleno (Dafna, Doraluz, Guillermo)
-    const fillerUsers = realUsers
-      .filter(u => FILLER_EMAILS.includes(u.email) && u.id !== currentUserId)
-      .map(userToMatchProfile);
-    
-    // Agregar relleno si no llegamos a 20 perfiles
+    // Solo usuarios reales - sin relleno ni mock
     let allProfiles = [...finalList];
-    if (allProfiles.length < 20) {
-      const needed = 20 - allProfiles.length;
-      const fillersToAdd = fillerUsers
-        .filter(f => !allProfiles.find(p => p.id === f.id))
-        .slice(0, needed);
-      allProfiles = [...allProfiles, ...fillersToAdd];
-    }
-    
-    // Si aún faltan, usar mock
-    if (allProfiles.length < 20) {
-      const mockSeed = currentUserId || 'default-seed';
-      const mockFiller = seededShuffle([...DUMMY_DATABASE], mockSeed)
-        .filter(m => !allProfiles.find(p => p.id === m.id))
-        .slice(0, 20 - allProfiles.length);
-      allProfiles = [...allProfiles, ...mockFiller];
-    }
     
     // Dividir en 2 grupos SIN duplicados dentro de cada grupo
     const toShare = allProfiles.slice(0, 10);
@@ -657,45 +634,27 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
     return { toShare, shareWithMe };
   }
   
-  // Fallback: Menos de 10 usuarios reales - combinar con relleno
-  console.log('⚠️ Pocos usuarios reales, combinando con relleno...');
+  // Fallback: Menos de 10 usuarios reales - usar solo los que hay
+  console.log('⚠️ Pocos usuarios reales, usando solo usuarios disponibles...');
   
   // Convertir usuarios reales a perfiles (excluyendo actual)
   const realProfiles = realUsers
     .filter(u => u.id !== currentUserId)
     .map(userToMatchProfile);
   
-  // Obtener usuarios de relleno
-  const fillerUsers = realUsers
-    .filter(u => FILLER_EMAILS.includes(u.email) && u.id !== currentUserId)
-    .map(userToMatchProfile);
-  
-  // Combinar reales + relleno
-  let allProfiles = [...realProfiles];
-  if (allProfiles.length < 20) {
-    const fillersToAdd = fillerUsers
-      .filter(f => !allProfiles.find(p => p.id === f.id))
-      .slice(0, 20 - allProfiles.length);
-    allProfiles = [...allProfiles, ...fillersToAdd];
-  }
-  
-  // Si aún faltan, usar mock
-  if (allProfiles.length < 20) {
-    const mockSeed = currentUserId || 'default-seed';
-    const mockFiller = seededShuffle([...DUMMY_DATABASE], mockSeed)
-      .filter(m => !allProfiles.find(p => p.id === m.id))
-      .slice(0, 20 - allProfiles.length);
-    allProfiles = [...allProfiles, ...mockFiller];
-  }
+  // Solo usuarios reales - sin relleno ni mock
+  const allProfiles = [...realProfiles];
   
   // Mezclar para variedad
   const mockSeed = currentUserId || 'default-seed';
   const shuffled = seededShuffle(allProfiles, mockSeed);
 
-  const toShare = shuffled.slice(0, 10);
-  const shareWithMe = shuffled.slice(10, 20);
+  // Dividir lo que haya disponible
+  const half = Math.ceil(shuffled.length / 2);
+  const toShare = shuffled.slice(0, half);
+  const shareWithMe = shuffled.slice(half);
   
-  console.log(`✅ Tribu mixta: ${realProfiles.length} reales + ${fillerUsers.length} relleno + mock`);
+  console.log(`✅ Tribu con usuarios reales: ${toShare.length} a impulsar + ${shareWithMe.length} que impulsan`);
 
   return { toShare, shareWithMe };
 };
@@ -706,7 +665,8 @@ export const getProfileById = (id: string): MatchProfile | undefined => {
   if (realUser) {
     return userToMatchProfile(realUser);
   }
-  return DUMMY_DATABASE.find(p => p.id === id);
+  // Solo usuarios reales - sin mock
+  return undefined;
 };
 
 // Obtiene el perfil del usuario actual desde la DB real
@@ -795,23 +755,9 @@ export const generateMockMatches = (userCategory: string, currentUserId?: string
     }));
   }
   
-  // Fallback a mock si no hay suficientes usuarios reales
-  const numberOfMatches = Math.floor(Math.random() * 5) + 8; 
-  const shuffled = [...DUMMY_DATABASE.slice(1)].sort(() => 0.5 - Math.random());
-  const selectedProfiles = shuffled.slice(0, numberOfMatches);
-
-  return selectedProfiles.map(profile => {
-    const reason = "Sinergia comercial potencial";
-    const score = Math.floor(Math.random() * (99 - 70) + 70);
-
-    return {
-      id: `match-${profile.id}`,
-      targetProfile: profile,
-      affinityScore: score,
-      reason: reason,
-      status: 'New' as const
-    };
-  });
+  // Sin usuarios reales suficientes - retornar vacío
+  console.log('⚠️ No hay suficientes usuarios reales para generar matches');
+  return [];
 };
 
 export const getMockActivity = (userId?: string): ActivityItem[] => {

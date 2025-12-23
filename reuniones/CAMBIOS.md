@@ -8,6 +8,8 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 81 | **✅ FIX RUNTIME ERRORS: Corregido AdminPanelInline undefined, movido AcademiaViewWrapper, limpieza 50+ imports innecesarios en App.tsx** | 23 Dic |
+| 80 | **✅ FIX BUILD ERROR: Eliminado código duplicado de App.tsx (1633L→401L, -75%), corregidos imports relativos en módulos, build exitoso en Vercel** | 23 Dic |
 | 79 | **✅ ESTABILIZACIÓN POST-REFACTORIZACIÓN: Base de datos limpia (9 usuarios), persistencia completa (businessDescription agregado), PDFs legales creados, PIN desarrollo corregido, documentación MercadoPago actualizada** | 23 Dic |
 | 78 | **✅ REFACTORIZACIÓN COMPLETA: Arquitectura modular implementada. App.tsx reducido de 7,700L a 1,501L (-80.5%). Todos los componentes migrados a estructura screens/components/** | 23 Dic |
 | 77 | **Refactorización Fase 4b COMPLETADA: TribeAssignmentsView migrado a screens/tribe/ (3636L eliminadas de App.tsx, -62% del tamaño original)** | 23 Dic |

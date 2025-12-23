@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 89 | **✅ FIX CRÍTICO CSS: Agregado import './index.css' en index.tsx (faltaba!). Creado SafeIcon wrapper para extensiones bloqueadoras. Resuelve CSS sin estilos en incógnito y CheckCircle undefined** | 23 Dic |
 | 88 | **✅ FIX RENDER LOOP: Eliminado console.logs diagnóstico + useMemo en getCurrentUser/getMyProfile. Resuelve "Illegal constructor" y pantalla blanca en PWA** | 23 Dic |
 | 87 | **✅ FIX SERVICE WORKER: Versionado automático con timestamp, Network First para UI, NO cache Firebase. Auto-reload al detectar actualizaciones. Garantiza CSS/JS frescos sin pérdida de datos usuarios** | 23 Dic |
 | 86 | **✅ FIX ARQUITECTURA: Eliminados doble exports (5 archivos). Refactorizado App.tsx: movido syncUserToCloud/syncChecklistToCloud a services/cloudSync.ts, SURVEY_OPTIONS a constants/surveyOptions.ts. App.tsx ahora solo entry point** | 23 Dic |

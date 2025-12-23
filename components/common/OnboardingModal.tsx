@@ -2,7 +2,7 @@
 // Modal de onboarding para nuevos usuarios
 
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 
 // Tutorial Steps Component - Sin emojis, iconos profesionales
 const TUTORIAL_STEPS = [
@@ -101,7 +101,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
 
   // Usar portal para renderizar fuera del contenedor scrolleable
   // Estilos completamente inline para máxima prioridad
-  return ReactDOM.createPortal(
+  return createPortal(
     <div
       style={{
         position: 'fixed',

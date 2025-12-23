@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -529,7 +529,7 @@ const ActivityView = () => {
       </div>
 
       {/* Modal para ver actividad completa */}
-      {expandedItem && ReactDOM.createPortal(
+      {expandedItem && createPortal(
         <div
           className="fixed inset-0 bg-black/50 z-[99999] flex items-end justify-center animate-fadeIn backdrop-blur-sm"
           onClick={() => {
@@ -844,7 +844,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
 
   // Usar portal para renderizar fuera del contenedor scrolleable
   // Estilos completamente inline para mÃ¡xima prioridad
-  return ReactDOM.createPortal(
+  return createPortal(
     <div
       style={{
         position: 'fixed',
@@ -936,7 +936,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
     onComplete(newPassword);
   };
 
-  return ReactDOM.createPortal(
+  return createPortal(
     <div
       style={{
         position: 'fixed',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X } from 'lucide-react';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';
@@ -166,7 +166,7 @@ export const ActivityView = () => {
       </div>
 
       {/* Modal para ver actividad completa */}
-      {expandedItem && ReactDOM.createPortal(
+      {expandedItem && createPortal(
         <div
           className="fixed inset-0 bg-black/50 z-[99999] flex items-end justify-center animate-fadeIn backdrop-blur-sm"
           onClick={() => {

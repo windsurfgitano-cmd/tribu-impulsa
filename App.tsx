@@ -1,6 +1,5 @@
 ﻿
 import React, { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
 import { HashRouter as Router } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star, Eye, EyeOff } from 'lucide-react';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';

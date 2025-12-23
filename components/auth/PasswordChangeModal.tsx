@@ -2,7 +2,7 @@
 // Modal de cambio de contraseña para primer login
 
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 
 interface PasswordChangeModalProps {
   onComplete: (newPass: string) => void;
@@ -26,7 +26,7 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ onComp
     onComplete(newPassword);
   };
 
-  return ReactDOM.createPortal(
+  return createPortal(
     <div
       style={{
         position: 'fixed',

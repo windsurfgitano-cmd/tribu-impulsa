@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo, useRef } from 'react';
-import ReactDOM from 'react-dom';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock,
@@ -558,7 +558,7 @@ const TribeAssignmentsView = () => {
       )}
 
       {/* Modal de registro de cumplimiento */}
-      {showShareModal && ReactDOM.createPortal(
+      {showShareModal && createPortal(
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm"
           onClick={() => { setShowShareModal(null); setShareUrl(''); }}
@@ -611,7 +611,7 @@ const TribeAssignmentsView = () => {
       )}
 
       {/* Modal de AnÃ¡lisis TRIBU X - FULL SCREEN */}
-      {analysisProfile && ReactDOM.createPortal(
+      {analysisProfile && createPortal(
         <div
           className="fixed inset-0 bg-black/80 flex flex-col z-[99999] backdrop-blur-sm"
           onClick={() => setAnalysisProfile(null)}
@@ -901,7 +901,7 @@ const TribeAssignmentsView = () => {
             </ul>
           </div>
         )}
-        {reportingProfile && ReactDOM.createPortal(
+        {reportingProfile && createPortal(
           <div
             style={{
               position: 'fixed',

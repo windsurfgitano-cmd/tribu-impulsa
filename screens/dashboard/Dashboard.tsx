@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react';
+﻿import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -6,11 +6,24 @@ import {
   Sparkles,
   ArrowRight
 } from 'lucide-react';
-import { getMyProfile } from '../../services/matchService';
+import { getMyProfile, generateMockMatches } from '../../services/matchService';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';
-import { getCurrentUser } from '../../services/databaseService';
+import { getCurrentUser, createReminder, updateOnboardingProgress } from '../../services/databaseService';
+import { changeUserPassword, markFirstLoginComplete } from '../../services/realUsersData';
 import { validateUserProfile } from '../../utils/validation';
 import { OnboardingModal } from '../../components/common/OnboardingModal';
+import { PasswordChangeModal } from '../../components/auth/PasswordChangeModal';
+import { useConfetti } from '../../components/Confetti';
+import { getTribeStatsSnapshot } from '../../services/tribeStorage';
+
+// Helper para verificar si el onboarding está completo
+const isOnboardingComplete = (userId: string): boolean => {
+  return localStorage.getItem(`onboarding_complete_${userId}`) === 'true';
+};
+
+const markOnboardingComplete = (userId: string): void => {
+  localStorage.setItem(`onboarding_complete_${userId}`, 'true');
+};
 
 
 const Dashboard = () => {

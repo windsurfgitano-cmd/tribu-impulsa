@@ -1,5 +1,10 @@
+/* Tailwind CSS - Required directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Tribu Impulsa - Paleta de colores monday.com */
-/* Build: 2025-12-23 19:45 - Force CSS reload v2 */
+/* Build: 2025-12-23 20:15 - Tailwind CSS installed */
 
 :root {
   /* Danger (rojo) - Estados stuck, alertas */

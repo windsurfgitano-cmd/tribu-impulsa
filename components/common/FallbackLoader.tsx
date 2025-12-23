@@ -37,6 +37,3 @@ export const FallbackLoader: React.FC<FallbackLoaderProps> = ({ onComplete, dura
     </>
   );
 };
-
-export default FallbackLoader;
-

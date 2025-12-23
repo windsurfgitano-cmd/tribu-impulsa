@@ -3,9 +3,7 @@ import React, { useState, useEffect, FormEvent, useMemo, useRef } from 'react';
 import { HashRouter as Router } from 'react-router-dom';
 import { Activity, Users, Settings, LogOut, User as UserIcon, CheckCircle, ArrowRight, Briefcase, Sparkles, MapPin, Globe, Instagram, Calendar, ArrowLeft, Bell, Edit2, Save, X, Share2, Download, FolderSync, TrendingUp, AlertTriangle, AlertCircle, Clock, Send, HelpCircle, ChevronRight, BarChart3, RefreshCw, Zap, Lock, CreditCard, Crown, Gift, Home, Type, Handshake, ExternalLink, MessageCircle, Star, Eye, EyeOff } from 'lucide-react';
 import { AFFINITY_OPTIONS, CATEGORY_MAPPING, MatchProfile, TribeAssignments } from './types';
-import { TRIBE_CATEGORY_OPTIONS } from './data/tribeCategories';
 import { REGIONS, ALL_COMUNAS, searchComunas, searchRegions } from './constants/geography';
-import { AFFINITIES } from './constants/affinities';
 import { generateMockMatches, getProfileById, getMockActivity, getMyProfile, generateTribeAssignments } from './services/matchService';
 import { UserProfile } from './services/databaseService';
 import { forceReloadRealUsers } from './services/realUsersData';
@@ -16,9 +14,7 @@ import {
   onForegroundMessage,
   getNotificationStatus,
   sendLocalNotification,
-  syncProfileToCloud,
-  getProfileFromCloud,
-  syncChecklistProgress
+  getProfileFromCloud
 } from './services/firebaseService';
 import { ensureInitialized } from './services/productionInit';
 import { AppLayout } from './components/layout';
@@ -79,45 +75,7 @@ console.log('🔔 Estado notificaciones:', getNotificationStatus());
 // ============================================
 // SINCRONIZACIÓN AUTOMÁTICA CON FIRESTORE
 // ============================================
-
-// Sincronizar usuario a la nube
-export const syncUserToCloud = async (user: UserProfile) => {
-  try {
-    await syncProfileToCloud({
-      id: user.id,
-      name: user.name,
-      companyName: user.companyName,
-      category: user.category,
-      location: user.city,
-      bio: user.bio,
-      instagram: user.instagram,
-      website: user.website,
-      phone: user.phone,
-      email: user.email
-    });
-    console.log('☁️ Usuario sincronizado a la nube:', user.email);
-  } catch (error) {
-    console.error('Error sincronizando usuario:', error);
-  }
-};
-
-// Sincronizar checklist a la nube
-export const syncChecklistToCloud = async (userId: string, checklist: { toShare: Record<string, boolean>; shareWithMe: Record<string, boolean> }) => {
-  try {
-    const completed = Object.values(checklist.toShare).filter(Boolean).length +
-      Object.values(checklist.shareWithMe).filter(Boolean).length;
-    const total = Object.keys(checklist.toShare).length + Object.keys(checklist.shareWithMe).length;
-
-    await syncChecklistProgress(userId, {
-      completed,
-      total,
-      items: { ...checklist.toShare, ...checklist.shareWithMe }
-    });
-    console.log('☁️ Checklist sincronizado:', `${completed}/${total}`);
-  } catch (error) {
-    console.error('Error sincronizando checklist:', error);
-  }
-};
+// NOTA: Las funciones de sincronización se movieron a services/cloudSync.ts
 
 // Cargar perfil desde la nube
 const loadUserFromCloud = async (userId: string): Promise<UserProfile | null> => {
@@ -134,30 +92,8 @@ const loadUserFromCloud = async (userId: string): Promise<UserProfile | null> =>
   }
 };
 
-export const SURVEY_CATEGORY_OPTIONS = TRIBE_CATEGORY_OPTIONS;
-
-// Afinidades generadas desde constants/affinities.ts - formato "Grupo - Label"
-export const SURVEY_AFFINITY_OPTIONS = AFFINITIES.map(aff => `${aff.group} - ${aff.label}`);
-
-export const SURVEY_SCOPE_OPTIONS = [
-  { value: 'LOCAL', label: 'LOCAL (sólo si operas en una comuna específica)' },
-  { value: 'REGIONAL', label: 'REGIONAL (si cubres una o varias regiones de Chile)' },
-  { value: 'NACIONAL', label: 'NACIONAL (llegas a todo Chile)' }
-];
-
-export const SURVEY_REVENUE_OPTIONS = [
-  'Menos de $500.000',
-  '$500.000 - $2.000.000',
-  '$2.000.000 - $5.000.000',
-  '$5.000.000 - $10.000.000',
-  'Más de $10.000.000'
-];
-
-// IMPORTANTE: Todas las claves usan el userId para segregar datos por usuario
-export const getUserStorageKey = (baseKey: string): string => {
-  const userId = localStorage.getItem('tribu_current_user') || 'guest';
-  return `${baseKey}_${userId}`;
-};
+// NOTA: Las opciones de survey se movieron a constants/surveyOptions.ts
+// NOTA: getUserStorageKey ya existe en utils/storage.ts
 
 const TRIBE_ASSIGNMENTS_KEY = 'tribeAssignmentsData';
 const TRIBE_STATUS_KEY = 'tribeAssignmentStatus';

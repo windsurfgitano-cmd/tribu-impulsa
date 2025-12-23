@@ -101,6 +101,3 @@ export const NotificationButton: React.FC = () => {
     </div>
   );
 };
-
-export default NotificationButton;
-

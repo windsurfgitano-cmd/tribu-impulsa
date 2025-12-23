@@ -60,6 +60,3 @@ export const SearchingScreen: React.FC = () => {
   // Animación 3D épica
   return <CosmicLoadingAnimation onComplete={handleComplete} duration={totalDuration} />;
 };
-
-export default SearchingScreen;
-

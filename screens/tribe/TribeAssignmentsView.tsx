@@ -13,11 +13,11 @@ import {
 import { getMyProfile } from '../../services/matchService';
 import { getCurrentUser } from '../../services/databaseService';
 import { getAppConfig } from '../../utils/storage';
+import { syncChecklistToCloud } from '../../services/cloudSync';
 import {
   loadChecklistFromFirebase,
   logInteraction
 } from '../../services/firebaseService';
-import { syncChecklistToCloud } from '../../App';
 import {
   TribeAssignments,
   MatchProfile

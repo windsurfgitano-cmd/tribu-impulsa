@@ -88,6 +88,3 @@ export const ProfileReminderBanner: React.FC = () => {
     </div>
   );
 };
-
-export default ProfileReminderBanner;
-

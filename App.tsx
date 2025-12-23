@@ -314,6 +314,7 @@ const compressImage = (file: File, maxWidth: number = 400): Promise<string> => {
 };
 
 const App = () => {
+  console.log('🔍 App component mounting...');
   return (
     <Router>
       <AppLayout />

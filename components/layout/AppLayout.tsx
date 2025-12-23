@@ -38,6 +38,7 @@ const AcademiaViewWrapper = () => {
 };
 
 const AppLayout = () => {
+  console.log('🔍 AppLayout mounting...');
   const location = useLocation();
   const navigate = useNavigate();
   const currentUser = getCurrentUser();

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
@@ -38,11 +38,13 @@ const AcademiaViewWrapper = () => {
 };
 
 const AppLayout = () => {
-  console.log('🔍 AppLayout mounting...');
   const location = useLocation();
   const navigate = useNavigate();
-  const currentUser = getCurrentUser();
-  const myProfile = getMyProfile();
+  
+  // Memoizar para evitar recalcular en cada render
+  const currentUser = useMemo(() => getCurrentUser(), [location.pathname]);
+  const myProfile = useMemo(() => getMyProfile(), [location.pathname]);
+  
   const [showMenu, setShowMenu] = useState(false);
   const [navGlobalProgress, setNavGlobalProgress] = useState({ current: 0, target: 1000 });
 

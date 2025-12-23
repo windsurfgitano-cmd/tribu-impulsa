@@ -10,7 +10,8 @@ import {
   Handshake,
   X
 } from 'lucide-react';
-import { getCurrentUser, getMyProfile } from '../../services/databaseService';
+import { getCurrentUser } from '../../services/databaseService';
+import { getMyProfile } from '../../services/matchService';
 import { clearStoredSession } from '../../utils/storage';
 import { LoginScreen } from '../../screens/auth';
 import { RegisterScreen } from '../../screens/auth';
@@ -47,7 +48,7 @@ const AppLayout = () => {
   useEffect(() => {
     const loadProgress = async () => {
       try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { getFirestoreInstance } = await import('../../services/firebaseService');
         const { doc, getDoc } = await import('firebase/firestore');
         const db = getFirestoreInstance();
         if (!db) return;

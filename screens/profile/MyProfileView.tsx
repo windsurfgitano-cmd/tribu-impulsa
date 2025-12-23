@@ -127,7 +127,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
     // Sincronizar contraseÃ±a con Firebase (persistente entre dispositivos)
     try {
-      const { updateUserPassword } = await import('./services/firebaseService');
+      const { updateUserPassword } = await import('../../services/firebaseService');
       const synced = await updateUserPassword(user.id, newPassword);
       if (synced) {
         console.log('âœ… ContraseÃ±a sincronizada con Firebase');
@@ -154,7 +154,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     try {
       setSaveMessage('ðŸ“· Subiendo foto a la nube...');
 
-      const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+      const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
 
       // Validar archivo
       const validation = validateImageFile(file);
@@ -199,7 +199,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     try {
       setSaveMessage('ðŸ–¼ï¸ Subiendo banner a la nube...');
 
-      const { uploadProfileImage, validateImageFile } = await import('./services/firebaseService');
+      const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
 
       // Validar archivo
       const validation = validateImageFile(file);
@@ -294,7 +294,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
       while (!firebaseSaved && retries > 0) {
         try {
-          const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('./services/firebaseService');
+          const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('../../services/firebaseService');
 
           setSaveMessage(`â˜ï¸ Guardando en la nube... (intento ${4 - retries}/3)`);
 
@@ -376,7 +376,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             onClick={async () => {
               setSaveMessage('â˜ï¸ Sincronizando con la nube...');
               try {
-                const { syncUserToFirebase } = await import('./services/firebaseService');
+                const { syncUserToFirebase } = await import('../../services/firebaseService');
                 const localUser = getCurrentUser();
 
                 // PASO 1: PRIMERO subir datos locales a Firebase (para no perderlos)
@@ -1507,7 +1507,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
     setIsProcessing(true);
 
     try {
-      const { getFirestoreInstance } = await import('./services/firebaseService');
+      const { getFirestoreInstance } = await import('../../services/firebaseService');
       const { doc, updateDoc } = await import('firebase/firestore');
       const db = getFirestoreInstance();
 
@@ -1930,7 +1930,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
     try {
       // Intentar usar Azure OpenAI primero
-      const { analyzeCompatibility } = await import('./services/aiMatchingService');
+      const { analyzeCompatibility } = await import('../../services/aiMatchingService');
       const result = await analyzeCompatibility(
         { id: myProfile.id, name: myProfile.name, companyName: myProfile.companyName, city: myProfile.location || '', category: myProfile.category, affinity: myProfile.category },
         { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }

@@ -67,7 +67,7 @@ const Dashboard = () => {
 
       // Sincronizar con Firebase
       try {
-        const { updateUserPassword } = await import('./services/firebaseService');
+        const { updateUserPassword } = await import('../../services/firebaseService');
         await updateUserPassword(currentUser.id, newPassword);
       } catch (err) {
         console.log('âš ï¸ ContraseÃ±a guardada localmente');
@@ -335,7 +335,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
       // Primero intentar cargar desde Firebase (fuente de verdad)
       let loadedFromFirebase = false;
       try {
-        const { getFirestoreInstance } = await import('./services/firebaseService');
+        const { getFirestoreInstance } = await import('../../services/firebaseService');
         const { collection, getDocs } = await import('firebase/firestore');
         const db = getFirestoreInstance();
         if (db) {
@@ -425,7 +425,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
 
     // 2. SINCRONIZAR CON FIREBASE + HISTORIAL DE PAGOS
     try {
-      const { getFirestoreInstance } = await import('./services/firebaseService');
+      const { getFirestoreInstance } = await import('../../services/firebaseService');
       const { doc, setDoc, collection, addDoc } = await import('firebase/firestore');
       const db = getFirestoreInstance();
       if (db) {

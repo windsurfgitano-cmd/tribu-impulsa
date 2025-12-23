@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { TermsCheckbox } from '../../components/TermsAndConditions';
 import { createUser } from '../../services/databaseService';
-import { syncUserToCloud } from '../../services/realUsersData';
+import { syncUserToCloud } from '../../App';
 import { persistSurveyResponse, SurveyFormState } from '../../services/surveyService';
 import { REGIONS } from '../../constants/geography';
 import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
-import { SURVEY_CATEGORY_OPTIONS, SURVEY_AFFINITY_OPTIONS } from '../../constants';
+import { SURVEY_CATEGORY_OPTIONS, SURVEY_AFFINITY_OPTIONS, SURVEY_SCOPE_OPTIONS, SURVEY_REVENUE_OPTIONS } from '../../App';
 
 const RegisterScreen = () => {
   const navigate = useNavigate();

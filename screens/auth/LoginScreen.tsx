@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, Lock, CheckCircle, Gift, User as UserIcon } from 'lucide-react';
 import { getFirestoreInstance } from '../../services/firebaseService';
 import { 
-  getUserByEmail, 
-  validateCredentials, 
   setCurrentUser, 
-  getUserFromFirebaseByEmail,
   syncNotificationsFromFirebase
 } from '../../services/databaseService';
+import {
+  getUserByEmail,
+  validateCredentials,
+  getUserFromFirebaseByEmail
+} from '../../services/realUsersData';
 import { 
   getStoredSession, 
   setStoredSession, 

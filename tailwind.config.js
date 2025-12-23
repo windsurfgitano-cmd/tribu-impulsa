@@ -9,6 +9,32 @@ export default {
     "./hooks/**/*.{js,ts,jsx,tsx}",
     "./utils/**/*.{js,ts,jsx,tsx}"
   ],
+  safelist: [
+    'animate-shimmer',
+    'animate-slideUp',
+    'animate-slideDown',
+    'animate-fadeIn',
+    'animate-pulse',
+    'animate-bounce',
+    'animate-spin',
+    'bg-gradient-to-r',
+    'bg-gradient-to-br',
+    'from-indigo-500',
+    'via-violet-500',
+    'to-purple-500',
+    'from-indigo-50',
+    'via-violet-50',
+    'to-purple-50',
+    'from-emerald-50',
+    'to-green-50',
+    'text-indigo-600',
+    'text-indigo-700',
+    'text-violet-700',
+    'text-emerald-700',
+    'border-indigo-100',
+    'border-violet-100',
+    'border-emerald-100'
+  ],
   theme: {
     extend: {
       fontFamily: {

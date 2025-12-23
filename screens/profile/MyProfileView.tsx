@@ -8,7 +8,8 @@ import {
   Eye,
   EyeOff,
   Lock,
-  Type
+  Type,
+  CheckCircle
 } from 'lucide-react';
 import { getMyProfile } from '../../services/matchService';
 import { getCurrentUser, updateUser } from '../../services/databaseService';

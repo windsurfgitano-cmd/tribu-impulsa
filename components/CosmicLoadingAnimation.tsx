@@ -24,6 +24,18 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
   const [messageIndex, setMessageIndex] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
 
+  // Forzar reproducción del video
+  useEffect(() => {
+    const videoElement = document.querySelector('video');
+    if (videoElement) {
+      videoElement.play().catch(err => {
+        console.log('⚠️ Autoplay bloqueado, forzando mute:', err);
+        videoElement.muted = true;
+        videoElement.play();
+      });
+    }
+  }, []);
+
   // Efecto principal - progreso y mensajes
   useEffect(() => {
     const startTime = Date.now();
@@ -75,8 +87,12 @@ export const CosmicLoadingAnimation: React.FC<CosmicLoadingAnimationProps> = ({
         loop
         playsInline
         preload="auto"
+        onLoadStart={() => console.log('🎥 Video loading...')}
+        onCanPlay={() => console.log('✅ Video ready')}
+        onError={(e) => console.error('❌ Video error:', e)}
       >
         <source src="/newtribuloading.mp4" type="video/mp4" />
+        <source src="/tribuvideo.mp4" type="video/mp4" />
       </video>
       
       {/* UI en la parte inferior */}

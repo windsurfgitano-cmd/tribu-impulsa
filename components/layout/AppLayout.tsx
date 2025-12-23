@@ -8,7 +8,9 @@ import {
   Gift,
   Activity,
   Handshake,
-  X
+  X,
+  CheckCircle,
+  Lock
 } from 'lucide-react';
 import { getCurrentUser } from '../../services/databaseService';
 import { getMyProfile } from '../../services/matchService';

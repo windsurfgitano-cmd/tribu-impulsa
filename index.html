@@ -64,10 +64,38 @@
         navigator.serviceWorker.register('/sw.js')
           .then(reg => {
             console.log('✅ Service Worker registrado:', reg.scope);
+            
+            // Verificar actualizaciones periódicamente (cada 30 minutos)
+            setInterval(() => {
+              console.log('[SW] Verificando actualizaciones...');
+              reg.update();
+            }, 30 * 60 * 1000);
+            
+            // Verificar inmediatamente después de 5 segundos
+            setTimeout(() => reg.update(), 5000);
           })
           .catch(err => {
             console.log('❌ Service Worker falló:', err);
           });
+        
+        // Escuchar mensajes del Service Worker
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'SW_UPDATED') {
+            console.log('🔄 Nueva versión detectada:', event.data.version);
+            console.log('🔄 Recargando en 2 segundos...');
+            
+            // Mostrar notificación visual (opcional)
+            const updateBanner = document.createElement('div');
+            updateBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#00CA72;color:white;padding:12px;text-align:center;z-index:999999;font-family:Inter,sans-serif;font-size:14px;';
+            updateBanner.textContent = '✨ Nueva versión disponible, actualizando...';
+            document.body.appendChild(updateBanner);
+            
+            // Reload automático después de 2 segundos
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
+        });
       });
     }
   </script>

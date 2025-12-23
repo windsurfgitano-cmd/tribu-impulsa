@@ -1,5 +1,7 @@
 // Service Worker - Tribu Impulsa PWA
-const CACHE_NAME = 'tribu-impulsa-v1';
+// Versionado automático: el timestamp se inyecta en build time
+const CACHE_VERSION = '__BUILD_TIMESTAMP__';
+const CACHE_NAME = `tribu-impulsa-${CACHE_VERSION}`;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -21,55 +23,96 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate - Clean old caches
+// Activate - Limpieza agresiva de cachés antiguas
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating Service Worker...');
+  console.log('[SW] 🚀 Activando nueva versión:', CACHE_VERSION);
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => {
-            console.log('[SW] Deleting old cache:', name);
-            return caches.delete(name);
-          })
-      );
-    }).then(() => self.clients.claim())
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name.startsWith('tribu-impulsa-') && name !== CACHE_NAME)
+            .map((name) => {
+              console.log('[SW] ⚠️ Eliminando caché antigua:', name);
+              return caches.delete(name);
+            })
+        );
+      })
+      .then(() => {
+        console.log('[SW] ✅ Cachés antiguas eliminadas, tomando control...');
+        return self.clients.claim();  // Toma control inmediato de todas las pestañas
+      })
+      .then(() => {
+        // Notificar a todos los clientes que hay nueva versión disponible
+        console.log('[SW] 📢 Notificando actualización a clientes...');
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({ 
+              type: 'SW_UPDATED',
+              version: CACHE_VERSION 
+            });
+          });
+        });
+      })
   );
 });
 
-// Fetch - Network first, fallback to cache
+// Fetch - Estrategia diferenciada: Network First para UI, NO cache para Firebase
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
   
-  // Skip external requests
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  // Skip external requests (excepto para cachear fuentes de Google)
+  if (!event.request.url.startsWith(self.location.origin) && 
+      !event.request.url.includes('fonts.googleapis.com') &&
+      !event.request.url.includes('fonts.gstatic.com')) {
+    return;
+  }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response before caching
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      })
-      .catch(() => {
-        // Network failed, try cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          // If not in cache, return offline fallback for navigation
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
-          }
-          return new Response('Offline', { status: 503 });
-        });
-      })
-  );
+  // Detectar si es un asset estático de UI (HTML/CSS/JS/imágenes)
+  const isUIAsset = event.request.url.match(/\.(html|css|js|png|jpg|jpeg|svg|ico|woff|woff2|ttf)$/i) ||
+                    event.request.url.includes('fonts.googleapis.com') ||
+                    event.request.url.includes('fonts.gstatic.com');
+
+  // Detectar si es una llamada a Firebase/Firestore (NO cachear - datos siempre frescos)
+  const isFirebaseCall = event.request.url.includes('firebaseio.com') ||
+                         event.request.url.includes('firestore.googleapis.com') ||
+                         event.request.url.includes('cloudfunctions.net');
+
+  if (isFirebaseCall) {
+    // Firebase: siempre network, NUNCA cachear (datos de usuarios)
+    event.respondWith(fetch(event.request));
+  } else if (isUIAsset) {
+    // UI Assets: Network First - siempre intentar obtener versión fresca
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Si la descarga fue exitosa, cachear la nueva versión
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+          return response;
+        })
+        .catch(() => {
+          // Network falló, usar caché como fallback (PWA offline)
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              console.log('[SW] Sirviendo desde caché (offline):', event.request.url);
+              return cachedResponse;
+            }
+            // Si no está en caché y es navegación, devolver index.html
+            if (event.request.mode === 'navigate') {
+              return caches.match('/index.html');
+            }
+            return new Response('Offline', { status: 503 });
+          });
+        })
+    );
+  } else {
+    // Otros recursos: Network only
+    event.respondWith(fetch(event.request));
+  }
 });
 
 // Handle push notifications

@@ -4,7 +4,8 @@ import {
   Users,
   TrendingUp,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  HelpCircle
 } from 'lucide-react';
 import { getMyProfile, generateMockMatches } from '../../services/matchService';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';

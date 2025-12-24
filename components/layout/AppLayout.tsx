@@ -157,7 +157,7 @@ const AppLayout = () => {
 
   return (
     <div className="min-h-screen w-full text-[#181B34] font-sans bg-[#F5F7FB]">
-      {/* MenÃº Hamburguesa Overlay */}
+      {/* Menú Hamburguesa Overlay */}
       {showNav && showMenu && (
         <div className="fixed inset-0 z-[10000]">
           <div
@@ -167,7 +167,7 @@ const AppLayout = () => {
           <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
             <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white">MenÃº</h2>
+                <h2 className="text-xl font-bold text-white">Menú</h2>
                 <button
                   onClick={() => setShowMenu(false)}
                   className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
@@ -258,7 +258,7 @@ const AppLayout = () => {
           }}
         >
           <div className="h-[70px] px-2 flex justify-around items-center max-w-md mx-auto">
-            {/* MenÃº Hamburguesa */}
+            {/* Menú Hamburguesa */}
             <button
               onClick={() => setShowMenu(true)}
               className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${showMenu ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'
@@ -269,7 +269,7 @@ const AppLayout = () => {
                 <line x1="3" y1="12" x2="21" y2="12" />
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
-              <span className="text-[0.625rem] mt-1 font-medium">MenÃº</span>
+              <span className="text-[0.625rem] mt-1 font-medium">Menú</span>
             </button>
 
             {/* Inicio - BLOQUEADO para invitados */}

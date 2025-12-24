@@ -15,25 +15,6 @@ export const ProfileReminderBanner: React.FC = () => {
   if (!currentUser || dismissed) return null;
 
   const validation = validateUserProfile(currentUser);
-  // Debug logging (solo en desarrollo)
-  if (import.meta.env.DEV) {
-    console.log('🔍 Validación de perfil:', {
-      isComplete: validation.isComplete,
-      missingFields: validation.missingFields,
-      user: {
-        name: currentUser?.name,
-        companyName: currentUser?.companyName,
-        scope: currentUser?.scope,
-        comuna: currentUser?.comuna,
-        selectedRegions: currentUser?.selectedRegions,
-        bio: currentUser?.bio?.length,
-        businessDescription: currentUser?.businessDescription?.length,
-        revenue: currentUser?.revenue,
-        avatarUrl: currentUser?.avatarUrl ? '✅' : '❌',
-        onboardingComplete: currentUser?.onboardingComplete
-      }
-    });
-  }
 
   if (validation.isComplete) return null;
 

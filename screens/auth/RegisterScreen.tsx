@@ -5,6 +5,7 @@ import { TermsCheckbox } from '../../components/TermsAndConditions';
 import { createUser } from '../../services/databaseService';
 import { syncUserToCloud } from '../../services/cloudSync';
 import { persistSurveyResponse, SurveyFormState } from '../../services/surveyService';
+import { getUserByEmail, getUserFromFirebaseByEmail } from '../../services/realUsersData';
 import { REGIONS } from '../../constants/geography';
 import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
 import { SURVEY_CATEGORY_OPTIONS, SURVEY_AFFINITY_OPTIONS, SURVEY_SCOPE_OPTIONS, SURVEY_REVENUE_OPTIONS } from '../../constants/surveyOptions';
@@ -122,12 +123,29 @@ const RegisterScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep()) return;
 
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
+      // Verificar si el email ya existe (local o Firebase)
+      setIsProcessing(true);
+      const emailLower = formData.email.toLowerCase().trim();
+      
+      let existingUser = getUserByEmail(emailLower);
+      if (!existingUser) {
+        // Verificar en Firebase también
+        existingUser = await getUserFromFirebaseByEmail(emailLower);
+      }
+      
+      if (existingUser) {
+        setErrors({ email: 'Este email ya está registrado' });
+        setStep(1); // Volver al paso del email
+        setIsProcessing(false);
+        return;
+      }
+
       // Normalizar valores antes de guardar
       const normalizedPhone = normalizePhone(formData.phone);
       const normalizedInstagram = normalizeInstagram(formData.instagram);

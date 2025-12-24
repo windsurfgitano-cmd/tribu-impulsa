@@ -198,6 +198,20 @@ const LoginScreen = () => {
     e.preventDefault();
     setError('');
 
+    // Verificar si el email ya existe (IMPORTANTE: emails deben ser únicos)
+    const emailLower = email.toLowerCase().trim();
+    let existingUser = getUserByEmail(emailLower);
+    if (!existingUser) {
+      // Verificar en Firebase también
+      existingUser = await getUserFromFirebaseByEmail(emailLower);
+    }
+    
+    if (existingUser) {
+      setError('Este email ya está registrado. Por favor inicia sesión o usa otro email.');
+      setView('initial'); // Volver a la pantalla inicial
+      return;
+    }
+
     // Validar TODOS los campos obligatorios
     if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || !registerData.category) {
       setError('Por favor completa TODOS los campos obligatorios');

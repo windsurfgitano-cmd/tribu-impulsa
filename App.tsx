@@ -50,6 +50,20 @@ initializeFirebase();
       console.log('⚠️ Limpieza de perfiles pendiente');
     }
 
+    // 🧹 LIMPIEZA: Eliminar emails duplicados (mantener el más reciente)
+    try {
+      const { cleanupDuplicateEmails } = await import('./services/realUsersData');
+      const result = await cleanupDuplicateEmails();
+      if (result.duplicatesRemoved > 0) {
+        console.log(`🧹 ${result.duplicatesRemoved} emails duplicados eliminados (de ${result.duplicatesFound} encontrados)`);
+      }
+      if (result.errors.length > 0) {
+        console.warn('⚠️ Errores en limpieza de duplicados:', result.errors);
+      }
+    } catch (cleanupErr) {
+      console.log('⚠️ Limpieza de duplicados pendiente');
+    }
+
     // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
     try {
       const { syncPhotosFromFirebase } = await import('./services/firebaseService');

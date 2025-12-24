@@ -961,6 +961,81 @@ export const setUserStatus = async (userId: string, status: 'active' | 'inactive
   return await updateUserInFirebase(userId, { status });
 };
 
+// LIMPIAR EMAILS DUPLICADOS (mantener el más reciente)
+export const cleanupDuplicateEmails = async (): Promise<{
+  duplicatesFound: number;
+  duplicatesRemoved: number;
+  errors: string[];
+}> => {
+  console.log('🔍 Buscando emails duplicados...');
+  
+  const localUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]') as UserProfile[];
+  const emailMap = new Map<string, UserProfile[]>();
+  
+  // Agrupar usuarios por email
+  localUsers.forEach(user => {
+    const emailLower = (user.email || '').toLowerCase().trim();
+    if (!emailLower) return;
+    
+    if (!emailMap.has(emailLower)) {
+      emailMap.set(emailLower, []);
+    }
+    emailMap.get(emailLower)!.push(user);
+  });
+  
+  // Encontrar duplicados
+  const duplicates = Array.from(emailMap.entries()).filter(([_, users]) => users.length > 1);
+  
+  if (duplicates.length === 0) {
+    console.log('✅ No se encontraron emails duplicados');
+    return { duplicatesFound: 0, duplicatesRemoved: 0, errors: [] };
+  }
+  
+  console.log(`⚠️ Se encontraron ${duplicates.length} emails duplicados`);
+  
+  const errors: string[] = [];
+  let removedCount = 0;
+  
+  // Para cada email duplicado, mantener solo el más reciente
+  for (const [email, users] of duplicates) {
+    console.log(`📧 Email duplicado: ${email} (${users.length} cuentas)`);
+    
+    // Ordenar por fecha de creación (más reciente primero)
+    const sorted = users.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA; // Más reciente primero
+    });
+    
+    // Mantener el primero (más reciente), eliminar el resto
+    const toKeep = sorted[0];
+    const toRemove = sorted.slice(1);
+    
+    console.log(`  ✅ Manteniendo: ${toKeep.name} (${toKeep.id}) - creado: ${toKeep.createdAt}`);
+    
+    for (const user of toRemove) {
+      console.log(`  🗑️ Eliminando: ${user.name} (${user.id}) - creado: ${user.createdAt}`);
+      
+      try {
+        await deleteUser(user.id);
+        removedCount++;
+      } catch (error) {
+        const errorMsg = `Error eliminando ${user.email}: ${error}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+  }
+  
+  console.log(`✅ Limpieza completada: ${removedCount} duplicados eliminados`);
+  
+  return {
+    duplicatesFound: duplicates.length,
+    duplicatesRemoved: removedCount,
+    errors
+  };
+};
+
 // DIAGNÓSTICO: Ver estado de usuarios
 export const diagnoseUsers = async (): Promise<{
   local: number;

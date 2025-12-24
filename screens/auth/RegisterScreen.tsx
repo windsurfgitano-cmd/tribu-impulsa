@@ -111,6 +111,8 @@ const RegisterScreen = () => {
         category: formData.category,
         affinity: formData.affinity,
         scope: formData.scope,
+        comuna: formData.comuna || undefined,
+        selectedRegions: formData.selectedRegions.length > 0 ? formData.selectedRegions : undefined,
         whatsapp: formData.phone // WhatsApp = teléfono por defecto
       });
 
@@ -153,31 +155,31 @@ const RegisterScreen = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-[#F5F7FB] relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 py-6 sm:py-8 bg-[#F5F7FB] relative overflow-hidden">
       <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-[#6161FF]/8 rounded-full blur-[80px]"></div>
       <div className="absolute bottom-[-10%] left-[-5%] w-[300px] h-[300px] bg-[#00CA72]/8 rounded-full blur-[80px]"></div>
 
-      <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative z-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 max-w-lg w-full relative z-10 shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">
         {/* Header con progreso */}
-        <div className="flex justify-between items-center mb-6">
-          <button onClick={handleBack} className="text-[#7C8193] hover:text-[#6161FF] p-2">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <button onClick={handleBack} className="text-[#7C8193] hover:text-[#6161FF] p-1 sm:p-2 touch-manipulation">
             <ArrowLeft size={20} />
           </button>
-          <div className="flex gap-1.5">
+          <div className="flex gap-1 sm:gap-1.5">
             {Array.from({ length: totalSteps }).map((_, i) => (
-              <div key={i} className={`h-2 w-8 rounded-full transition-all duration-500 ${step > i ? 'bg-gradient-to-r from-[#6161FF] to-[#00CA72]' : step === i + 1 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`} />
+              <div key={i} className={`h-1.5 sm:h-2 w-6 sm:w-8 rounded-full transition-all duration-500 ${step > i ? 'bg-gradient-to-r from-[#6161FF] to-[#00CA72]' : step === i + 1 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`} />
             ))}
           </div>
-          <span className="text-sm text-[#7C8193]">{step}/{totalSteps}</span>
+          <span className="text-xs sm:text-sm text-[#7C8193]">{step}/{totalSteps}</span>
         </div>
 
         {/* Paso 1: Datos personales */}
         {step === 1 && (
           <div className="space-y-5 animate-fadeIn">
-            <div className="text-center mb-6">
-              <img src="/NuevoLogo.png" alt="Tribu Impulsa" className="w-16 h-16 mx-auto mb-3 object-contain" />
-              <h2 className="text-2xl font-bold text-[#181B34]">¡Bienvenido/a!</h2>
-              <p className="text-[#7C8193] text-sm mt-1">Cuéntanos sobre ti</p>
+            <div className="text-center mb-4 sm:mb-6">
+              <img src="/NuevoLogo.png" alt="Tribu Impulsa" className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 object-contain" />
+              <h2 className="text-xl sm:text-2xl font-bold text-[#181B34]">¡Bienvenido/a!</h2>
+              <p className="text-[#7C8193] text-xs sm:text-sm mt-1">Cuéntanos sobre ti</p>
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-2 uppercase tracking-wide">Nombre y Apellido *</label>
@@ -468,10 +470,10 @@ const RegisterScreen = () => {
         )}
 
         {/* Botón Continuar */}
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <button
             onClick={handleNext}
-            className="w-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white py-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-[1.01] flex items-center justify-center gap-2"
+            className="w-full bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white py-3 sm:py-4 rounded-xl font-bold shadow-md hover:shadow-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 text-sm sm:text-base touch-manipulation"
           >
             {step === totalSteps ? '🚀 Buscar Mi Tribu' : 'Continuar'}
             <ArrowRight size={18} />

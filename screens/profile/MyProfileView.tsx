@@ -985,10 +985,15 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               {/* Cerrar sesión */}
               <button
                 onClick={() => {
+                  // Limpiar completamente la sesión
                   clearStoredSession();
                   localStorage.removeItem('tribu_session');
                   localStorage.removeItem('algorithm_seen');
-                  navigate('/');
+                  localStorage.removeItem('tribu_current_user');
+                  localStorage.removeItem('tribu_onboarding_completed');
+                  sessionStorage.clear();
+                  // Forzar recarga completa de la página
+                  window.location.href = '/';
                 }}
                 className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
               >

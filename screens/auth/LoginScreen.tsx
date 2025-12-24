@@ -210,15 +210,19 @@ const LoginScreen = () => {
       return;
     }
 
-    if (registerData.scope === 'LOCAL' && !registerData.comuna) {
-      setError('Por favor indica tu comuna');
-      return;
+    // Validación según alcance geográfico
+    if (registerData.scope === 'LOCAL') {
+      if (!registerData.comuna) {
+        setError('Por favor indica tu comuna para alcance LOCAL');
+        return;
+      }
+    } else if (registerData.scope === 'REGIONAL') {
+      if (registerData.selectedRegions.length === 0) {
+        setError('Por favor selecciona al menos una región para alcance REGIONAL');
+        return;
+      }
     }
-
-    if (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) {
-      setError('Por favor selecciona al menos una región');
-      return;
-    }
+    // NACIONAL no requiere validación adicional
 
     // Validar biografía y descripción
     if (registerData.bio.length < 50) {

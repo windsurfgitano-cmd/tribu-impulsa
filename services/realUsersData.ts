@@ -888,6 +888,43 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
   }
 };
 
+// Eliminar todos los perfiles incompletos del sistema
+export const cleanupIncompleteProfiles = async (): Promise<{ deleted: number; errors: string[] }> => {
+  try {
+    const { validateUserProfile } = await import('../utils/validation');
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]') as UserProfile[];
+    
+    let deletedCount = 0;
+    const errors: string[] = [];
+    
+    console.log('🧹 Iniciando limpieza de perfiles incompletos...');
+    
+    for (const user of users) {
+      const validation = validateUserProfile(user);
+      
+      // Si el perfil está incompleto, eliminarlo
+      if (!validation.isComplete) {
+        console.log(`🗑️ Eliminando perfil incompleto: ${user.email} (${user.name})`);
+        console.log(`   Campos faltantes: ${validation.missingFields.join(', ')}`);
+        
+        const success = await deleteUser(user.id);
+        if (success) {
+          deletedCount++;
+        } else {
+          errors.push(`Error eliminando ${user.email}`);
+        }
+      }
+    }
+    
+    console.log(`✅ Limpieza completada: ${deletedCount} perfiles eliminados`);
+    
+    return { deleted: deletedCount, errors };
+  } catch (error) {
+    console.error('Error en limpieza de perfiles:', error);
+    return { deleted: 0, errors: [String(error)] };
+  }
+};
+
 // Actualizar usuario en Firebase y localStorage
 export const updateUserInFirebase = async (userId: string, updates: Partial<UserProfile>): Promise<boolean> => {
   try {

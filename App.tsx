@@ -36,6 +36,20 @@ initializeFirebase();
     await forceReloadRealUsers();
     console.log('✅ Usuarios cargados y sincronizados');
 
+    // 🧹 LIMPIEZA: Eliminar perfiles incompletos
+    try {
+      const { cleanupIncompleteProfiles } = await import('./services/realUsersData');
+      const result = await cleanupIncompleteProfiles();
+      if (result.deleted > 0) {
+        console.log(`🧹 ${result.deleted} perfiles incompletos eliminados`);
+      }
+      if (result.errors.length > 0) {
+        console.warn('⚠️ Errores en limpieza:', result.errors);
+      }
+    } catch (cleanupErr) {
+      console.log('⚠️ Limpieza de perfiles pendiente');
+    }
+
     // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
     try {
       const { syncPhotosFromFirebase } = await import('./services/firebaseService');

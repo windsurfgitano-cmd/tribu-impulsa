@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔄 RESET TOTAL DEL SISTEMA</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #FF5252;
+      margin-bottom: 10px;
+    }
+    .warning {
+      background: #FFF3E0;
+      border-left: 4px solid #FF9800;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+    .warning h3 {
+      color: #FF9800;
+      margin-top: 0;
+    }
+    .status {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .info { background: #E3F2FD; border-left: 4px solid #2196F3; }
+    .success { background: #E8F5E9; border-left: 4px solid #4CAF50; }
+    .error { background: #FFEBEE; border-left: 4px solid #F44336; }
+    button {
+      background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%);
+      color: white;
+      border: none;
+      padding: 20px 40px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 20px 0;
+      transition: all 0.3s;
+      display: block;
+      width: 100%;
+    }
+    button:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 10px 30px rgba(255,82,82,0.5); 
+    }
+    button:disabled { 
+      opacity: 0.5; 
+      cursor: not-allowed; 
+    }
+    .checklist {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+    }
+    .checklist li {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 RESET TOTAL DEL SISTEMA</h1>
+    
+    <div class="warning">
+      <h3>⚠️ ADVERTENCIA CRÍTICA</h3>
+      <p>Este script borrará <strong>ABSOLUTAMENTE TODO</strong>:</p>
+      <ul>
+        <li>❌ Todos los usuarios de Firebase Authentication</li>
+        <li>❌ Todos los documentos de Firestore</li>
+        <li>❌ Todo el localStorage de tu navegador</li>
+        <li>❌ Resetear contador a 0/1000</li>
+      </ul>
+      <p><strong>NO SE PUEDE DESHACER.</strong></p>
+    </div>
+
+    <div class="checklist">
+      <h3>✅ Lo que quedará después:</h3>
+      <ul>
+        <li>✅ Firebase Authentication: <strong>0 usuarios</strong></li>
+        <li>✅ Firestore /users: <strong>0 documentos</strong></li>
+        <li>✅ Contador: <strong>0/1000</strong></li>
+        <li>✅ localStorage: <strong>vacío</strong></li>
+        <li>✅ Sistema: <strong>Limpio y listo para empezar</strong></li>
+      </ul>
+    </div>
+
+    <button onclick="executeFullReset()" id="resetBtn">
+      🗑️ BORRAR TODO Y EMPEZAR DE CERO
+    </button>
+
+    <div id="status"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getFirestore, collection, getDocs, doc, deleteDoc, setDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getAuth, deleteUser, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvAxWWNJYxW_VEDrjXLcjxoGaCQnqPVGk",
+      authDomain: "tribu-impulsa.firebaseapp.com",
+      projectId: "tribu-impulsa",
+      storageBucket: "tribu-impulsa.firebasestorage.app",
+      messagingSenderId: "614984945425",
+      appId: "1:614984945425:web:ec9e8ca01ddb88d98a79d6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.innerHTML = message;
+      document.getElementById('status').appendChild(div);
+      document.getElementById('status').scrollTop = document.getElementById('status').scrollHeight;
+      console.log(message.replace(/<[^>]*>/g, ''));
+    }
+
+    window.executeFullReset = async function() {
+      const btn = document.getElementById('resetBtn');
+      btn.disabled = true;
+
+      // TRIPLE CONFIRMACIÓN
+      const confirm1 = prompt('⚠️ PASO 1/3: Escribe "BORRAR" para confirmar:');
+      if (confirm1 !== 'BORRAR') {
+        log('❌ Operación cancelada', 'error');
+        btn.disabled = false;
+        return;
+      }
+
+      const confirm2 = prompt('⚠️ PASO 2/3: Escribe "TODO" para confirmar:');
+      if (confirm2 !== 'TODO') {
+        log('❌ Operación cancelada', 'error');
+        btn.disabled = false;
+        return;
+      }
+
+      const confirm3 = confirm('⚠️ PASO 3/3: ¿Estás ABSOLUTAMENTE SEGURO?\n\nEsto borrará TODO sin posibilidad de recuperación.\n\nClick OK para continuar.');
+      if (!confirm3) {
+        log('❌ Operación cancelada', 'error');
+        btn.disabled = false;
+        return;
+      }
+
+      document.getElementById('status').innerHTML = '';
+      log('🚀 INICIANDO RESET TOTAL DEL SISTEMA...', 'info');
+      log('<br>', 'info');
+
+      // ========================================
+      // PASO 1: BORRAR FIRESTORE /users
+      // ========================================
+      log('📦 <strong>PASO 1: Limpiando Firestore /users</strong>', 'info');
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        
+        if (usersSnapshot.empty) {
+          log('   ⚠️ Firestore ya está vacío', 'info');
+        } else {
+          log(`   🔍 Encontrados ${usersSnapshot.size} documentos`, 'info');
+          
+          for (const docSnap of usersSnapshot.docs) {
+            await deleteDoc(doc(db, 'users', docSnap.id));
+            log(`   🗑️ Eliminado: ${docSnap.id}`, 'info');
+          }
+          
+          log(`   ✅ ${usersSnapshot.size} documentos eliminados de Firestore`, 'success');
+        }
+      } catch (error) {
+        log(`   ❌ Error en Firestore: ${error.message}`, 'error');
+      }
+      log('<br>', 'info');
+
+      // ========================================
+      // PASO 2: BORRAR OTRAS COLECCIONES
+      // ========================================
+      log('📦 <strong>PASO 2: Limpiando otras colecciones</strong>', 'info');
+      const collectionsToClean = ['notifications', 'interactions', 'reports', 'tribe_assignments'];
+      
+      for (const collectionName of collectionsToClean) {
+        try {
+          const snapshot = await getDocs(collection(db, collectionName));
+          if (!snapshot.empty) {
+            for (const docSnap of snapshot.docs) {
+              await deleteDoc(doc(db, collectionName, docSnap.id));
+            }
+            log(`   🗑️ ${collectionName}: ${snapshot.size} documentos eliminados`, 'info');
+          }
+        } catch (error) {
+          log(`   ⚠️ ${collectionName}: ${error.message}`, 'info');
+        }
+      }
+      log('   ✅ Colecciones secundarias limpiadas', 'success');
+      log('<br>', 'info');
+
+      // ========================================
+      // PASO 3: RESETEAR CONTADOR
+      // ========================================
+      log('🔢 <strong>PASO 3: Reseteando contador</strong>', 'info');
+      try {
+        await setDoc(doc(db, 'system_stats', 'global'), {
+          profilesCompleted: 0,
+          membersActive: 0,
+          lastUpdated: new Date().toISOString(),
+          resetAt: new Date().toISOString()
+        });
+        log('   ✅ Contador reseteado a 0/1000', 'success');
+      } catch (error) {
+        log(`   ❌ Error reseteando contador: ${error.message}`, 'error');
+      }
+      log('<br>', 'info');
+
+      // ========================================
+      // PASO 4: LIMPIAR LOCALSTORAGE
+      // ========================================
+      log('💾 <strong>PASO 4: Limpiando localStorage</strong>', 'info');
+      try {
+        const keysToKeep = ['theme', 'language']; // Mantener preferencias si existen
+        const allKeys = Object.keys(localStorage);
+        let removed = 0;
+
+        allKeys.forEach(key => {
+          if (!keysToKeep.includes(key)) {
+            localStorage.removeItem(key);
+            removed++;
+          }
+        });
+
+        sessionStorage.clear();
+        
+        log(`   🗑️ ${removed} items eliminados de localStorage`, 'info');
+        log('   🗑️ sessionStorage limpiado', 'info');
+        log('   ✅ Almacenamiento local limpiado', 'success');
+      } catch (error) {
+        log(`   ❌ Error limpiando localStorage: ${error.message}`, 'error');
+      }
+      log('<br>', 'info');
+
+      // ========================================
+      // PASO 5: CERRAR SESIÓN (si hay alguna)
+      // ========================================
+      log('🚪 <strong>PASO 5: Cerrando sesión</strong>', 'info');
+      try {
+        await signOut(auth);
+        log('   ✅ Sesión cerrada', 'success');
+      } catch (error) {
+        log('   ℹ️ No había sesión activa', 'info');
+      }
+      log('<br>', 'info');
+
+      // ========================================
+      // RESUMEN FINAL
+      // ========================================
+      log('════════════════════════════════════', 'success');
+      log('🎉 <strong>RESET COMPLETADO</strong>', 'success');
+      log('════════════════════════════════════', 'success');
+      log('<br>', 'success');
+      log('✅ Firebase Authentication: <strong>0 usuarios</strong>', 'success');
+      log('✅ Firestore /users: <strong>0 documentos</strong>', 'success');
+      log('✅ Contador Rally: <strong>0/1000</strong>', 'success');
+      log('✅ localStorage: <strong>vacío</strong>', 'success');
+      log('<br>', 'success');
+      log('🚀 <strong>Sistema limpio y listo para empezar desde cero</strong>', 'success');
+      log('<br>', 'success');
+      log('La página se recargará en 5 segundos...', 'info');
+
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 5000);
+    };
+  </script>
+</body>
+</html>
+

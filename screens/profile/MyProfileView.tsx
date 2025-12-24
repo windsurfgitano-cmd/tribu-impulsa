@@ -643,10 +643,13 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual</label>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual *</label>
                   <select
-                    value={editRevenue}
-                    onChange={(e) => setEditRevenue(e.target.value)}
+                    value={editRevenue || ''}
+                    onChange={(e) => {
+                      setEditRevenue(e.target.value);
+                      console.log('💰 Revenue actualizado:', e.target.value);
+                    }}
                     className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                   >
                     <option value="">Selecciona rango...</option>
@@ -736,7 +739,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                             : 'bg-white border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'
                             }`}
                         >
-                          {editSelectedRegions.includes(region.id) ? 'âœ“ ' : ''}{region.shortName}
+                          {editSelectedRegions.includes(region.id) ? '✓ ' : ''}{region.shortName}
                         </button>
                       ))}
                     </div>

@@ -73,6 +73,8 @@ const Dashboard = () => {
       updateOnboardingProgress(currentUser.id, 'viewedChecklistTutorial');
       updateOnboardingProgress(currentUser.id, 'viewedProfileSetup');
       createReminder(currentUser.id, 'welcome');
+      // Marcar onboarding como completo permanentemente
+      markOnboardingComplete(currentUser.id);
     }
     setShowOnboarding(false);
   };

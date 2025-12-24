@@ -126,10 +126,12 @@ export const updateUser = (id: string, updates: Partial<UserProfile>): UserProfi
   const index = users.findIndex(u => u.id === id);
   if (index === -1) return null;
   
+  // Agregar timestamp de actualización
+  const now = new Date().toISOString();
   users[index] = {
     ...users[index],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
   return users[index];

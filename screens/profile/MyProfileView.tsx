@@ -34,7 +34,7 @@ import { validateUserProfile, syncProfileCompletionState } from '../../utils/val
 import { changeUserPassword } from '../../services/realUsersData';
 import { syncProfileToCloud, getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
-import { getAppConfig } from '../../utils/storage';
+import { getAppConfig, clearStoredSession } from '../../utils/storage';
 import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
 import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
 import { AFFINITY_OPTIONS } from '../../types';
@@ -986,15 +986,37 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               {/* Cerrar sesión */}
               <button
                 onClick={() => {
+                  console.log('🚪 Cerrando sesión...');
+                  
                   // Limpiar completamente la sesión
-                  clearStoredSession();
-                  localStorage.removeItem('tribu_session');
-                  localStorage.removeItem('algorithm_seen');
-                  localStorage.removeItem('tribu_current_user');
-                  localStorage.removeItem('tribu_onboarding_completed');
-                  sessionStorage.clear();
-                  // Forzar recarga completa de la página
-                  window.location.href = '/';
+                  try {
+                    clearStoredSession();
+                    localStorage.removeItem('tribu_session');
+                    localStorage.removeItem('algorithm_seen');
+                    localStorage.removeItem('tribu_current_user');
+                    localStorage.removeItem('tribu_onboarding_completed');
+                    
+                    // Limpiar todas las claves de onboarding por usuario
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(key => {
+                      if (key.startsWith('onboarding_complete_')) {
+                        localStorage.removeItem(key);
+                      }
+                    });
+                    
+                    sessionStorage.clear();
+                    
+                    console.log('✅ Sesión limpiada, redirigiendo...');
+                    
+                    // Forzar recarga completa de la página
+                    setTimeout(() => {
+                      window.location.href = '/';
+                    }, 100);
+                  } catch (error) {
+                    console.error('❌ Error cerrando sesión:', error);
+                    // Intentar redireccionar de todas formas
+                    window.location.href = '/';
+                  }
                 }}
                 className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
               >

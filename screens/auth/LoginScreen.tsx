@@ -24,6 +24,26 @@ import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from '../
 import { REGIONS } from '../../constants/geography';
 import { SURVEY_AFFINITY_OPTIONS } from '../../constants';
 
+// Funciones helper para autoformateo de campos
+const autoFormatInstagram = (value: string): string => {
+  const cleaned = value.trim();
+  if (!cleaned) return '';
+  return cleaned.startsWith('@') ? cleaned : `@${cleaned}`;
+};
+
+const autoFormatWebsite = (value: string): string => {
+  const cleaned = value.trim();
+  if (!cleaned) return '';
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+  return `https://${cleaned}`;
+};
+
+const autoFormatPhone = (value: string): string => {
+  const cleaned = value.replace(/\s/g, '').trim();
+  if (!cleaned) return '';
+  return cleaned.startsWith('+569') ? cleaned : `+569${cleaned}`;
+};
+
 const LoginScreen = () => {
   const navigate = useNavigate();
   // Estados del flujo - ahora incluye 'landing' como primera pantalla
@@ -813,11 +833,12 @@ const LoginScreen = () => {
                   type="text"
                   value={registerData.instagram}
                   onChange={(e) => setRegisterData({ ...registerData, instagram: e.target.value })}
+                  onBlur={(e) => setRegisterData({ ...registerData, instagram: autoFormatInstagram(e.target.value) })}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                  placeholder="@usuario"
+                  placeholder="usuario (@ automático)"
                   required
                 />
-                <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">⚠️ Debe ser público</p>
+                <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">⚠️ Debe ser público • @ se agrega automáticamente</p>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Teléfono *</label>
@@ -825,27 +846,35 @@ const LoginScreen = () => {
                   type="tel"
                   value={registerData.phone}
                   onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                  onBlur={(e) => setRegisterData({ ...registerData, phone: autoFormatPhone(e.target.value) })}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                  placeholder="+56912345678"
+                  placeholder="912345678 (+569 automático)"
                   required
                 />
+                <p className="text-[0.5625rem] text-[#7C8193] mt-0.5">+569 se agrega automáticamente</p>
               </div>
             </div>
 
             {/* RRSS Opcionales */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">Web (opcional)</label>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">Web</label>
                 <input
-                  type="url"
+                  type="text"
                   value={registerData.website}
                   onChange={(e) => setRegisterData({ ...registerData, website: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      setRegisterData({ ...registerData, website: autoFormatWebsite(e.target.value) });
+                    }
+                  }}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-xs text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-1 focus:ring-[#6161FF]/30"
                   placeholder="miweb.cl"
                 />
+                <p className="text-[0.45rem] text-[#7C8193] mt-0.5">https:// automático</p>
               </div>
               <div>
-                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">LinkedIn (opcional)</label>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">LinkedIn</label>
                 <input
                   type="text"
                   value={registerData.linkedin}
@@ -855,14 +884,20 @@ const LoginScreen = () => {
                 />
               </div>
               <div>
-                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">TikTok (opcional)</label>
+                <label className="block text-[0.6rem] font-medium text-[#7C8193] mb-1">TikTok</label>
                 <input
                   type="text"
                   value={registerData.tiktok}
                   onChange={(e) => setRegisterData({ ...registerData, tiktok: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      setRegisterData({ ...registerData, tiktok: autoFormatInstagram(e.target.value) });
+                    }
+                  }}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-xs text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-1 focus:ring-[#6161FF]/30"
-                  placeholder="@usuario"
+                  placeholder="usuario"
                 />
+                <p className="text-[0.45rem] text-[#7C8193] mt-0.5">@ automático</p>
               </div>
             </div>
 

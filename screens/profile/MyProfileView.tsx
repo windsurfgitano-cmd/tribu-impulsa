@@ -37,6 +37,7 @@ import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 import { getAppConfig } from '../../utils/storage';
 import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
 import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
+import { AFFINITY_OPTIONS } from '../../types';
 
 
 const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {

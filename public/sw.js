@@ -2,6 +2,10 @@
 // Versionado automático: el timestamp se inyecta en build time
 const CACHE_VERSION = '__BUILD_TIMESTAMP__';
 const CACHE_NAME = `tribu-impulsa-${CACHE_VERSION}`;
+
+// Si el navegador tiene problemas internos con CacheStorage (pasa a veces en Chrome/Windows),
+// desactivamos caching para evitar romper la instalación/actualización del SW.
+let CACHE_DISABLED = false;
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -18,6 +22,10 @@ self.addEventListener('install', (event) => {
       .then((cache) => {
         console.log('[SW] Caching static assets');
         return cache.addAll(STATIC_ASSETS);
+      })
+      .catch((err) => {
+        CACHE_DISABLED = true;
+        console.warn('[SW] CacheStorage no disponible, continuando sin caché:', err);
       })
       .then(() => self.skipWaiting())
   );
@@ -37,6 +45,10 @@ self.addEventListener('activate', (event) => {
               return caches.delete(name);
             })
         );
+      })
+      .catch((err) => {
+        CACHE_DISABLED = true;
+        console.warn('[SW] No se pudo listar/eliminar cachés, continuando:', err);
       })
       .then(() => {
         console.log('[SW] ✅ Cachés antiguas eliminadas, tomando control...');
@@ -87,15 +99,23 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Si la descarga fue exitosa, cachear la nueva versión
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
+          // Si CacheStorage está deshabilitado, no intentamos escribir en caché
+          if (!CACHE_DISABLED) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            }).catch((err) => {
+              CACHE_DISABLED = true;
+              console.warn('[SW] CacheStorage falló, desactivando caché:', err);
+            });
+          }
           return response;
         })
         .catch(() => {
           // Network falló, usar caché como fallback (PWA offline)
+          if (CACHE_DISABLED) {
+            return new Response('Offline', { status: 503 });
+          }
           return caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {
               console.log('[SW] Sirviendo desde caché (offline):', event.request.url);

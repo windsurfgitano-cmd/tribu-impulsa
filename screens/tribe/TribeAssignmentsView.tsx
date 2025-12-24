@@ -7,6 +7,18 @@ import {
   CheckCircle,
   HelpCircle,
   ArrowLeft,
+  Edit2,
+  Save,
+  Instagram,
+  Share2,
+  MapPin,
+  Globe,
+  ArrowRight,
+  Type,
+  LogOut,
+  Crown,
+  Gift,
+  CreditCard,
   Clock,
   RefreshCw,
   Sparkles
@@ -41,6 +53,7 @@ import { saveShareRecord } from '../../services/shareStorage';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';
 import { ProgressBanner } from '../../components/ProgressBanner';
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
+import { NotificationButton } from '../../components/common';
 
 
 const TribeAssignmentsView = () => {

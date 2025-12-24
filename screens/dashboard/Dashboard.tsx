@@ -6,7 +6,8 @@ import {
   Sparkles,
   ArrowRight,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
+  CreditCard
 } from 'lucide-react';
 import { getMyProfile, generateMockMatches } from '../../services/matchService';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';

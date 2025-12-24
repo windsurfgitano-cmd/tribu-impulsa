@@ -10,7 +10,8 @@ import {
   Handshake,
   X,
   CheckCircle,
-  Lock
+  Lock,
+  ChevronRight
 } from 'lucide-react';
 import { getCurrentUser } from '../../services/databaseService';
 import { getMyProfile } from '../../services/matchService';

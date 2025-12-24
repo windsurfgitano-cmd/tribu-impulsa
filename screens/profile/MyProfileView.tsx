@@ -11,7 +11,18 @@ import {
   Type,
   CheckCircle,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  Instagram,
+  Share2,
+  MapPin,
+  Globe,
+  ArrowRight,
+  LogOut,
+  Crown,
+  Gift,
+  CreditCard,
+  Bell,
+  Sparkles
 } from 'lucide-react';
 import { getMyProfile } from '../../services/matchService';
 import { getCurrentUser, updateUser } from '../../services/databaseService';
@@ -22,6 +33,7 @@ import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from '../
 import { validateUserProfile, syncProfileCompletionState } from '../../utils/validation';
 import { changeUserPassword } from '../../services/realUsersData';
 import { syncProfileToCloud } from '../../services/firebaseService';
+import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 
 
 const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {

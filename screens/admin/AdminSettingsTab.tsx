@@ -3,7 +3,9 @@ import {
   Save,
   RefreshCw,
   Users,
-  BarChart3
+  BarChart3,
+  CreditCard,
+  HelpCircle
 } from 'lucide-react';
 
 

@@ -3,12 +3,16 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  Bell,
+  Calendar,
+  ChevronRight,
   Instagram,
   Globe,
   MapPin,
   Briefcase,
   MessageCircle,
-  Share2
+  Share2,
+  X
 } from 'lucide-react';
 import { MatchProfile } from '../../types';
 import { getProfileById } from '../../services/matchService';

@@ -271,15 +271,79 @@ export const markNotificationAsRead = (id: string): void => {
   if (index !== -1) {
     notifications[index].read = true;
     localStorage.setItem(DB_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    
+    // 🔥 SINCRONIZAR A FIREBASE
+    syncNotificationReadToFirebase(id).catch(err =>
+      console.error('⚠️ Error sincronizando notificación leída:', err)
+    );
   }
 };
 
 export const markAllNotificationsAsRead = (userId: string): void => {
   const notifications = getAllNotifications();
+  const notifIds: string[] = [];
+  
   notifications.forEach(n => {
-    if (n.userId === userId) n.read = true;
+    if (n.userId === userId && !n.read) {
+      n.read = true;
+      notifIds.push(n.id);
+    }
   });
+  
   localStorage.setItem(DB_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+  
+  // 🔥 SINCRONIZAR A FIREBASE
+  if (notifIds.length > 0) {
+    syncAllNotificationsReadToFirebase(notifIds).catch(err =>
+      console.error('⚠️ Error sincronizando notificaciones leídas:', err)
+    );
+  }
+};
+
+// 🔥 Función para sincronizar notificación leída a Firebase
+const syncNotificationReadToFirebase = async (notificationId: string): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, updateDoc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    await updateDoc(doc(db, 'notifications', notificationId), {
+      read: true,
+      readAt: new Date().toISOString()
+    });
+
+    console.log('✅ Notificación marcada como leída en Firebase');
+  } catch (error) {
+    console.error('❌ Error sincronizando notificación leída:', error);
+    throw error;
+  }
+};
+
+// 🔥 Función para sincronizar múltiples notificaciones leídas a Firebase
+const syncAllNotificationsReadToFirebase = async (notificationIds: string[]): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, updateDoc, writeBatch } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    const batch = writeBatch(db);
+    const readAt = new Date().toISOString();
+
+    notificationIds.forEach(id => {
+      const notifRef = doc(db, 'notifications', id);
+      batch.update(notifRef, { read: true, readAt });
+    });
+
+    await batch.commit();
+    console.log(`✅ ${notificationIds.length} notificaciones marcadas como leídas en Firebase`);
+  } catch (error) {
+    console.error('❌ Error sincronizando notificaciones leídas:', error);
+    throw error;
+  }
 };
 
 // ================== INTERACTIONS ==================
@@ -298,6 +362,11 @@ export const createInteraction = (data: Omit<Interaction, 'id' | 'createdAt' | '
   };
   interactions.push(newInteraction);
   localStorage.setItem(DB_KEYS.INTERACTIONS, JSON.stringify(interactions));
+  
+  // 🔥 SINCRONIZAR A FIREBASE
+  syncInteractionToFirebase(newInteraction).catch(err =>
+    console.error('⚠️ Error sincronizando interacción:', err)
+  );
   
   // Crear notificación para el destinatario
   const fromUser = getUserById(data.fromUserId);
@@ -328,6 +397,52 @@ export const updateInteractionStatus = (id: string, status: Interaction['status'
   if (index !== -1) {
     interactions[index].status = status;
     localStorage.setItem(DB_KEYS.INTERACTIONS, JSON.stringify(interactions));
+    
+    // 🔥 SINCRONIZAR A FIREBASE
+    syncInteractionUpdateToFirebase(id, status).catch(err =>
+      console.error('⚠️ Error sincronizando actualización de interacción:', err)
+    );
+  }
+};
+
+// 🔥 Funciones para sincronizar interacciones a Firebase
+const syncInteractionToFirebase = async (interaction: Interaction): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    await setDoc(doc(db, 'interactions', interaction.id), {
+      ...interaction,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('✅ Interacción sincronizada a Firebase');
+  } catch (error) {
+    console.error('❌ Error sincronizando interacción:', error);
+    throw error;
+  }
+};
+
+const syncInteractionUpdateToFirebase = async (id: string, status: string): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    await updateDoc(doc(db, 'interactions', id), {
+      status,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('✅ Estado de interacción actualizado en Firebase');
+  } catch (error) {
+    console.error('❌ Error actualizando interacción:', error);
+    throw error;
   }
 };
 

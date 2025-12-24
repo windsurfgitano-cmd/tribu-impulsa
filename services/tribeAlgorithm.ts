@@ -196,11 +196,49 @@ export const generateAllTribeAssignments = (): Map<string, TribeAssignment> => {
   return assignments;
 };
 
-// Guardar asignaciones en localStorage
+// Guardar asignaciones en localStorage Y Firebase
 export const saveTribeAssignments = (assignments: Map<string, TribeAssignment>): void => {
   const obj = Object.fromEntries(assignments);
+  const timestamp = new Date().toISOString();
+  
+  // Guardar localmente
   localStorage.setItem('tribu_assignments', JSON.stringify(obj));
-  localStorage.setItem('tribu_assignments_updated', new Date().toISOString());
+  localStorage.setItem('tribu_assignments_updated', timestamp);
+  
+  // 🔥 SINCRONIZAR A FIREBASE
+  syncAssignmentsToFirebase(obj, timestamp).catch(err =>
+    console.error('⚠️ Error sincronizando asignaciones a Firebase:', err)
+  );
+};
+
+// 🔥 Función para sincronizar asignaciones a Firebase
+const syncAssignmentsToFirebase = async (
+  assignments: Record<string, TribeAssignment>,
+  timestamp: string
+): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) {
+      console.warn('⚠️ Firestore no disponible, asignaciones solo guardadas localmente');
+      return;
+    }
+
+    // Guardar todas las asignaciones en un solo documento
+    await setDoc(doc(db, 'tribe_assignments', 'current'), {
+      assignments,
+      updatedAt: serverTimestamp(),
+      localTimestamp: timestamp,
+      month: new Date().toISOString().slice(0, 7)
+    }, { merge: true });
+
+    console.log('✅ Asignaciones de Tribu sincronizadas a Firebase');
+  } catch (error) {
+    console.error('❌ Error en sincronización de asignaciones:', error);
+    throw error;
+  }
 };
 
 // Cargar asignaciones desde localStorage

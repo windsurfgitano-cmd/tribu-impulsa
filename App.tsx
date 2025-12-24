@@ -36,33 +36,37 @@ initializeFirebase();
     await forceReloadRealUsers();
     console.log('✅ Usuarios cargados y sincronizados');
 
-    // 🧹 LIMPIEZA: Eliminar perfiles incompletos
-    try {
-      const { cleanupIncompleteProfiles } = await import('./services/realUsersData');
-      const result = await cleanupIncompleteProfiles();
-      if (result.deleted > 0) {
-        console.log(`🧹 ${result.deleted} perfiles incompletos eliminados`);
-      }
-      if (result.errors.length > 0) {
-        console.warn('⚠️ Errores en limpieza:', result.errors);
-      }
-    } catch (cleanupErr) {
-      console.log('⚠️ Limpieza de perfiles pendiente');
-    }
+    // 🧹 LIMPIEZA AUTOMÁTICA: DESACTIVADA
+    // La limpieza automática estaba borrando perfiles completos por error
+    // Si se necesita limpiar, usar el botón secreto (5 clicks en logo)
+    
+    // // 🧹 LIMPIEZA: Eliminar perfiles incompletos
+    // try {
+    //   const { cleanupIncompleteProfiles } = await import('./services/realUsersData');
+    //   const result = await cleanupIncompleteProfiles();
+    //   if (result.deleted > 0) {
+    //     console.log(`🧹 ${result.deleted} perfiles incompletos eliminados`);
+    //   }
+    //   if (result.errors.length > 0) {
+    //     console.warn('⚠️ Errores en limpieza:', result.errors);
+    //   }
+    // } catch (cleanupErr) {
+    //   console.log('⚠️ Limpieza de perfiles pendiente');
+    // }
 
-    // 🧹 LIMPIEZA: Eliminar emails duplicados (mantener el más reciente)
-    try {
-      const { cleanupDuplicateEmails } = await import('./services/realUsersData');
-      const result = await cleanupDuplicateEmails();
-      if (result.duplicatesRemoved > 0) {
-        console.log(`🧹 ${result.duplicatesRemoved} emails duplicados eliminados (de ${result.duplicatesFound} encontrados)`);
-      }
-      if (result.errors.length > 0) {
-        console.warn('⚠️ Errores en limpieza de duplicados:', result.errors);
-      }
-    } catch (cleanupErr) {
-      console.log('⚠️ Limpieza de duplicados pendiente');
-    }
+    // // 🧹 LIMPIEZA: Eliminar emails duplicados (mantener el más reciente)
+    // try {
+    //   const { cleanupDuplicateEmails } = await import('./services/realUsersData');
+    //   const result = await cleanupDuplicateEmails();
+    //   if (result.duplicatesRemoved > 0) {
+    //     console.log(`🧹 ${result.duplicatesRemoved} emails duplicados eliminados (de ${result.duplicatesFound} encontrados)`);
+    //   }
+    //   if (result.errors.length > 0) {
+    //     console.warn('⚠️ Errores en limpieza de duplicados:', result.errors);
+    //   }
+    // } catch (cleanupErr) {
+    //   console.log('⚠️ Limpieza de duplicados pendiente');
+    // }
 
     // 🗑️ RESET COMPLETO: DESACTIVADO
     // El reset ya se ejecutó exitosamente

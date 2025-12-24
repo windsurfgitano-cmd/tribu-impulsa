@@ -111,7 +111,7 @@ const AppLayout = () => {
         return;
       }
       
-      // Si no estÃ¡ en localStorage, verificar Firebase
+      // Si no está en localStorage, verificar Firebase
       try {
         const membershipData = await fetchMembershipFromCloud(currentUser.id);
         if (membershipData) {
@@ -124,7 +124,7 @@ const AppLayout = () => {
           setIsMember(isActive);
         }
       } catch (err) {
-        console.log('Error verificando membresÃ­a:', err);
+        console.log('Error verificando membresía:', err);
       }
     };
     
@@ -141,11 +141,11 @@ const AppLayout = () => {
   const isDirectory = location.pathname.includes('/directory');
   const isBeneficios = location.pathname.includes('/beneficios');
 
-  // FunciÃ³n para navegar con verificaciÃ³n de membresÃ­a
+  // Función para navegar con verificación de membresía
   const navigateWithCheck = (path: string, requiresMembership: boolean) => {
     // Bloquear acceso a Mi Tribu hasta 1000 perfiles
     if (path === '/tribe' && navGlobalProgress.current < navGlobalProgress.target) {
-      alert('Â¡Mi Tribu se desbloquearÃ¡ cuando lleguemos a 1000 perfiles completos!');
+      alert('¡Mi Tribu se desbloqueará cuando lleguemos a 1000 perfiles completos!');
       return;
     }
     
@@ -165,7 +165,7 @@ const AppLayout = () => {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl animate-slideIn">
+          <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] md:max-w-md bg-white shadow-2xl animate-slideIn">
             <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-white">Menú</h2>
@@ -202,7 +202,7 @@ const AppLayout = () => {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-gray-500">Santander Academia</p>
-                  <p className="text-xs text-gray-400">PrÃ³ximamente</p>
+                  <p className="text-xs text-gray-400">Próximamente</p>
                 </div>
               </button>
 
@@ -262,7 +262,7 @@ const AppLayout = () => {
             {/* Menú Hamburguesa */}
             <button
               onClick={() => setShowMenu(true)}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${showMenu ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 relative ${showMenu ? 'text-[#6161FF] bg-[#6161FF]/10' : 'text-[#7C8193] hover:text-[#181B34] hover:bg-[#F5F7FB] active:scale-95'
                 }`}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={showMenu ? 2.5 : 1.8} strokeLinecap="round">
@@ -276,8 +276,8 @@ const AppLayout = () => {
             {/* Inicio - BLOQUEADO para invitados */}
             <button
               onClick={() => navigateWithCheck('/dashboard', true)}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${isDashboard ? 'text-[#6161FF]' :
-                !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 relative ${isDashboard ? 'text-[#6161FF] bg-[#6161FF]/10' :
+                !isMember ? 'text-[#B3B8C6] cursor-not-allowed' : 'text-[#7C8193] hover:text-[#181B34] hover:bg-[#F5F7FB] active:scale-95'
                 }`}
             >
               <Home size={22} strokeWidth={isDashboard ? 2.5 : 1.8} />
@@ -288,7 +288,7 @@ const AppLayout = () => {
             {/* Checklist / Mi Tribu - BLOQUEADO para invitados */}
             <button
               onClick={() => navigateWithCheck('/tribe', true)}
-              className="flex flex-col items-center justify-center -mt-4 relative"
+              className="flex flex-col items-center justify-center -mt-4 relative transition-all duration-200 active:scale-95"
             >
               <div className={`w-14 h-14 rounded-full flex items-center justify-center backdrop-blur-xl border border-white/30 shadow-lg ${!isMember ? 'bg-[#7C8193]/60' : 'bg-[#E91E63]/90'
                 }`}
@@ -307,8 +307,8 @@ const AppLayout = () => {
             {/* Beneficios - BLOQUEADO para invitados */}
             <button
               onClick={() => navigateWithCheck('/beneficios', true)}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors relative ${isBeneficios ? 'text-[#6161FF]' :
-                !isMember ? 'text-[#B3B8C6]' : 'text-[#7C8193] hover:text-[#181B34]'
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 relative ${isBeneficios ? 'text-[#6161FF] bg-[#6161FF]/10' :
+                !isMember ? 'text-[#B3B8C6] cursor-not-allowed' : 'text-[#7C8193] hover:text-[#181B34] hover:bg-[#F5F7FB] active:scale-95'
                 }`}
             >
               <Gift size={22} strokeWidth={isBeneficios ? 2.5 : 1.8} />
@@ -316,10 +316,10 @@ const AppLayout = () => {
               {!isMember && <Lock size={10} className="absolute top-1 right-1 text-[#FB275D]" />}
             </button>
 
-            {/* ConfiguraciÃ³n/Perfil - LIBRE para todos */}
+            {/* Configuración/Perfil - LIBRE para todos */}
             <button
               onClick={() => navigate('/my-profile')}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-colors ${isProfile ? 'text-[#6161FF]' : 'text-[#7C8193] hover:text-[#181B34]'}`}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all duration-200 ${isProfile ? 'text-[#6161FF] bg-[#6161FF]/10' : 'text-[#7C8193] hover:text-[#181B34] hover:bg-[#F5F7FB] active:scale-95'}`}
             >
               <Settings size={22} strokeWidth={isProfile ? 2.5 : 1.8} />
               <span className="text-[0.625rem] mt-1 font-medium">Ajustes</span>

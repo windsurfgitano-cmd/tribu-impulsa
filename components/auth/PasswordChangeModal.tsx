@@ -48,12 +48,11 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ onComp
           backgroundColor: 'white',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '400px',
           maxHeight: '85vh',
           overflowY: 'auto',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         }}
-        className="animate-slideUp"
+        className="animate-slideUp max-w-[400px] md:max-w-[500px]"
       >
         <div className="p-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FFCC00] to-[#FFE066] flex items-center justify-center text-3xl shadow-lg">

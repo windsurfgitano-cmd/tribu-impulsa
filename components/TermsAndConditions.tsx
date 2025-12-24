@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Download, FileText, CheckCircle, Shield, Users, Lock, Mail } from 'lucide-react';
 
 // Contenido de Políticas de Privacidad y Protección de Datos
@@ -221,10 +222,13 @@ export const TermsModal: React.FC<TermsModalProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
+  return createPortal(
+    <div 
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <div 
-        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-full md:max-w-2xl max-h-[90vh] flex flex-col shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -309,7 +313,8 @@ export const TermsModal: React.FC<TermsModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

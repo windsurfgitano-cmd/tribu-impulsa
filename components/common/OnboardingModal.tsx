@@ -124,12 +124,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ onComplete }) 
           backgroundColor: 'white',
           borderRadius: '24px',
           width: '100%',
-          maxWidth: '400px',
-          maxHeight: '80vh',
+          maxHeight: '85vh',
           overflowY: 'auto',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         }}
-        className="animate-slideUp">
+        className="animate-slideUp max-w-[400px] md:max-w-[500px]">
         {/* Progress */}
         <div className="flex gap-1 p-4">
           {TUTORIAL_STEPS.map((_, i) => (

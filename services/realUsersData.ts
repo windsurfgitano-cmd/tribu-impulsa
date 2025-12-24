@@ -358,18 +358,31 @@ export const getUserByEmail = (email: string): (UserProfile & { firstLogin?: boo
 export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
   try {
     const { getFirestoreInstance } = await import('./firebaseService');
-    const { collection, query, where, getDocs } = await import('firebase/firestore');
+    const { collection, getDocs } = await import('firebase/firestore');
     const db = getFirestoreInstance();
 
     if (!db) return null;
 
-    const q = query(collection(db, 'users'), where('email', '==', email.toLowerCase()));
-    const querySnapshot = await getDocs(q);
+    // Buscar todos los usuarios y filtrar por email case-insensitive
+    // Firebase no soporta case-insensitive queries directamente
+    const emailLower = email.toLowerCase();
+    const querySnapshot = await getDocs(collection(db, 'users'));
 
     if (querySnapshot.empty) return null;
 
-    const userData = querySnapshot.docs[0].data();
-    const userId = querySnapshot.docs[0].id;
+    // Buscar el usuario con el email correcto (case-insensitive)
+    const userDoc = querySnapshot.docs.find(doc => {
+      const data = doc.data();
+      return data.email && data.email.toLowerCase() === emailLower;
+    });
+
+    if (!userDoc) {
+      console.log('🔍 Usuario no encontrado en Firebase con email:', email);
+      return null;
+    }
+
+    const userData = userDoc.data();
+    const userId = userDoc.id;
 
     // Convertir datos de Firebase a formato UserProfile
     const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {

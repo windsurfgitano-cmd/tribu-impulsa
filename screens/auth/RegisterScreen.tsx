@@ -108,13 +108,20 @@ const RegisterScreen = () => {
       if (!formData.category) newErrors.category = 'Selecciona un giro';
     } else if (step === 4) {
       if (!formData.affinity) newErrors.affinity = 'Selecciona una afinidad';
-      // Validar geografía según alcance
-      if (formData.scope === 'LOCAL' && !formData.comuna) {
-        newErrors.comuna = 'Selecciona tu comuna';
+      
+      // Validar alcance geográfico
+      if (!formData.scope) {
+        newErrors.scope = 'Selecciona tu alcance';
+      } else if (formData.scope === 'LOCAL') {
+        // LOCAL: Requiere comuna
+        if (!formData.comuna) newErrors.comuna = 'Selecciona tu comuna';
+      } else if (formData.scope === 'REGIONAL') {
+        // REGIONAL: Requiere regiones seleccionadas
+        if (formData.selectedRegions.length === 0) {
+          newErrors.selectedRegions = 'Selecciona al menos una región';
+        }
       }
-      if (formData.scope === 'REGIONAL' && formData.selectedRegions.length === 0) {
-        newErrors.selectedRegions = 'Selecciona al menos una región';
-      }
+      // NACIONAL: No requiere validación adicional
     } else if (step === 5) {
       if (!formData.instagram.trim()) newErrors.instagram = 'Instagram es requerido';
     }

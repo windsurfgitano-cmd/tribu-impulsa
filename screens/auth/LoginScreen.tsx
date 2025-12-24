@@ -219,14 +219,21 @@ const LoginScreen = () => {
       return;
     }
 
-    // Validar ubicación
-    if (!registerData.scope || !registerData.city) {
-      setError('Por favor indica tu ubicación');
+    // Validar alcance geográfico
+    if (!registerData.scope) {
+      setError('Por favor selecciona tu alcance geográfico');
       return;
     }
 
     // Validación según alcance geográfico
-    if (registerData.scope === 'LOCAL') {
+    if (registerData.scope === 'NACIONAL') {
+      // NACIONAL: No requiere ciudad, región ni comuna
+      // Se saltea todas las validaciones geográficas
+    } else if (registerData.scope === 'LOCAL') {
+      if (!registerData.city) {
+        setError('Por favor indica tu ciudad');
+        return;
+      }
       if (!registerData.comuna) {
         setError('Por favor indica tu comuna para alcance LOCAL');
         return;
@@ -237,7 +244,6 @@ const LoginScreen = () => {
         return;
       }
     }
-    // NACIONAL no requiere validación adicional
 
     // Validar biografía y descripción
     if (registerData.bio.length < 50) {

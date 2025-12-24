@@ -51,6 +51,19 @@
         background: #7C8193;
       }
     </style>
+    <!-- 🔍 Consola de debugging móvil (solo en desarrollo) -->
+    <script>
+      // Solo cargar en móvil Y si está en modo debug
+      if (/Android|webOS|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const isDebug = localStorage.getItem('tribu_debug_mode') === 'true';
+        if (isDebug) {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+          document.body.appendChild(script);
+          script.onload = () => window.eruda.init();
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

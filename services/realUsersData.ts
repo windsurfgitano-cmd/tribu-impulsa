@@ -1082,4 +1082,122 @@ export const diagnoseUsers = async (): Promise<{
   return result;
 };
 
+// 🗑️ RESET COMPLETO: Borrar TODAS las cuentas (localStorage + Firebase)
+export const deleteAllAccounts = async (): Promise<{
+  localDeleted: number;
+  firebaseDeleted: number;
+  errors: string[];
+}> => {
+  console.log('🗑️ INICIANDO RESET COMPLETO - BORRANDO TODAS LAS CUENTAS...');
+  
+  const errors: string[] = [];
+  let localDeleted = 0;
+  let firebaseDeleted = 0;
+
+  // 1. Borrar todas las cuentas de localStorage
+  try {
+    const localUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]') as UserProfile[];
+    console.log(`📦 Encontradas ${localUsers.length} cuentas en localStorage`);
+    
+    localUsers.forEach(user => {
+      try {
+        // Borrar usando deleteUser que maneja todo
+        const deleted = deleteUser(user.id);
+        if (deleted) {
+          localDeleted++;
+          console.log(`  ✅ Borrada de localStorage: ${user.email}`);
+        }
+      } catch (error) {
+        const errorMsg = `Error borrando ${user.email} de localStorage: ${error}`;
+        console.error(errorMsg);
+        errors.push(errorMsg);
+      }
+    });
+
+    // Limpiar array completo
+    localStorage.removeItem('tribu_users');
+    console.log(`✅ ${localDeleted} cuentas borradas de localStorage`);
+    
+  } catch (error) {
+    const errorMsg = `Error limpiando localStorage: ${error}`;
+    console.error(errorMsg);
+    errors.push(errorMsg);
+  }
+
+  // 2. Borrar todas las cuentas de Firebase
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { collection, getDocs, deleteDoc, doc } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+    
+    if (db) {
+      console.log('🔥 Conectando a Firebase...');
+      const usersSnapshot = await getDocs(collection(db, 'users'));
+      console.log(`📦 Encontradas ${usersSnapshot.size} cuentas en Firebase`);
+      
+      for (const userDoc of usersSnapshot.docs) {
+        try {
+          await deleteDoc(doc(db, 'users', userDoc.id));
+          firebaseDeleted++;
+          const userData = userDoc.data();
+          console.log(`  ✅ Borrada de Firebase: ${userData.email}`);
+        } catch (error) {
+          const errorMsg = `Error borrando ${userDoc.id} de Firebase: ${error}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
+        }
+      }
+      
+      console.log(`✅ ${firebaseDeleted} cuentas borradas de Firebase`);
+    } else {
+      console.warn('⚠️ Firebase no disponible, solo se limpiaron cuentas locales');
+    }
+  } catch (error) {
+    const errorMsg = `Error limpiando Firebase: ${error}`;
+    console.error(errorMsg);
+    errors.push(errorMsg);
+  }
+
+  // 3. Limpiar datos relacionados
+  try {
+    console.log('🧹 Limpiando datos relacionados...');
+    localStorage.removeItem('tribu_session');
+    localStorage.removeItem('tribu_current_user');
+    localStorage.removeItem('algorithm_seen');
+    localStorage.removeItem('tribu_onboarding_completed');
+    
+    // Limpiar todas las claves de onboarding por usuario
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('onboarding_complete_')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    sessionStorage.clear();
+    console.log('✅ Datos relacionados limpiados');
+  } catch (error) {
+    console.error('⚠️ Error limpiando datos relacionados:', error);
+  }
+
+  const summary = {
+    localDeleted,
+    firebaseDeleted,
+    errors
+  };
+
+  console.log('');
+  console.log('🎉 ========================================');
+  console.log('   RESET COMPLETO TERMINADO');
+  console.log('🎉 ========================================');
+  console.log(`   📦 localStorage: ${localDeleted} cuentas eliminadas`);
+  console.log(`   🔥 Firebase: ${firebaseDeleted} cuentas eliminadas`);
+  console.log(`   ❌ Errores: ${errors.length}`);
+  console.log('   ✨ Sistema limpio - listo para empezar desde cero');
+  console.log('========================================');
+  console.log('');
+
+  return summary;
+};
+
 export default REAL_USERS;

@@ -64,6 +64,16 @@ initializeFirebase();
       console.log('⚠️ Limpieza de duplicados pendiente');
     }
 
+    // 🗑️ RESET COMPLETO: Descomentar SOLO para borrar TODAS las cuentas
+    // ADVERTENCIA: Esto borra TODO de localStorage Y Firebase
+    // try {
+    //   const { deleteAllAccounts } = await import('./services/realUsersData');
+    //   const result = await deleteAllAccounts();
+    //   console.log(`🗑️ RESET: ${result.localDeleted} local + ${result.firebaseDeleted} Firebase eliminadas`);
+    // } catch (resetErr) {
+    //   console.error('❌ Error en reset:', resetErr);
+    // }
+
     // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
     try {
       const { syncPhotosFromFirebase } = await import('./services/firebaseService');

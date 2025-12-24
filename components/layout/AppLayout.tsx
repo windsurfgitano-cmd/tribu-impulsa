@@ -16,6 +16,7 @@ import {
 import { getCurrentUser } from '../../services/databaseService';
 import { getMyProfile } from '../../services/matchService';
 import { clearStoredSession } from '../../utils/storage';
+import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
 import { LoginScreen } from '../../screens/auth';
 import { RegisterScreen } from '../../screens/auth';
 import { SurveyScreen } from '../../screens/survey';

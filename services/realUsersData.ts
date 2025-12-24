@@ -786,10 +786,31 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
   try {
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc } = await import('firebase/firestore');
+    const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
     const db = getFirestoreInstance();
 
     if (db) {
-      // Guardar usuario completo en Firebase con TODOS los campos
+      // 🔐 PASO 1: Crear usuario en Firebase Authentication
+      try {
+        const auth = getAuth();
+        console.log('🔐 [REGISTER] Creando usuario en Firebase Authentication...');
+        const userCredential = await createUserWithEmailAndPassword(
+          auth, 
+          newUser.email, 
+          newUser.password
+        );
+        console.log('✅ [REGISTER] Usuario creado en Authentication:', userCredential.user.uid);
+      } catch (authError: any) {
+        if (authError.code === 'auth/email-already-in-use') {
+          console.warn('⚠️ [REGISTER] Email ya existe en Authentication (OK, continuando)');
+        } else {
+          console.error('❌ [REGISTER] Error en Authentication:', authError);
+          throw authError;
+        }
+      }
+
+      // 📦 PASO 2: Guardar usuario completo en Firestore
+      console.log('📦 [REGISTER] Guardando perfil completo en Firestore...');
       await setDoc(doc(db, 'users', newUser.id), {
         id: newUser.id,
         email: newUser.email,
@@ -826,7 +847,7 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
         createdAt: newUser.createdAt,
         source: 'app_registration'
       });
-      console.log('☁️ Nuevo usuario guardado en Firebase:', newUser.email);
+      console.log('✅ [REGISTER] Usuario guardado en Firestore:', newUser.email);
 
       // 📊 Actualizar contador global de perfiles
       const { getDoc, updateDoc, increment } = await import('firebase/firestore');

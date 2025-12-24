@@ -48,6 +48,7 @@ const LoginScreen = () => {
   const navigate = useNavigate();
   // Estados del flujo - ahora incluye 'landing' como primera pantalla
   const [step, setStep] = useState<'landing' | 'email' | 'password' | 'register' | 'forgot'>('landing');
+  const [userIntent, setUserIntent] = useState<'login' | 'register'>('register'); // Intención del usuario
   const [resetSent, setResetSent] = useState(false);
   const [resetClicks, setResetClicks] = useState(0);
   const [email, setEmail] = useState('');
@@ -167,12 +168,25 @@ const LoginScreen = () => {
 
     setIsLoading(false);
 
-    if (existingUser) {
-      // Usuario existe → pedir contraseña
-      setStep('password');
+    // Lógica basada en la intención del usuario
+    if (userIntent === 'login') {
+      // Usuario quiere INICIAR SESIÓN
+      if (existingUser) {
+        // ✅ Usuario existe → pedir contraseña
+        setStep('password');
+      } else {
+        // ❌ Usuario NO existe → mostrar error
+        setError('Este email no está registrado. ¿Quieres crear una cuenta?');
+      }
     } else {
-      // Usuario NO existe → mostrar registro
-      setStep('register');
+      // Usuario quiere REGISTRARSE
+      if (existingUser) {
+        // ❌ Usuario YA existe → mostrar error
+        setError('Este email ya está registrado. ¿Quieres iniciar sesión?');
+      } else {
+        // ✅ Usuario NO existe → mostrar registro
+        setStep('register');
+      }
     }
   };
 
@@ -570,7 +584,11 @@ const LoginScreen = () => {
             <div className="space-y-3">
               {/* CTA Principal - Nuevo usuario */}
               <button
-                onClick={() => setStep('email')}
+                onClick={() => {
+                  setUserIntent('register');
+                  setStep('email');
+                  setError('');
+                }}
                 className="w-full bg-gradient-to-r from-[#6161FF] via-[#7B5EFF] to-[#8B5CF6] text-white py-4 rounded-xl font-bold text-lg hover:shadow-[0_8px_25px_rgba(97,97,255,0.45)] transition-all shadow-xl flex items-center justify-center gap-3 group relative overflow-hidden transform hover:scale-[1.02]"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 animate-shimmer" />
@@ -581,7 +599,11 @@ const LoginScreen = () => {
 
               {/* Botón secundario - Ya tengo cuenta */}
               <button
-                onClick={() => setStep('email')}
+                onClick={() => {
+                  setUserIntent('login');
+                  setStep('email');
+                  setError('');
+                }}
                 className="w-full bg-white border-2 border-[#6161FF] text-[#6161FF] py-3 rounded-xl font-semibold hover:bg-[#6161FF]/5 transition-all flex items-center justify-center gap-2"
               >
                 <UserIcon size={18} />
@@ -595,7 +617,11 @@ const LoginScreen = () => {
         {step === 'email' && (
           <>
             <p className="text-[#7C8193] mb-6 text-sm text-center -mt-2">
-              Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span>.
+              {userIntent === 'login' ? (
+                <>Ingresa tu email para <span className="text-[#6161FF] font-semibold">iniciar sesión</span></>
+              ) : (
+                <>Conecta, colabora y crece con el <span className="text-[#6161FF] font-semibold">Algoritmo Tribal</span></>
+              )}
             </p>
             <form onSubmit={handleEmailCheck} className="space-y-4 text-left">
               <div>
@@ -603,21 +629,63 @@ const LoginScreen = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(''); // Limpiar error al escribir
+                  }}
                   className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3.5 text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
                   placeholder="tu@email.com"
                   autoFocus
                 />
               </div>
 
-              {error && <p className="text-[#FB275D] text-sm text-center">{error}</p>}
+              {error && (
+                <div className="bg-[#FFF0F5] border border-[#FB275D]/30 rounded-lg p-3 text-sm">
+                  <p className="text-[#FB275D] font-medium">{error}</p>
+                  {userIntent === 'register' && error.includes('ya está registrado') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserIntent('login');
+                        setError('');
+                        handleEmailCheck({ preventDefault: () => {} } as FormEvent);
+                      }}
+                      className="mt-2 text-[#6161FF] font-semibold hover:underline"
+                    >
+                      → Ir a iniciar sesión
+                    </button>
+                  )}
+                  {userIntent === 'login' && error.includes('no está registrado') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserIntent('register');
+                        setError('');
+                        setStep('register');
+                      }}
+                      className="mt-2 text-[#6161FF] font-semibold hover:underline"
+                    >
+                      → Crear cuenta nueva
+                    </button>
+                  )}
+                </div>
+              )}
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group"
+                disabled={isLoading}
+                className="w-full bg-gradient-to-r from-[#6161FF] to-[#8B8BFF] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(97,97,255,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50"
               >
-                Continuar
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                {isLoading ? 'Verificando...' : 'Continuar'}
+                {!isLoading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStep('landing')}
+                className="w-full text-[#7C8193] text-sm hover:text-[#6161FF] transition-colors"
+              >
+                ← Volver
               </button>
             </form>
           </>

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧹 Exportar y Limpiar Firebase</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #6161FF;
+      margin-bottom: 10px;
+    }
+    .status {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .info { background: #E3F2FD; border-left: 4px solid #2196F3; }
+    .success { background: #E8F5E9; border-left: 4px solid #4CAF50; }
+    .error { background: #FFEBEE; border-left: 4px solid #F44336; }
+    .warning { background: #FFF3E0; border-left: 4px solid #FF9800; }
+    button {
+      background: linear-gradient(135deg, #6161FF 0%, #8B5CF6 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 10px 5px;
+      transition: all 0.3s;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(97,97,255,0.4); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.danger { background: linear-gradient(135deg, #FF6B6B 0%, #FF5252 100%); }
+    button.success { background: linear-gradient(135deg, #00CA72 0%, #00A85A 100%); }
+    .user-card {
+      background: #F5F7FB;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 10px;
+      border-left: 4px solid #6161FF;
+    }
+    .export-data {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px 0;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    .step {
+      background: white;
+      border: 2px solid #6161FF;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 10px;
+    }
+    .step h3 {
+      color: #6161FF;
+      margin-top: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧹 Limpieza Total de Firebase</h1>
+    <p><strong>PLAN:</strong> Exportar 2 cuentas buenas → Borrar TODO → Empezar limpio</p>
+    
+    <div class="step">
+      <h3>PASO 1: Ver todas las cuentas en Firestore</h3>
+      <button onclick="listAllUsers()">📋 Ver TODAS las cuentas</button>
+      <div id="all-users"></div>
+    </div>
+
+    <div class="step">
+      <h3>PASO 2: Exportar las 2 cuentas buenas</h3>
+      <p>IDs a exportar:</p>
+      <ul>
+        <li><code>user_1766613947922_76zx73p8o</code></li>
+        <li><code>user_1766615066188_0lz3ib1cb</code></li>
+      </ul>
+      <button onclick="exportGoodUsers()" class="success">💾 Exportar estas 2 cuentas</button>
+      <div id="export-result"></div>
+    </div>
+
+    <div class="step">
+      <h3>PASO 3: BORRAR TODO de Firestore</h3>
+      <p><strong>⚠️ ADVERTENCIA:</strong> Esto borrará TODOS los usuarios de Firestore.</p>
+      <button onclick="deleteAllFirestore()" class="danger">🗑️ BORRAR TODO Firestore</button>
+    </div>
+
+    <div class="step">
+      <h3>PASO 4: Resetear contador a 0</h3>
+      <button onclick="resetCounter()" class="danger">🔄 Resetear contador</button>
+    </div>
+
+    <div class="step">
+      <h3>PASO 5: Re-crear las 2 cuentas limpias</h3>
+      <p>Usa los datos exportados del PASO 2</p>
+      <button onclick="recreateUsers()" class="success">✨ Re-crear 2 cuentas</button>
+    </div>
+
+    <div id="status"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getFirestore, collection, getDocs, doc, deleteDoc, setDoc, writeBatch } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getAuth, createUserWithEmailAndPassword, deleteUser as deleteAuthUser } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDvAxWWNJYxW_VEDrjXLcjxoGaCQnqPVGk",
+      authDomain: "tribu-impulsa.firebaseapp.com",
+      projectId: "tribu-impulsa",
+      storageBucket: "tribu-impulsa.firebasestorage.app",
+      messagingSenderId: "614984945425",
+      appId: "1:614984945425:web:ec9e8ca01ddb88d98a79d6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let exportedUsers = [];
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = `status ${type}`;
+      div.innerHTML = message;
+      document.getElementById('status').appendChild(div);
+      console.log(message.replace(/<[^>]*>/g, ''));
+    }
+
+    window.listAllUsers = async function() {
+      document.getElementById('all-users').innerHTML = '';
+      log('🔍 Cargando usuarios de Firestore...', 'info');
+
+      try {
+        const querySnapshot = await getDocs(collection(db, 'users'));
+        
+        if (querySnapshot.empty) {
+          log('⚠️ No hay usuarios en Firestore', 'warning');
+          return;
+        }
+
+        log(`📊 Total: <strong>${querySnapshot.size}</strong> usuarios en Firestore`, 'info');
+        
+        const container = document.getElementById('all-users');
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const card = document.createElement('div');
+          card.className = 'user-card';
+          card.innerHTML = `
+            <strong>${data.name || 'Sin nombre'}</strong><br>
+            📧 ${data.email || 'Sin email'}<br>
+            🏢 ${data.companyName || 'Sin empresa'}<br>
+            🆔 ID: <code>${doc.id}</code><br>
+            📅 Creado: ${data.createdAt ? new Date(data.createdAt).toLocaleString() : 'N/A'}
+          `;
+          container.appendChild(card);
+        });
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    window.exportGoodUsers = async function() {
+      document.getElementById('export-result').innerHTML = '';
+      const goodIds = [
+        'user_1766613947922_76zx73p8o',
+        'user_1766615066188_0lz3ib1cb'
+      ];
+
+      log('💾 Exportando 2 cuentas buenas...', 'info');
+
+      try {
+        const querySnapshot = await getDocs(collection(db, 'users'));
+        exportedUsers = [];
+
+        querySnapshot.forEach((doc) => {
+          if (goodIds.includes(doc.id)) {
+            const data = doc.data();
+            exportedUsers.push({ id: doc.id, ...data });
+            log(`✅ Exportado: <strong>${data.name}</strong> (${data.email})`, 'success');
+          }
+        });
+
+        if (exportedUsers.length === 0) {
+          log('❌ No se encontraron las cuentas especificadas', 'error');
+          return;
+        }
+
+        // Mostrar datos exportados
+        const exportDiv = document.createElement('div');
+        exportDiv.className = 'export-data';
+        exportDiv.innerHTML = `<strong>Datos exportados (${exportedUsers.length} usuarios):</strong><br><br>` +
+          JSON.stringify(exportedUsers, null, 2);
+        document.getElementById('export-result').appendChild(exportDiv);
+
+        // Guardar en localStorage como backup
+        localStorage.setItem('tribu_backup_users', JSON.stringify(exportedUsers));
+        log('💾 Backup guardado en localStorage', 'success');
+
+        // Descargar como JSON
+        const blob = new Blob([JSON.stringify(exportedUsers, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tribu-backup-${Date.now()}.json`;
+        a.click();
+        log('📥 Archivo JSON descargado', 'success');
+
+      } catch (error) {
+        log(`❌ Error exportando: ${error.message}`, 'error');
+      }
+    };
+
+    window.deleteAllFirestore = async function() {
+      const confirmation = prompt('⚠️ PELIGRO: Esto borrará TODOS los usuarios de Firestore.\n\nEscribe "BORRAR TODO" para confirmar:');
+      
+      if (confirmation !== 'BORRAR TODO') {
+        log('❌ Operación cancelada', 'warning');
+        return;
+      }
+
+      log('🗑️ Borrando TODOS los usuarios de Firestore...', 'warning');
+
+      try {
+        const querySnapshot = await getDocs(collection(db, 'users'));
+        let deleted = 0;
+
+        for (const docSnap of querySnapshot.docs) {
+          await deleteDoc(doc(db, 'users', docSnap.id));
+          deleted++;
+          log(`🗑️ Eliminado: ${docSnap.id}`, 'info');
+        }
+
+        log(`✅ <strong>${deleted}</strong> usuarios eliminados de Firestore`, 'success');
+      } catch (error) {
+        log(`❌ Error borrando: ${error.message}`, 'error');
+      }
+    };
+
+    window.resetCounter = async function() {
+      if (!confirm('¿Resetear contador a 0?')) return;
+
+      log('🔄 Reseteando contador...', 'info');
+
+      try {
+        await setDoc(doc(db, 'system_stats', 'global'), {
+          profilesCompleted: 0,
+          membersActive: 0,
+          lastUpdated: new Date().toISOString()
+        });
+
+        log('✅ Contador reseteado a 0', 'success');
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    window.recreateUsers = async function() {
+      if (exportedUsers.length === 0) {
+        log('❌ Primero exporta las cuentas en el PASO 2', 'error');
+        return;
+      }
+
+      if (!confirm(`¿Re-crear ${exportedUsers.length} cuentas?\n\nEstas se crearán en:\n- Firebase Authentication\n- Firestore /users`)) {
+        return;
+      }
+
+      log('✨ Re-creando cuentas limpias...', 'info');
+
+      for (const user of exportedUsers) {
+        try {
+          log(`⏳ Creando: ${user.name} (${user.email})...`, 'info');
+
+          // PASO 1: Crear en Authentication
+          try {
+            await createUserWithEmailAndPassword(auth, user.email, user.password || 'TRIBU2026');
+            log(`🔐 ✅ Creado en Authentication`, 'success');
+          } catch (authError) {
+            if (authError.code === 'auth/email-already-in-use') {
+              log(`⚠️ Email ya existe en Authentication (OK)`, 'warning');
+            } else {
+              throw authError;
+            }
+          }
+
+          // PASO 2: Crear en Firestore
+          await setDoc(doc(db, 'users', user.id), {
+            ...user,
+            createdAt: user.createdAt || new Date().toISOString(),
+            syncedAt: new Date().toISOString()
+          });
+          log(`📦 ✅ Creado en Firestore`, 'success');
+
+          // PASO 3: Incrementar contador
+          const statsRef = doc(db, 'system_stats', 'global');
+          const currentStats = (await getDocs(collection(db, 'system_stats'))).docs[0]?.data() || { profilesCompleted: 0 };
+          await setDoc(statsRef, {
+            profilesCompleted: (currentStats.profilesCompleted || 0) + 1,
+            membersActive: (currentStats.membersActive || 0) + 1,
+            lastUpdated: new Date().toISOString()
+          });
+          log(`📊 ✅ Contador actualizado`, 'success');
+
+          log(`<br>✅ <strong>${user.name}</strong> re-creado completamente<br>`, 'success');
+
+        } catch (error) {
+          log(`❌ Error con ${user.name}: ${error.message}`, 'error');
+        }
+      }
+
+      log(`<br>🎉 <strong>PROCESO COMPLETADO</strong><br>✅ ${exportedUsers.length} cuentas re-creadas<br>✅ Contador actualizado<br>✅ Sistema limpio y funcionando`, 'success');
+    };
+
+    // Auto-listar al cargar
+    setTimeout(listAllUsers, 500);
+  </script>
+</body>
+</html>
+

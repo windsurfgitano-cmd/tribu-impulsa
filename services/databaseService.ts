@@ -118,7 +118,39 @@ export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'upd
   users.push(newUser);
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
   setCurrentUser(newUser.id);
+  
+  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE
+  syncUserToFirebaseAuto(newUser).catch(err => 
+    console.error('⚠️ Error sincronizando usuario a Firebase:', err)
+  );
+  
   return newUser;
+};
+
+// 🔥 Función para sincronizar usuario completo a Firebase
+const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) {
+      console.warn('⚠️ Firestore no disponible, usuario solo guardado localmente');
+      return;
+    }
+
+    // Guardar usuario COMPLETO en Firebase
+    await setDoc(doc(db, 'users', user.id), {
+      ...user,
+      updatedAt: serverTimestamp(),
+      syncedAt: new Date().toISOString()
+    }, { merge: true });
+
+    console.log('✅ Usuario sincronizado automáticamente a Firebase:', user.email);
+  } catch (error) {
+    console.error('❌ Error en sincronización automática:', error);
+    throw error;
+  }
 };
 
 export const updateUser = (id: string, updates: Partial<UserProfile>): UserProfile | null => {
@@ -134,6 +166,12 @@ export const updateUser = (id: string, updates: Partial<UserProfile>): UserProfi
     updatedAt: now
   };
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
+  
+  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE
+  syncUserToFirebaseAuto(users[index]).catch(err => 
+    console.error('⚠️ Error sincronizando actualización a Firebase:', err)
+  );
+  
   return users[index];
 };
 

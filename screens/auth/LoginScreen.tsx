@@ -408,36 +408,43 @@ const LoginScreen = () => {
             setTimeout(() => setResetClicks(0), 2000); // Reset counter después de 2s
             
             if (resetClicks >= 4) { // 5 clicks totales
-              const confirmed = window.confirm('🗑️ ¿LIMPIAR TODO EL SISTEMA?\n\nEsto borrará:\n- Todas las cuentas locales\n- Datos de sesión\n- Cache de onboarding\n- Estadísticas de Firebase\n\n⚠️ NO SE PUEDE DESHACER');
+              // 🔒 SEGURIDAD: Requiere contraseña admin
+              const password = window.prompt('🔒 ACCESO RESTRINGIDO\n\nIngresa la contraseña de administrador:');
               
-              if (confirmed) {
-                (async () => {
-                  console.log('🗑️ Limpiando sistema completo...');
-                  
-                  // 1. Limpiar localStorage y sessionStorage
-                  localStorage.clear();
-                  sessionStorage.clear();
-                  console.log('✅ LocalStorage y sessionStorage limpiados');
-                  
-                  // 2. Resetear contador de Firebase
-                  try {
-                    const db = getFirestoreInstance();
-                    if (db) {
-                      const { doc, setDoc } = await import('firebase/firestore');
-                      await setDoc(doc(db, 'system_stats', 'global'), {
-                        profilesCompleted: 0,
-                        lastUpdated: new Date().toISOString()
-                      });
-                      console.log('✅ Contador de Firebase reseteado a 0');
+              if (password === 'TRIBU2026RESET') {
+                const confirmed = window.confirm('🗑️ ¿LIMPIAR TODO EL SISTEMA?\n\nEsto borrará:\n- Todas las cuentas locales\n- Datos de sesión\n- Cache de onboarding\n- Estadísticas de Firebase\n\n⚠️ NO SE PUEDE DESHACER');
+                
+                if (confirmed) {
+                  (async () => {
+                    console.log('🗑️ Limpiando sistema completo...');
+                    
+                    // 1. Limpiar localStorage y sessionStorage
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    console.log('✅ LocalStorage y sessionStorage limpiados');
+                    
+                    // 2. Resetear contador de Firebase
+                    try {
+                      const db = getFirestoreInstance();
+                      if (db) {
+                        const { doc, setDoc } = await import('firebase/firestore');
+                        await setDoc(doc(db, 'system_stats', 'global'), {
+                          profilesCompleted: 0,
+                          lastUpdated: new Date().toISOString()
+                        });
+                        console.log('✅ Contador de Firebase reseteado a 0');
+                      }
+                    } catch (error) {
+                      console.error('⚠️ Error reseteando contador:', error);
                     }
-                  } catch (error) {
-                    console.error('⚠️ Error reseteando contador:', error);
-                  }
-                  
-                  console.log('✅ Sistema limpiado');
-                  alert('✅ Sistema limpiado completamente\n\nContador: 0\nLa página se recargará.');
-                  window.location.reload();
-                })();
+                    
+                    console.log('✅ Sistema limpiado');
+                    alert('✅ Sistema limpiado completamente\n\nContador: 0\nLa página se recargará.');
+                    window.location.reload();
+                  })();
+                }
+              } else if (password !== null) {
+                alert('❌ Contraseña incorrecta\n\nAcceso denegado.');
               }
               setResetClicks(0);
             }

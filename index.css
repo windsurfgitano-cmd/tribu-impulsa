@@ -581,25 +581,26 @@ body {
   }
 }
 
-/* iPhone 14 Pro Max specific (430x932 @ 3x) */
+/* iPhone 14 Pro Max y dispositivos similares (430x932 @ 3x) */
 @media only screen 
-  and (device-width: 430px) 
-  and (device-height: 932px) 
+  and (min-device-width: 428px) 
+  and (max-device-width: 432px)
+  and (min-device-height: 926px)
   and (-webkit-device-pixel-ratio: 3) {
   
-  /* Dynamic Island safe area */
+  /* Dynamic Island safe area - Más espacio para evitar colisión */
   .pt-safe, .pt-safe-min {
-    padding-top: max(env(safe-area-inset-top, 59px), 59px);
+    padding-top: max(env(safe-area-inset-top, 59px), 59px) !important;
   }
   
   /* Home indicator area */
   .pb-safe {
-    padding-bottom: max(env(safe-area-inset-bottom, 34px), 34px);
+    padding-bottom: max(env(safe-area-inset-bottom, 34px), 34px) !important;
   }
   
   /* Larger touch targets for Pro Max */
   button, .btn-primary, .btn-secondary, a[role="button"] {
-    min-height: 48px;
+    min-height: 48px !important;
     min-width: 48px;
   }
   

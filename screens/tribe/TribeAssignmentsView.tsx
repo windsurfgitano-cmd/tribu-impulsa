@@ -54,6 +54,7 @@ import { useSurveyGuard } from '../../hooks/useSurveyGuard';
 import { ProgressBanner } from '../../components/ProgressBanner';
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 import { NotificationButton } from '../../components/common';
+import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
 
 
 const TribeAssignmentsView = () => {

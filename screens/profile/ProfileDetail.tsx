@@ -362,7 +362,7 @@ const ProfileDetail = () => {
               <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
                 <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF]"><MapPin size={20} /></div>
                 <div className="text-sm">
-                  <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">UbicaciÃ³n</span>
+                  <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
                   <span className="font-medium text-[#181B34]">{profile.location}</span>
                 </div>
               </div>
@@ -455,7 +455,7 @@ const ProfileDetail = () => {
               </div>
             </div>
 
-            {/* SecciÃ³n de AnÃ¡lisis de Match - Tribu X */}
+            {/* Sección de Análisis de Match - Tribu X */}
             <MatchAnalysisSection profileId={profile.id} profileData={profile} />
 
             <button className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white font-bold py-4 rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3 transform hover:scale-[1.02]">
@@ -472,12 +472,12 @@ const ProfileDetail = () => {
 // 6. Activity View - Sistema de notificaciones tribales
 // 20 tipos de actividades:
 // 1. share_reminder - Recordatorio de compartir
-// 2. report_warning - Alguien te reportÃ³
+// 2. report_warning - Alguien te reportó
 // 3. report_received - Recibiste un reporte de alguien
 // 4. thanks_received - Alguien te dio gracias
 // 5. like_received - Alguien te dio like
-// 6. shared_you - Alguien te compartiÃ³
-// 7. new_assignment - Nueva asignaciÃ³n tribal
+// 6. shared_you - Alguien te compartió
+// 7. new_assignment - Nueva asignación tribal
 // 8. month_start - Inicio de mes
 // 9. mid_month - Recordatorio mitad de mes
 // 10. month_end - Fin de mes
@@ -488,7 +488,7 @@ const ProfileDetail = () => {
 // 15. profile_viewed - Alguien vio tu perfil
 // 16. tribe_updated - Tu tribu fue actualizada
 // 17. welcome - Bienvenida
-// 18. tip - Consejo del dÃ­a
+// 18. tip - Consejo del día
 // 19. achievement - Logro desbloqueado
 // 20. system - Mensaje del sistema
 
@@ -534,7 +534,7 @@ const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: n
 const ACTIVITIES_KEY = 'tribu_activities';
 const ARCHIVED_KEY = 'tribu_activities_archived';
 
-// Obtener actividades del localStorage (especÃ­ficas por usuario)
+// Obtener actividades del localStorage (específicas por usuario)
 const getStoredActivities = (): ActivityItem[] => {
   if (typeof window === 'undefined') return [];
   const storageKey = getUserStorageKey(ACTIVITIES_KEY);
@@ -550,13 +550,13 @@ const getStoredActivities = (): ActivityItem[] => {
   return initial;
 };
 
-// Guardar actividades (especÃ­ficas por usuario)
+// Guardar actividades (específicas por usuario)
 const persistActivities = (activities: ActivityItem[]) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(getUserStorageKey(ACTIVITIES_KEY), JSON.stringify(activities));
 };
 
-// Obtener actividades archivadas (especÃ­ficas por usuario)
+// Obtener actividades archivadas (específicas por usuario)
 const getArchivedActivities = (): ActivityItem[] => {
   if (typeof window === 'undefined') return [];
   const stored = localStorage.getItem(getUserStorageKey(ARCHIVED_KEY));
@@ -595,7 +595,7 @@ const generateInitialActivities = (): ActivityItem[] => {
     {
       id: `act_${Date.now()}_1`,
       type: 'welcome',
-      title: `Â¡Bienvenido/a ${userName}!`,
+      title: `¡Bienvenido/a ${userName}!`,
       description: 'Tu comunidad de emprendedores te espera. Revisa tu tribu 10+10 y comienza a compartir.',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
@@ -606,8 +606,8 @@ const generateInitialActivities = (): ActivityItem[] => {
     {
       id: `act_${Date.now()}_2`,
       type: 'new_assignment',
-      title: 'Tu tribu estÃ¡ lista',
-      description: 'Tienes 10 cuentas para impulsar y 10 que te impulsarÃ¡n. Â¡RevÃ­salas!',
+      title: 'Tu tribu está lista',
+      description: 'Tienes 10 cuentas para impulsar y 10 que te impulsarán. ¡Revísalas!',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
       icon: 'ðŸŽ¯',
@@ -618,7 +618,7 @@ const generateInitialActivities = (): ActivityItem[] => {
       id: `act_${Date.now()}_3`,
       type: 'tip',
       title: 'Consejo: Historias > Posts',
-      description: 'Las historias de Instagram tienen mÃ¡s alcance. Comparte contenido de tu tribu en historias.',
+      description: 'Las historias de Instagram tienen más alcance. Comparte contenido de tu tribu en historias.',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
       icon: 'ðŸ’¡',
@@ -717,7 +717,7 @@ const ActivityView = () => {
                 onClick={markAllAsRead}
                 className="text-xs text-[#6161FF] hover:underline"
               >
-                Marcar leÃ­do
+                Marcar leído
               </button>
             )}
           </div>
@@ -781,7 +781,7 @@ const ActivityView = () => {
                   <span className="text-[0.625rem] text-[#7C8193] whitespace-nowrap">{item.timestamp}</span>
                 </div>
                 <p className="text-xs text-[#7C8193] leading-relaxed line-clamp-2">{item.description}</p>
-                <span className="text-[0.625rem] text-[#6161FF] mt-1 inline-block">Tocar para ver mÃ¡s â†’</span>
+                <span className="text-[0.625rem] text-[#6161FF] mt-1 inline-block">Tocar para ver más â†’</span>
               </div>
               {filter === 'archived' ? (
                 <button
@@ -993,7 +993,7 @@ const DirectoryView = () => {
                 </h3>
                 <p className="text-xs text-[#7C8193] truncate">por {user.name}</p>
                 
-                {/* CategorÃ­a y afinidad */}
+                {/* Categoría y afinidad */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <span className="inline-flex items-center gap-1 text-[0.625rem] font-medium bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full">
                     <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
@@ -1026,17 +1026,17 @@ const DirectoryView = () => {
 const TUTORIAL_STEPS = [
   {
     id: 'welcome',
-    title: 'Â¡Conoce a tu Tribu!',
+    title: '¡Conoce a tu Tribu!',
     subtitle: 'Bienvenido/a a la comunidad de emprendedores',
-    content: 'ðŸŽ¯ Tribu Impulsa es una red de apoyo mutuo donde emprendedores se impulsan entre sÃ­.\n\nCada mes recibes TU TRIBU: un grupo de emprendedores seleccionados especialmente para ti.',
+    content: 'ðŸŽ¯ Tribu Impulsa es una red de apoyo mutuo donde emprendedores se impulsan entre sí.\n\nCada mes recibes TU TRIBU: un grupo de emprendedores seleccionados especialmente para ti.',
     iconType: 'zap',
     color: 'from-[#6161FF] to-[#00CA72]'
   },
   {
     id: 'howItWorks',
-    title: 'Â¿CÃ³mo funciona?',
+    title: '¿Cómo funciona?',
     subtitle: 'Es simple: dar y recibir',
-    content: 'ðŸ“¤ YO DOY: Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)\n\nðŸ“¥ YO RECIBO: 10 emprendedores diferentes comparten TU contenido en sus redes\n\nÂ¡AsÃ­ todos ganamos exposiciÃ³n!',
+    content: 'ðŸ“¤ YO DOY: Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)\n\nðŸ“¥ YO RECIBO: 10 emprendedores diferentes comparten TU contenido en sus redes\n\n¡Así todos ganamos exposición!',
     iconType: 'users',
     color: 'from-[#00CA72] to-[#4AE698]'
   },
@@ -1044,29 +1044,29 @@ const TUTORIAL_STEPS = [
     id: 'matching',
     title: 'Matching Inteligente',
     subtitle: 'El algoritmo trabaja por ti',
-    content: 'ðŸ§  Nuestro algoritmo te conecta con emprendedores:\n\nâœ“ Complementarios a tu negocio (no competencia)\nâœ“ De la zona geogrÃ¡fica que tÃº hayas elegido\nâœ“ Con intereses y afinidades similares\n\nEl 1Â° de cada mes recibes una NUEVA Tribu.',
+    content: 'ðŸ§  Nuestro algoritmo te conecta con emprendedores:\n\nâœ“ Complementarios a tu negocio (no competencia)\nâœ“ De la zona geográfica que tú hayas elegido\nâœ“ Con intereses y afinidades similares\n\nEl 1Â° de cada mes recibes una NUEVA Tribu.',
     iconType: 'zap',
     color: 'from-[#A78BFA] to-[#C9A8FF]'
   },
   {
     id: 'checklist',
     title: 'Tu Checklist Mensual',
-    subtitle: 'MantÃ©n el control de tus colaboraciones',
-    content: 'âœ… Paso 1: Ve a "Checklist" en el menÃº\nâœ… Paso 2: Revisa tus 10+10 asignaciones\nâœ… Paso 3: Comparte y marca "Ya compartÃ­"\nâœ… Paso 4: EscrÃ­beles por WhatsApp\n\nSi alguien no cumple, puedes reportarlo.',
+    subtitle: 'Mantén el control de tus colaboraciones',
+    content: 'âœ… Paso 1: Ve a "Checklist" en el menú\nâœ… Paso 2: Revisa tus 10+10 asignaciones\nâœ… Paso 3: Comparte y marca "Ya compartí"\nâœ… Paso 4: Escríbeles por WhatsApp\n\nSi alguien no cumple, puedes reportarlo.',
     iconType: 'check',
     color: 'from-[#FFCC00] to-[#FFE066]'
   },
   {
     id: 'start',
-    title: 'Â¡Listo para empezar!',
-    subtitle: 'Tu Tribu te estÃ¡ esperando',
-    content: 'ðŸš€ Ya tienes todo lo que necesitas:\n\n1. Revisa tu Tribu del mes\n2. Comparte a tus 10 asignados\n3. ConÃ©ctate por WhatsApp\n4. Â¡Crece junto a la comunidad!\n\nÂ¿Empezamos?',
+    title: '¡Listo para empezar!',
+    subtitle: 'Tu Tribu te está esperando',
+    content: 'ðŸš€ Ya tienes todo lo que necesitas:\n\n1. Revisa tu Tribu del mes\n2. Comparte a tus 10 asignados\n3. Conéctate por WhatsApp\n4. ¡Crece junto a la comunidad!\n\n¿Empezamos?',
     iconType: 'user',
     color: 'from-[#E91E63] to-[#FF6B9D]'
   }
 ];
 
-// Iconos SVG para el onboarding (mÃ¡s profesionales que emojis)
+// Iconos SVG para el onboarding (más profesionales que emojis)
 const OnboardingIcon = ({ type }: { type: string }) => {
   const icons: Record<string, React.ReactNode> = {
     zap: (
@@ -1118,7 +1118,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   };
 
   // Usar portal para renderizar fuera del contenedor scrolleable
-  // Estilos completamente inline para mÃ¡xima prioridad
+  // Estilos completamente inline para máxima prioridad
   return createPortal(
     <div
       style={{
@@ -1183,7 +1183,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
               onClick={handleNext}
               className="flex-1 py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition"
             >
-              {currentStep < TUTORIAL_STEPS.length - 1 ? 'Siguiente' : 'Â¡Comenzar!'}
+              {currentStep < TUTORIAL_STEPS.length - 1 ? 'Siguiente' : '¡Comenzar!'}
             </button>
           </div>
         </div>
@@ -1193,7 +1193,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   );
 };
 
-// Modal de cambio de contraseÃ±a para primer login
+// Modal de cambio de contraseña para primer login
 const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: string) => void; onSkip: () => void }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -1201,11 +1201,11 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
 
   const handleSubmit = () => {
     if (newPassword.length < 6) {
-      setError('La contraseÃ±a debe tener al menos 6 caracteres');
+      setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError('Las contraseÃ±as no coinciden');
+      setError('Las contraseñas no coinciden');
       return;
     }
     onComplete(newPassword);
@@ -1244,30 +1244,30 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FFCC00] to-[#FFE066] flex items-center justify-center text-3xl shadow-lg">
             ðŸ”
           </div>
-          <h2 className="text-xl font-bold text-[#181B34] text-center mb-2">Â¡Bienvenido/a a Tribu!</h2>
+          <h2 className="text-xl font-bold text-[#181B34] text-center mb-2">¡Bienvenido/a a Tribu!</h2>
           <p className="text-[#7C8193] text-center text-sm mb-4">
-            Por seguridad, te recomendamos cambiar tu contraseÃ±a
+            Por seguridad, te recomendamos cambiar tu contraseña
           </p>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1">Nueva contraseÃ±a</label>
+              <label className="block text-xs font-semibold text-[#434343] mb-1">Nueva contraseña</label>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
-                placeholder="MÃ­nimo 6 caracteres"
+                placeholder="Mínimo 6 caracteres"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1">Confirmar contraseÃ±a</label>
+              <label className="block text-xs font-semibold text-[#434343] mb-1">Confirmar contraseña</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
-                placeholder="Repite tu contraseÃ±a"
+                placeholder="Repite tu contraseña"
               />
             </div>
 
@@ -1277,7 +1277,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
               onClick={handleSubmit}
               className="w-full py-3 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white rounded-xl font-semibold hover:opacity-90 transition"
             >
-              Guardar nueva contraseÃ±a
+              Guardar nueva contraseña
             </button>
             <button
               onClick={onSkip}

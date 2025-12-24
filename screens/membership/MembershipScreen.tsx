@@ -30,6 +30,14 @@ export const MembershipScreen = () => {
   useEffect(() => {
     const checkMembership = async () => {
       if (!currentUser?.id) return;
+      
+      // No redirigir si el usuario viene desde ajustes
+      const fromSettings = sessionStorage.getItem('from_settings');
+      if (fromSettings === 'true') {
+        sessionStorage.removeItem('from_settings');
+        return;
+      }
+      
       const membershipData = await fetchMembershipFromCloud(currentUser.id);
       if (membershipData) {
         syncMembershipToLocalCache(currentUser.id, membershipData);
@@ -40,8 +48,10 @@ export const MembershipScreen = () => {
         );
 
         if (isActive) {
-          // Si ya está dentro de la app, ir directo al dashboard sin video
-          navigate('/dashboard');
+          // Dar tiempo para ver la página antes de redirigir
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 1500);
         }
       }
     };

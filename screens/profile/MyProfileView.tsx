@@ -36,6 +36,7 @@ import { syncProfileToCloud, getNotificationStatus, requestNotificationPermissio
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 import { getAppConfig } from '../../utils/storage';
 import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
+import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
 
 
 const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {
@@ -49,7 +50,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const [showTagInput, setShowTagInput] = useState(false);
   const currentUser = getCurrentUser();
 
-  // Estados para selectores de matching (categorÃ­a, afinidad, geografÃ­a)
+  // Estados para selectores de matching (categoría, afinidad, geografía)
   const [editScope, setEditScope] = useState<'LOCAL' | 'REGIONAL' | 'NACIONAL'>(currentUser?.scope || 'NACIONAL');
   const [editSelectedRegionForComuna, setEditSelectedRegionForComuna] = useState<string>('');
   const [editSelectedRegions, setEditSelectedRegions] = useState<string[]>(currentUser?.selectedRegions || []);
@@ -58,14 +59,14 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const [editAffinity, setEditAffinity] = useState<string>(currentUser?.affinity || '');
   const [editRevenue, setEditRevenue] = useState<string>(currentUser?.revenue || '');
 
-  // Comunas filtradas por regiÃ³n seleccionada
+  // Comunas filtradas por región seleccionada
   const editComunasDeRegion = editSelectedRegionForComuna
     ? REGIONS.find(r => r.id === editSelectedRegionForComuna)?.comunas || []
     : [];
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Estados para cambio de contraseÃ±a
+  // Estados para cambio de contraseña
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -78,7 +79,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const [secretCode, setSecretCode] = useState('');
   const [secretCodeError, setSecretCodeError] = useState('');
 
-  // Estado para tamaÃ±o de letra (accesibilidad)
+  // Estado para tamaño de letra (accesibilidad)
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
 
   const handleSecretAccess = () => {
@@ -87,30 +88,30 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       setSecretCode('');
       setShowSecretInput(false);
     } else {
-      setSecretCodeError('CÃ³digo incorrecto');
+      setSecretCodeError('Código incorrecto');
       setTimeout(() => setSecretCodeError(''), 2000);
     }
   };
 
-  // FunciÃ³n para cambiar contraseÃ±a
+  // Función para cambiar contraseña
   const handleChangePassword = async () => {
     setPasswordError('');
     setPasswordSuccess(false);
 
     // Validaciones
     if (!currentPassword) {
-      setPasswordError('Ingresa tu contraseÃ±a actual');
+      setPasswordError('Ingresa tu contraseña actual');
       return;
     }
 
-    // Verificar contraseÃ±a actual
+    // Verificar contraseña actual
     const user = getCurrentUser();
     if (!user) {
       setPasswordError('Error: usuario no encontrado');
       return;
     }
 
-    // Buscar usuario y verificar contraseÃ±a
+    // Buscar usuario y verificar contraseña
     const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
     const userIndex = users.findIndex((u: { id: string }) => u.id === user.id);
 
@@ -121,36 +122,36 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
     const currentUserData = users[userIndex];
     if (currentUserData.password !== currentPassword && currentPassword !== 'TRIBU2026') {
-      setPasswordError('ContraseÃ±a actual incorrecta');
+      setPasswordError('Contraseña actual incorrecta');
       return;
     }
 
     if (newPassword.length < 6) {
-      setPasswordError('La nueva contraseÃ±a debe tener al menos 6 caracteres');
+      setPasswordError('La nueva contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('Las contraseÃ±as no coinciden');
+      setPasswordError('Las contraseñas no coinciden');
       return;
     }
 
-    // Actualizar contraseÃ±a en localStorage
+    // Actualizar contraseña en localStorage
     users[userIndex].password = newPassword;
     localStorage.setItem('tribu_users', JSON.stringify(users));
 
-    // Marcar que ya cambiÃ³ su contraseÃ±a (nunca mÃ¡s mostrar popup)
+    // Marcar que ya cambió su contraseña (nunca más mostrar popup)
     localStorage.setItem(`password_changed_${user.id}`, 'true');
 
-    // Sincronizar contraseÃ±a con Firebase (persistente entre dispositivos)
+    // Sincronizar contraseña con Firebase (persistente entre dispositivos)
     try {
       const { updateUserPassword } = await import('../../services/firebaseService');
       const synced = await updateUserPassword(user.id, newPassword);
       if (synced) {
-        console.log('âœ… ContraseÃ±a sincronizada con Firebase');
+        console.log('âœ… Contraseña sincronizada con Firebase');
       }
     } catch (err) {
-      console.log('âš ï¸ ContraseÃ±a guardada localmente (Firebase no disponible):', err);
+      console.log('âš ï¸ Contraseña guardada localmente (Firebase no disponible):', err);
     }
 
     setPasswordSuccess(true);
@@ -181,13 +182,13 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         return;
       }
 
-      // Subir a Firebase Storage (ya comprime automÃ¡ticamente)
+      // Subir a Firebase Storage (ya comprime automáticamente)
       const result = await uploadProfileImage(currentUser.id, file, 'avatar');
 
       if (result.success && result.url) {
         setProfile({ ...profile, avatarUrl: result.url });
 
-        // TambiÃ©n actualizar en localStorage
+        // También actualizar en localStorage
         const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
         const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
         if (userIndex !== -1) {
@@ -232,7 +233,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       if (result.success && result.url) {
         setProfile({ ...profile, coverUrl: result.url });
 
-        // TambiÃ©n actualizar en localStorage
+        // También actualizar en localStorage
         const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
         const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
         if (userIndex !== -1) {
@@ -286,7 +287,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       facebook: (profile as any).facebook || '',
       twitter: (profile as any).twitter || '',
       website: profile.website,
-      // UbicaciÃ³n
+      // Ubicación
       city: profile.location?.split(',')[0]?.trim() || '',
       location: profile.location,
       avatarUrl: profile.avatarUrl,
@@ -315,7 +316,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
           setSaveMessage(`â˜ï¸ Guardando en la nube... (intento ${4 - retries}/3)`);
 
-          // Sincronizar a la colecciÃ³n users (PRINCIPAL)
+          // Sincronizar a la colección users (PRINCIPAL)
           await syncUserToFirebase(currentUser.id, profileData);
 
           // Sincronizar perfil completo
@@ -325,7 +326,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             subCategory: profile.subCategory,
           });
 
-          // Registrar la interacciÃ³n
+          // Registrar la interacción
           await logInteraction(currentUser.id, 'profile_updated', {
             fields: Object.keys(profileData),
             timestamp: new Date().toISOString()
@@ -343,7 +344,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       }
 
       if (!firebaseSaved) {
-        // Si despuÃ©s de 3 intentos no se guardÃ³, mostrar advertencia CLARA
+        // Si después de 3 intentos no se guardó, mostrar advertencia CLARA
         setSaveMessage('âš ï¸ Guardado local. Presiona Sincronizar para subir a la nube.');
       }
     } else {
@@ -362,7 +363,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         <img src={profile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-[#F5F7FB]"></div>
 
-        {/* BotÃ³n editar banner - Arriba a la derecha del cover (con safe-area para iPhone) */}
+        {/* Botón editar banner - Arriba a la derecha del cover (con safe-area para iPhone) */}
         {isEditing && (
           <button
             onClick={() => bannerInputRef.current?.click()}
@@ -437,9 +438,9 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                       setEditAffinity(user.affinity || '');
                       setEditRevenue(user.revenue || '');
                     }
-                    setSaveMessage('âœ… SincronizaciÃ³n completa');
+                    setSaveMessage('âœ… Sincronización completa');
                   } else {
-                    setSaveMessage('âš ï¸ No se encontrÃ³ usuario en la nube');
+                    setSaveMessage('âš ï¸ No se encontró usuario en la nube');
                   }
                 }
               } catch (error) {
@@ -459,7 +460,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       <div className="px-4 -mt-24 relative z-10">
         <div className="bg-white rounded-2xl !overflow-visible px-6 pb-8 border border-[#E4E7EF] shadow-[0_4px_30px_rgba(0,0,0,0.08)] flex flex-col items-center">
 
-          {/* Avatar - Simple, sin cÃ­rculo extra */}
+          {/* Avatar - Simple, sin círculo extra */}
           <div className="relative -mt-20 mb-4 z-20">
             <img
               src={profile.avatarUrl}
@@ -508,14 +509,14 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </>
             )}
 
-            {/* Badge de categorÃ­a (solo lectura) - mostrar giro principal limpio */}
+            {/* Badge de categoría (solo lectura) - mostrar giro principal limpio */}
             {!isEditing && (
               <div className="flex justify-center gap-2 mt-4 flex-wrap">
                 {/* Giro principal */}
                 <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-3 py-1.5 rounded-full">
                   {(editCategory || profile.category || '').split(' - ')[0].split('  ')[0] || 'Emprendimiento'}
                 </span>
-                {/* SubcategorÃ­a si existe */}
+                {/* Subcategoría si existe */}
                 {((editCategory || profile.category || '').includes(' - ') || (editCategory || profile.category || '').includes('  ')) && (
                   <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 text-[#00CA72] px-3 py-1.5 rounded-full">
                     {(editCategory || profile.category || '').split(' - ')[1]?.split('  ')[0] ||
@@ -525,7 +526,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </div>
             )}
 
-            {/* BotÃ³n Editar Perfil - Centrado debajo de categorÃ­a */}
+            {/* Botón Editar Perfil - Centrado debajo de categoría */}
             <div className="mt-4">
               {isEditing ? (
                 <div className="flex justify-center gap-3">
@@ -557,9 +558,9 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
           {/* Campos editables del perfil */}
           {isEditing && (
             <div className="w-full mb-6 space-y-4">
-              {/* Datos bÃ¡sicos */}
+              {/* Datos básicos */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Datos BÃ¡sicos</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Datos Básicos</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Nombre del Emprendimiento</label>
                   <input
@@ -589,19 +590,19 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">
-                    BiografÃ­a Corta (mÃ­n. 50 caracteres) {profile.bio?.length || 0}/50
+                    Biografía Corta (mín. 50 caracteres) {profile.bio?.length || 0}/50
                   </label>
                   <textarea
                     value={profile.bio}
                     onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
-                    placeholder="Escribe una biografÃ­a breve sobre ti y tu emprendimiento..."
+                    placeholder="Escribe una biografía breve sobre ti y tu emprendimiento..."
                     rows={2}
                     className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF] resize-none"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">
-                    DescripciÃ³n del Negocio (mÃ­n. 60 caracteres) {((profile as any).businessDescription || '')?.length || 0}/60
+                    Descripción del Negocio (mín. 60 caracteres) {((profile as any).businessDescription || '')?.length || 0}/60
                   </label>
                   <textarea
                     value={(profile as any).businessDescription || ''}
@@ -613,11 +614,11 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                 </div>
               </div>
 
-              {/* CategorÃ­a y Afinidad - SELECTORES para matching */}
+              {/* Categoría y Afinidad - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸŽ¯ CategorÃ­a e Intereses (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸŽ¯ Categoría e Intereses (para Matching)</h4>
                 <div>
-                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/CategorÃ­a del Negocio</label>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/Categoría del Negocio</label>
                   <select
                     value={editCategory}
                     onChange={(e) => setEditCategory(e.target.value)}
@@ -643,7 +644,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">FacturaciÃ³n Mensual</label>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Facturación Mensual</label>
                   <select
                     value={editRevenue}
                     onChange={(e) => setEditRevenue(e.target.value)}
@@ -654,14 +655,14 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                     <option value="$500.000 - $2.000.000">$500.000 - $2.000.000</option>
                     <option value="$2.000.000 - $5.000.000">$2.000.000 - $5.000.000</option>
                     <option value="$5.000.000 - $10.000.000">$5.000.000 - $10.000.000</option>
-                    <option value="MÃ¡s de $10.000.000">MÃ¡s de $10.000.000</option>
+                    <option value="Más de $10.000.000">Más de $10.000.000</option>
                   </select>
                 </div>
               </div>
 
-              {/* GeografÃ­a - SELECTORES para matching */}
+              {/* Geografía - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸ“ Alcance GeogrÃ¡fico (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸ“ Alcance Geográfico (para Matching)</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -678,20 +679,20 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                   </div>
                 </div>
 
-                {/* LOCAL: Selector RegiÃ³n -> Comuna */}
+                {/* LOCAL: Selector Región -> Comuna */}
                 {editScope === 'LOCAL' && (
                   <div className="space-y-3 animate-fadeIn">
                     <div>
-                      <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">RegiÃ³n</label>
+                      <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Región</label>
                       <select
                         value={editSelectedRegionForComuna}
                         onChange={(e) => {
                           setEditSelectedRegionForComuna(e.target.value);
-                          setEditComuna(''); // Reset comuna al cambiar regiÃ³n
+                          setEditComuna(''); // Reset comuna al cambiar región
                         }}
                         className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
                       >
-                        <option value="">Selecciona regiÃ³n...</option>
+                        <option value="">Selecciona región...</option>
                         {REGIONS.map(region => (
                           <option key={region.id} value={region.id}>{region.shortName}</option>
                         ))}
@@ -741,13 +742,13 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                       ))}
                     </div>
                     {editSelectedRegions.length > 0 && (
-                      <p className="text-xs text-[#6161FF] mt-2">{editSelectedRegions.length} regiÃ³n(es) seleccionada(s)</p>
+                      <p className="text-xs text-[#6161FF] mt-2">{editSelectedRegions.length} región(es) seleccionada(s)</p>
                     )}
                   </div>
                 )}
 
                 {editScope === 'NACIONAL' && (
-                  <p className="text-sm text-[#7C8193] italic">OperaciÃ³n a nivel nacional - matchearÃ¡s con todos</p>
+                  <p className="text-sm text-[#7C8193] italic">Operación a nivel nacional - matchearás con todos</p>
                 )}
               </div>
 
@@ -871,7 +872,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
           {!isEditing && (
             <div className="space-y-8 w-full text-left">
               <div>
-                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">BiografÃ­a</h3>
+                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Biografía</h3>
                 <p className="text-[#434343] leading-relaxed text-lg">
                   {profile.bio}
                 </p>
@@ -881,7 +882,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                 <div className="bg-[#F5F7FB] p-4 rounded-2xl flex items-center gap-4 border border-[#E4E7EF]">
                   <div className="bg-[#6161FF]/10 p-2 rounded-lg text-[#6161FF] shrink-0"><MapPin size={20} /></div>
                   <div className="text-sm min-w-0">
-                    <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">UbicaciÃ³n</span>
+                    <span className="block text-[#7C8193] text-[0.625rem] mb-0.5 uppercase tracking-wide">Ubicación</span>
                     <span className="font-medium text-[#181B34]">{profile.location}</span>
                   </div>
                 </div>
@@ -956,31 +957,31 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </div>
             </div>
 
-            {/* SECCIÃ“N MEMBRESÃA */}
+            {/* SECCIü“N MEMBRESüA */}
             <MembershipSection userId={currentUser?.id || ''} />
 
-            {/* BotÃ³n de Notificaciones Push */}
+            {/* Botón de Notificaciones Push */}
             <NotificationButton />
 
             {/* Opciones de cuenta */}
             <div className="pt-4 border-t border-[#E4E7EF] space-y-3">
-              {/* TamaÃ±o de letra (Accesibilidad) */}
+              {/* Tamaño de letra (Accesibilidad) */}
               <button
                 onClick={() => setShowFontSizeModal(true)}
                 className="w-full py-3 rounded-xl border border-[#00CA72]/30 text-[#00CA72] hover:bg-[#00CA72]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
               >
-                <Type size={16} /> TamaÃ±o de Letra: {fontSize === 'small' ? 'PequeÃ±o' : fontSize === 'medium' ? 'Mediano' : 'Grande'}
+                <Type size={16} /> Tamaño de Letra: {fontSize === 'small' ? 'Pequeño' : fontSize === 'medium' ? 'Mediano' : 'Grande'}
               </button>
 
-              {/* Cambiar contraseÃ±a */}
+              {/* Cambiar contraseña */}
               <button
                 onClick={() => setShowPasswordModal(true)}
                 className="w-full py-3 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
               >
-                <Lock size={16} /> Cambiar ContraseÃ±a
+                <Lock size={16} /> Cambiar Contraseña
               </button>
 
-              {/* Cerrar sesiÃ³n */}
+              {/* Cerrar sesión */}
               <button
                 onClick={() => {
                   clearStoredSession();
@@ -990,7 +991,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                 }}
                 className="w-full py-3 rounded-xl border border-[#FB275D]/30 text-[#FB275D] hover:bg-[#FB275D]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
               >
-                <LogOut size={16} /> Cerrar SesiÃ³n
+                <LogOut size={16} /> Cerrar Sesión
               </button>
 
               {/* Acceso secreto a Red/Directorio - Solo visible en desarrollo */}
@@ -1009,7 +1010,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                         value={secretCode}
                         onChange={(e) => setSecretCode(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSecretAccess()}
-                        placeholder="CÃ³digo de acceso..."
+                        placeholder="Código de acceso..."
                         className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-2 text-sm"
                       />
                       {secretCodeError && (
@@ -1027,50 +1028,50 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               )}
             </div>
 
-            {/* Modal cambio de contraseÃ±a */}
+            {/* Modal cambio de contraseña */}
             {showPasswordModal && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
                 <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
                   <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
                     <Lock size={20} className="text-[#6161FF]" />
-                    Cambiar ContraseÃ±a
+                    Cambiar Contraseña
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">ContraseÃ±a actual</label>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Contraseña actual</label>
                       <input
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                        placeholder="Tu contraseÃ±a actual"
+                        placeholder="Tu contraseña actual"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Nueva contraseÃ±a</label>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Nueva contraseña</label>
                       <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                        placeholder="MÃ­nimo 6 caracteres"
+                        placeholder="Mínimo 6 caracteres"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Confirmar nueva contraseÃ±a</label>
+                      <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase">Confirmar nueva contraseña</label>
                       <input
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-sm"
-                        placeholder="Repetir contraseÃ±a"
+                        placeholder="Repetir contraseña"
                       />
                     </div>
                     {passwordError && (
                       <p className="text-[#FB275D] text-sm">{passwordError}</p>
                     )}
                     {passwordSuccess && (
-                      <p className="text-[#00CA72] text-sm">âœ… ContraseÃ±a actualizada correctamente</p>
+                      <p className="text-[#00CA72] text-sm">âœ… Contraseña actualizada correctamente</p>
                     )}
                     <div className="flex gap-3 pt-2">
                       <button
@@ -1098,15 +1099,15 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </div>
             )}
 
-            {/* Modal tamaÃ±o de letra */}
+            {/* Modal tamaño de letra */}
             {showFontSizeModal && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999] p-4 backdrop-blur-sm">
                 <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto">
                   <h3 className="text-lg font-bold text-[#181B34] mb-4 flex items-center gap-2">
                     <Type size={20} className="text-[#00CA72]" />
-                    TamaÃ±o de Letra
+                    Tamaño de Letra
                   </h3>
-                  <p className="text-sm text-[#7C8193] mb-4">Ajusta el tamaÃ±o del texto para mejor legibilidad</p>
+                  <p className="text-sm text-[#7C8193] mb-4">Ajusta el tamaño del texto para mejor legibilidad</p>
                   <div className="space-y-3">
                     <button
                       onClick={() => setFontSize('small')}
@@ -1115,7 +1116,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                         : 'border-[#E4E7EF] text-[#434343] hover:border-[#00CA72]/50'
                         }`}
                     >
-                      <span className="text-sm font-medium">PequeÃ±o</span>
+                      <span className="text-sm font-medium">Pequeño</span>
                       <span className="text-xs text-[#7C8193]">16px</span>
                     </button>
                     <button
@@ -1155,7 +1156,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   );
 };
 
-// Componente de SecciÃ³n de MembresÃ­a
+// Componente de Sección de Membresía
 const MembershipSection = ({ userId }: { userId: string }) => {
   const navigate = useNavigate();
   const [membership, setMembership] = useState<{
@@ -1206,7 +1207,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
           setMembership(localStatus ? { status: localStatus } : null);
         }
       } catch (error) {
-        console.log('Error cargando membresÃ­a:', error);
+        console.log('Error cargando membresía:', error);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -1228,7 +1229,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
     });
   };
 
-  // Formatear precio - Usar precio de configuraciÃ³n como fallback
+  // Formatear precio - Usar precio de configuración como fallback
   const config = getAppConfig();
   const formatPrice = (amount?: number) => {
     const value = amount || config.membershipPrice;
@@ -1239,7 +1240,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
     }).format(value);
   };
 
-  // Calcular dÃ­as restantes
+  // Calcular días restantes
   const getDaysRemaining = () => {
     if (!membership?.expiresAt) return null;
     const expiry = new Date(membership.expiresAt);
@@ -1262,7 +1263,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
 
   return (
     <div className="pt-4 border-t border-[#E4E7EF]">
-      <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">MembresÃ­a</h3>
+      <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Membresía</h3>
 
       <div className={`rounded-2xl p-4 border ${isMember ? 'bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 border-[#6161FF]/20' : 'bg-[#F5F7FB] border-[#E4E7EF]'}`}>
         {/* Estado */}
@@ -1290,15 +1291,15 @@ const MembershipSection = ({ userId }: { userId: string }) => {
         {/* Detalles si es miembro */}
         {isMember && (
           <div className="space-y-2 text-sm border-t border-[#E4E7EF]/50 pt-3">
-            {/* Plan especial para Beta PÃºblica */}
+            {/* Plan especial para Beta Pública */}
             {membership?.paymentMethod === 'beta_publica' || membership?.paymentMethod === 'trial' || membership?.paymentMethod === 'promo_trial_1_peso' ? (
               <>
                 <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-xl p-3 mb-2">
                   <p className="text-[#00CA72] font-bold text-center">
-                    ðŸŽ‰ Trial Activo - CÃ­rculo Emprendedor
+                    ðŸŽ‰ Trial Activo - Círculo Emprendedor
                   </p>
                   <p className="text-xs text-[#7C8193] text-center mt-1">
-                    PromociÃ³n Beta Tribu Impulsa
+                    Promoción Beta Tribu Impulsa
                   </p>
                 </div>
                 <div className="flex justify-between">
@@ -1306,7 +1307,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
                   <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#7C8193]">VÃ¡lido hasta:</span>
+                  <span className="text-[#7C8193]">Válido hasta:</span>
                   <span className="text-[#181B34] font-medium">{formatDate(membership?.expiresAt)}</span>
                 </div>
               </>
@@ -1317,7 +1318,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
                   <span className="text-[#181B34] font-medium">{formatDate(membership?.paymentDate)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[#7C8193]">MÃ©todo:</span>
+                  <span className="text-[#7C8193]">Método:</span>
                   <span className="text-[#181B34] font-medium capitalize">{membership?.paymentMethod || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
@@ -1333,32 +1334,35 @@ const MembershipSection = ({ userId }: { userId: string }) => {
             {daysRemaining !== null && daysRemaining <= 30 && (
               <div className="mt-2 p-2 bg-[#FFCC00]/10 rounded-lg">
                 <p className="text-xs text-[#B38F00] font-medium">
-                  âš ï¸ Tu membresÃ­a vence en {daysRemaining} dÃ­as
+                  âš ï¸ Tu membresía vence en {daysRemaining} días
                 </p>
               </div>
             )}
           </div>
         )}
 
-        {/* BotÃ³n para invitados */}
+        {/* Botón para invitados */}
         {!isMember && (
           <button
-            onClick={() => navigate('/membership')}
+            onClick={() => {
+              sessionStorage.setItem('from_settings', 'true');
+              navigate('/membership');
+            }}
             className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-[#00CA72] to-[#00B366] text-white font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all"
           >
             <Gift size={18} />
-            Â¡Probar por $1!
+            ¡Probar por $1 Peso!
           </button>
         )}
 
-        {/* Administrar suscripciÃ³n - Solo para miembros */}
+        {/* Administrar suscripción - Solo para miembros */}
         {isMember && <SubscriptionManager userId={userId} currentPlan={membership?.paymentMethod || 'mensual'} expiresAt={membership?.expiresAt} />}
       </div>
     </div>
   );
 };
 
-// Componente para administrar suscripciÃ³n
+// Componente para administrar suscripción
 const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: string; currentPlan: string; expiresAt?: string }) => {
   const [showPlans, setShowPlans] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1366,10 +1370,10 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
   const [selectedTrialPlan, setSelectedTrialPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const config = getAppConfig();
 
-  // Verificar si el usuario ya usÃ³ el trial de $1 (oportunidad Ãºnica)
+  // Verificar si el usuario ya usó el trial de $1 (oportunidad única)
   const hasUsedTrial = localStorage.getItem(`trial_used_${userId}`) === 'true' || currentPlan === 'trial' || currentPlan === 'promo_trial';
 
-  // Fecha lÃ­mite para trial: 31 dic 2025
+  // Fecha límite para trial: 31 dic 2025
   const TRIAL_END_DATE = new Date('2025-12-31T23:59:59');
   const isTrialAvailable = new Date() <= TRIAL_END_DATE && !hasUsedTrial;
 
@@ -1382,7 +1386,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       originalPrice: null,
       duration: '1 mes',
       months: 1,
-      description: 'RenovaciÃ³n mes a mes',
+      description: 'Renovación mes a mes',
       badge: null,
       savings: null
     },
@@ -1393,7 +1397,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       originalPrice: 119940, // 6 x 19990
       duration: '6 meses',
       months: 6,
-      description: 'Â¡1 mes gratis!',
+      description: '¡1 mes gratis!',
       badge: 'ðŸ”¥ Popular',
       savings: 19950
     },
@@ -1404,7 +1408,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       originalPrice: 239880, // 12 x 19990
       duration: '12 meses',
       months: 12,
-      description: 'Â¡3 meses gratis!',
+      description: '¡3 meses gratis!',
       badge: 'ðŸ’Ž Mejor valor',
       savings: 59890
     }
@@ -1431,7 +1435,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       const userEmail = currentUser?.email || '';
 
       if (!userEmail) {
-        alert('Error: No se pudo obtener tu email. Por favor recarga la pÃ¡gina.');
+        alert('Error: No se pudo obtener tu email. Por favor recarga la página.');
         setIsProcessing(false);
         return;
       }
@@ -1468,12 +1472,12 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         // Redirigir a MercadoPago
         window.location.href = data.initPoint;
       } else {
-        console.error('âŒ No se recibiÃ³ initPoint:', data);
+        console.error('âŒ No se recibió initPoint:', data);
         alert('Error: No se pudo crear el pago. Intenta de nuevo o contacta soporte.');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error de conexiÃ³n. Intenta de nuevo.');
+      alert('Error de conexión. Intenta de nuevo.');
     }
 
     setIsProcessing(false);
@@ -1505,7 +1509,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       const data = await response.json();
 
       if (data.initPoint) {
-        // Marcar que intentÃ³ usar el trial (se confirmarÃ¡ en webhook)
+        // Marcar que intentó usar el trial (se confirmará en webhook)
         localStorage.setItem(`trial_used_${userId}`, 'true');
         window.location.href = data.initPoint;
       } else if (data.error) {
@@ -1514,12 +1518,12 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error de conexiÃ³n. Intenta de nuevo.');
+      alert('Error de conexión. Intenta de nuevo.');
       setIsProcessing(false);
     }
   };
 
-  // Cancelar suscripciÃ³n
+  // Cancelar suscripción
   const handleCancelSubscription = async () => {
     setIsProcessing(true);
 
@@ -1536,8 +1540,8 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         });
 
         localStorage.setItem(`membership_autorenew_${userId}`, 'false');
-        alert('Tu suscripciÃ³n no se renovarÃ¡ automÃ¡ticamente. TendrÃ¡s acceso hasta ' +
-          (expiresAt ? new Date(expiresAt).toLocaleDateString('es-CL') : 'el fin del perÃ­odo'));
+        alert('Tu suscripción no se renovará automáticamente. Tendrás acceso hasta ' +
+          (expiresAt ? new Date(expiresAt).toLocaleDateString('es-CL') : 'el fin del período'));
       }
     } catch (error) {
       console.error('Error cancelando:', error);
@@ -1555,22 +1559,22 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         className="w-full py-2.5 rounded-xl border border-[#6161FF]/30 text-[#6161FF] hover:bg-[#6161FF]/10 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
       >
         <CreditCard size={16} />
-        {showPlans ? 'Cerrar opciones' : 'Administrar SuscripciÃ³n'}
+        {showPlans ? 'Cerrar opciones' : 'Administrar Suscripción'}
       </button>
 
       {showPlans && (
         <div className="mt-4 space-y-3 animate-fadeIn">
 
-          {/* Oferta Trial $1 - Solo si estÃ¡ disponible */}
+          {/* Oferta Trial $1 - Solo si está disponible */}
           {isTrialAvailable && (
             <div className="relative rounded-xl border-2 border-[#00CA72] bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 p-4 mb-4">
               <span className="absolute -top-2.5 left-3 bg-[#00CA72] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                ðŸŽ OFERTA ÃšNICA
+                ðŸŽ OFERTA üšNICA
               </span>
               <div className="text-center mb-3">
                 <p className="text-2xl font-black text-[#00CA72]">$1</p>
                 <p className="text-sm text-[#434343] font-medium">1 mes completo de Tribu Impulsa</p>
-                <p className="text-xs text-[#7C8193]">DespuÃ©s continÃºa con el plan que elijas</p>
+                <p className="text-xs text-[#7C8193]">Después continúa con el plan que elijas</p>
               </div>
 
               {/* Selector de plan futuro */}
@@ -1594,13 +1598,13 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
                 disabled={isProcessing}
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#00CA72] to-[#00B366] text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-50"
               >
-                {isProcessing ? 'Procesando...' : 'Â¡Pagar $1 y Comenzar!'}
+                {isProcessing ? 'Procesando...' : '¡Pagar $1 y Comenzar!'}
               </button>
               <p className="text-[9px] text-[#7C8193] text-center mt-2">
-                DespuÃ©s de 30 dÃ­as se cobra el plan {selectedTrialPlan}. Cancela cuando quieras.
+                Después de 30 días se cobra el plan {selectedTrialPlan}. Cancela cuando quieras.
               </p>
               <p className="text-[8px] text-[#B3B8C6] text-center mt-1">
-                *DÃ©bito/prepago no soportan cobros recurrentes (limitaciÃ³n bancos Chile).
+                *Débito/prepago no soportan cobros recurrentes (limitación bancos Chile).
               </p>
             </div>
           )}
@@ -1648,20 +1652,20 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
             ))}
           </div>
 
-          {/* Cancelar suscripciÃ³n */}
+          {/* Cancelar suscripción */}
           <div className="pt-3 border-t border-dashed border-[#E4E7EF]">
             {!showCancelConfirm ? (
               <button
                 onClick={() => setShowCancelConfirm(true)}
                 className="w-full py-2 text-xs text-[#7C8193] hover:text-[#FB275D] transition-colors"
               >
-                Cancelar renovaciÃ³n automÃ¡tica
+                Cancelar renovación automática
               </button>
             ) : (
               <div className="bg-[#FB275D]/5 rounded-xl p-3 space-y-2">
-                <p className="text-sm text-[#FB275D] font-medium">Â¿Seguro que deseas cancelar?</p>
+                <p className="text-sm text-[#FB275D] font-medium">¿Seguro que deseas cancelar?</p>
                 <p className="text-xs text-[#7C8193]">
-                  MantendrÃ¡s acceso hasta que expire tu perÃ­odo actual.
+                  Mantendrás acceso hasta que expire tu período actual.
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -1702,7 +1706,7 @@ const NotificationButton = () => {
       setIsLoading(true);
       if (currentUser) {
         clearFCMToken();
-        // TambiÃ©n podrÃ­amos remover de la DB
+        // También podríamos remover de la DB
       }
       setShowToast('Notificaciones desactivadas');
       setTimeout(() => setShowToast(null), 3000);
@@ -1716,8 +1720,8 @@ const NotificationButton = () => {
         if (currentUser) {
           saveUserFCMToken(currentUser.id, token);
         }
-        sendLocalNotification('Â¡Notificaciones activadas!', 'RecibirÃ¡s alertas de tu tribu');
-        setShowToast('Â¡Notificaciones activadas!');
+        sendLocalNotification('¡Notificaciones activadas!', 'Recibirás alertas de tu tribu');
+        setShowToast('¡Notificaciones activadas!');
       } else {
         setShowToast('No se pudieron activar las notificaciones');
       }
@@ -1758,7 +1762,7 @@ const NotificationButton = () => {
               {isEnabled ? 'Notificaciones activas' : 'Notificaciones'}
             </p>
             <p className={`text-xs ${isEnabled ? 'text-[#00CA72]' : 'text-[#7C8193]'}`}>
-              {isEnabled ? 'RecibirÃ¡s alertas de tu tribu' : 'Activa para recibir alertas'}
+              {isEnabled ? 'Recibirás alertas de tu tribu' : 'Activa para recibir alertas'}
             </p>
           </div>
         </div>
@@ -1778,7 +1782,7 @@ const NotificationButton = () => {
   );
 };
 
-// Componente de AnÃ¡lisis de Match con LLM
+// Componente de Análisis de Match con LLM
 const MATCH_ANALYSIS_STORAGE_KEY = 'tribu_match_analysis';
 const MATCH_ANALYSIS_MONTH_KEY = 'tribu_match_analysis_month';
 
@@ -1793,7 +1797,7 @@ const getStoredAnalysis = (profileId: string): MatchAnalysis | null => {
   const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
   const storedMonth = localStorage.getItem(MATCH_ANALYSIS_MONTH_KEY);
 
-  // Si cambiÃ³ el mes, limpiar anÃ¡lisis antiguos
+  // Si cambió el mes, limpiar análisis antiguos
   if (storedMonth !== currentMonth) {
     localStorage.removeItem(MATCH_ANALYSIS_STORAGE_KEY);
     localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
@@ -1819,36 +1823,36 @@ const saveAnalysis = (profileId: string, analysis: string) => {
   localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
 };
 
-// Master Prompt para anÃ¡lisis de compatibilidad
+// Master Prompt para análisis de compatibilidad
 const generateMatchAnalysisPrompt = (myProfile: MatchProfile, targetProfile: MatchProfile) => {
   return `Eres el "Algoritmo Tribal X" de Tribu Impulsa, una plataforma de cross-promotion para emprendedores chilenos.
 
 CONTEXTO:
 - Usuario actual: ${myProfile.name} de "${myProfile.companyName}"
-- CategorÃ­a: ${myProfile.category}
-- UbicaciÃ³n: ${myProfile.location}
+- Categoría: ${myProfile.category}
+- Ubicación: ${myProfile.location}
 - Bio: ${myProfile.bio}
 - Tags: ${myProfile.tags?.join(', ') || 'N/A'}
 
 EMPRENDEDOR A ANALIZAR:
 - Nombre: ${targetProfile.name} de "${targetProfile.companyName}"
-- CategorÃ­a: ${targetProfile.category}  
-- SubcategorÃ­a: ${targetProfile.subCategory}
-- UbicaciÃ³n: ${targetProfile.location}
+- Categoría: ${targetProfile.category}  
+- Subcategoría: ${targetProfile.subCategory}
+- Ubicación: ${targetProfile.location}
 - Bio: ${targetProfile.bio}
 - Instagram: ${targetProfile.instagram}
 - Tags: ${targetProfile.tags?.join(', ') || 'N/A'}
 
 INSTRUCCIONES:
-Genera un anÃ¡lisis breve (mÃ¡ximo 3-4 oraciones) explicando por quÃ© estos dos emprendedores podrÃ­an tener una buena sinergia comercial para hacer cross-promotion en Chile. Considera:
+Genera un análisis breve (máximo 3-4 oraciones) explicando por qué estos dos emprendedores podrían tener una buena sinergia comercial para hacer cross-promotion en Chile. Considera:
 1. Complementariedad de rubros (no competencia directa)
 2. Potencial de audiencia compartida
-3. Oportunidades de colaboraciÃ³n especÃ­ficas
+3. Oportunidades de colaboración específicas
 
-Responde en espaÃ±ol chileno, de forma cercana y profesional. NO uses bullets, solo texto fluido.`;
+Responde en español chileno, de forma cercana y profesional. NO uses bullets, solo texto fluido.`;
 };
 
-// Estructura de anÃ¡lisis enriquecido
+// Estructura de análisis enriquecido
 interface EnrichedAnalysis {
   insight: string;
   opportunities: string[];
@@ -1861,7 +1865,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   const [hasGenerated, setHasGenerated] = useState(false);
   const myProfile = getMyProfile();
 
-  // Verificar si ya existe anÃ¡lisis guardado al montar
+  // Verificar si ya existe análisis guardado al montar
   useEffect(() => {
     const stored = getStoredAnalysis(profileId);
     if (stored) {
@@ -1873,11 +1877,11 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
         if (parsed && parsed.insight) {
           setAnalysis(parsed);
         } else {
-          // Migrar anÃ¡lisis antiguo a formato nuevo
+          // Migrar análisis antiguo a formato nuevo
           setAnalysis({
             insight: stored.analysis,
-            opportunities: ['ColaboraciÃ³n en redes sociales', 'Referidos mutuos'],
-            icebreaker: `Â¡Hola! Vi tu emprendimiento en Tribu Impulsa y creo que podrÃ­amos colaborar. Â¿Te interesa conversar?`
+            opportunities: ['Colaboración en redes sociales', 'Referidos mutuos'],
+            icebreaker: `¡Hola! Vi tu emprendimiento en Tribu Impulsa y creo que podríamos colaborar. ¿Te interesa conversar?`
           });
         }
         setHasGenerated(true);
@@ -1887,7 +1891,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     }
   }, [profileId]);
 
-  // Generar anÃ¡lisis inteligente local - ESPECÃFICO para cada match
+  // Generar análisis inteligente local - ESPECüFICO para cada match
   const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
     const sameLocation = me.location === target.location;
     const meCategory = me.category || 'emprendimiento';
@@ -1895,31 +1899,31 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     const meName = me.companyName || me.name;
     const targetName = target.companyName || target.name;
 
-    // Insight ÃšNICO basado en la combinaciÃ³n especÃ­fica de categorÃ­as
+    // Insight üšNICO basado en la combinación específica de categorías
     let insight = '';
 
-    // AnÃ¡lisis especÃ­fico por tipo de negocio
-    if (targetCategory.includes('Paisajismo') || targetCategory.includes('JardÃ­n')) {
-      insight = `${targetName} puede atraer clientes que valoran el bienestar y la naturaleza - exactamente el perfil que busca servicios como los de ${meName}. Una colaboraciÃ³n donde ${targetName} recomiende tus servicios a sus clientes (y viceversa) podrÃ­a generar leads de alta calidad para ambos.`;
-    } else if (targetCategory.includes('Belleza') || targetCategory.includes('EstÃ©tica')) {
-      insight = `Los clientes de ${targetName} buscan verse y sentirse bien - una audiencia perfecta para ${meName}. PodrÃ­an crear experiencias conjuntas de bienestar o packs que combinen sus servicios para maximizar el valor percibido.`;
+    // Análisis específico por tipo de negocio
+    if (targetCategory.includes('Paisajismo') || targetCategory.includes('Jardín')) {
+      insight = `${targetName} puede atraer clientes que valoran el bienestar y la naturaleza - exactamente el perfil que busca servicios como los de ${meName}. Una colaboración donde ${targetName} recomiende tus servicios a sus clientes (y viceversa) podría generar leads de alta calidad para ambos.`;
+    } else if (targetCategory.includes('Belleza') || targetCategory.includes('Estética')) {
+      insight = `Los clientes de ${targetName} buscan verse y sentirse bien - una audiencia perfecta para ${meName}. Podrían crear experiencias conjuntas de bienestar o packs que combinen sus servicios para maximizar el valor percibido.`;
     } else if (targetCategory.includes('Marketing') || targetCategory.includes('Digital')) {
-      insight = `${targetName} tiene expertise en visibilidad digital que podrÃ­a potenciar la presencia online de ${meName}. A cambio, ${meName} podrÃ­a ser un caso de Ã©xito o referencia para ${targetName}.`;
-    } else if (targetCategory.includes('ConsultorÃ­a') || targetCategory.includes('Coaching')) {
-      insight = `${targetName} trabaja con emprendedores que podrÃ­an necesitar exactamente lo que ofrece ${meName}. Esta conexiÃ³n podrÃ­a generar referidos de calidad en ambas direcciones.`;
-    } else if (targetCategory.includes('Salud') || targetCategory.includes('KinesiologÃ­a')) {
-      insight = `${targetName} y ${meName} comparten una audiencia interesada en bienestar integral. Sus clientes naturalmente podrÃ­an beneficiarse de ambos servicios, creando un ecosistema de salud completo.`;
-    } else if (targetCategory.includes('GastronomÃ­a') || targetCategory.includes('Alimentos')) {
-      insight = `${targetName} tiene acceso a una audiencia que valora experiencias de calidad. Un evento conjunto o colaboraciÃ³n de contenido podrÃ­a exponer ambas marcas a nuevos clientes potenciales.`;
+      insight = `${targetName} tiene expertise en visibilidad digital que podría potenciar la presencia online de ${meName}. A cambio, ${meName} podría ser un caso de éxito o referencia para ${targetName}.`;
+    } else if (targetCategory.includes('Consultoría') || targetCategory.includes('Coaching')) {
+      insight = `${targetName} trabaja con emprendedores que podrían necesitar exactamente lo que ofrece ${meName}. Esta conexión podría generar referidos de calidad en ambas direcciones.`;
+    } else if (targetCategory.includes('Salud') || targetCategory.includes('Kinesiología')) {
+      insight = `${targetName} y ${meName} comparten una audiencia interesada en bienestar integral. Sus clientes naturalmente podrían beneficiarse de ambos servicios, creando un ecosistema de salud completo.`;
+    } else if (targetCategory.includes('Gastronomía') || targetCategory.includes('Alimentos')) {
+      insight = `${targetName} tiene acceso a una audiencia que valora experiencias de calidad. Un evento conjunto o colaboración de contenido podría exponer ambas marcas a nuevos clientes potenciales.`;
     } else {
-      insight = `${targetName} en ${targetCategory} y ${meName} en ${meCategory} tienen audiencias complementarias sin competir directamente. Sus clientes podrÃ­an beneficiarse de ambos servicios, creando oportunidades de referidos mutuos.`;
+      insight = `${targetName} en ${targetCategory} y ${meName} en ${meCategory} tienen audiencias complementarias sin competir directamente. Sus clientes podrían beneficiarse de ambos servicios, creando oportunidades de referidos mutuos.`;
     }
 
     if (sameLocation) {
       insight += ` Al estar ambos en ${me.location}, pueden coordinar eventos presenciales o activaciones conjuntas.`;
     }
 
-    // Oportunidades ESPECÃFICAS para este match
+    // Oportunidades ESPECüFICAS para este match
     const opportunities = [
       `Sorteo conjunto: ${meName} regala un servicio/producto de ${targetName} a sus seguidores (y viceversa)`,
       `Contenido colaborativo: Live de Instagram donde ambos comparten tips de sus industrias`,
@@ -1928,7 +1932,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
     // Mensaje rompehielos personalizado
     const firstName = target.name?.split(' ')[0] || 'Hola';
-    const icebreaker = `Â¡Hola ${firstName}! ðŸ‘‹ Soy de ${meName} y te encontrÃ© en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrÃ­an beneficiarse mutuamente. Â¿Te interesarÃ­a explorar un sorteo cruzado o alguna colaboraciÃ³n? Â¡Creo que podrÃ­a funcionar muy bien! ðŸš€`;
+    const icebreaker = `¡Hola ${firstName}! ðŸ‘‹ Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! ðŸš€`;
 
     return {
       insight,
@@ -1937,7 +1941,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     };
   };
 
-  // FunciÃ³n para generar anÃ¡lisis con delay realista
+  // Función para generar análisis con delay realista
   const handleGenerateAnalysis = async () => {
     setIsLoading(true);
 
@@ -1953,33 +1957,33 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
         { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }
       );
 
-      // Verificar que el resultado sea vÃ¡lido y no sea el mensaje de error genÃ©rico
+      // Verificar que el resultado sea válido y no sea el mensaje de error genérico
       const isValidResult = result &&
         result.analysis &&
-        result.analysis !== 'AnÃ¡lisis no disponible' &&
+        result.analysis !== 'Análisis no disponible' &&
         result.opportunities &&
         result.opportunities.length > 0;
 
       if (isValidResult) {
-        // Usar icebreaker del LLM si existe, o generar uno bÃ¡sico
+        // Usar icebreaker del LLM si existe, o generar uno básico
         const llmIcebreaker = result.icebreaker ||
-          `Â¡Hola ${profileData.name.split(' ')[0]}! ðŸ‘‹ Vi tu negocio ${profileData.companyName} y me encantÃ³. Â¿Te interesa explorar una colaboraciÃ³n? ðŸ¤`;
+          `¡Hola ${profileData.name.split(' ')[0]}! ðŸ‘‹ Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? ðŸ¤`;
 
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
           opportunities: result.opportunities,
           icebreaker: llmIcebreaker
         };
-        console.log('âœ… AnÃ¡lisis LLM completo:', enriched);
+        console.log('âœ… Análisis LLM completo:', enriched);
         setAnalysis(enriched);
         saveAnalysis(profileId, JSON.stringify(enriched));
       } else {
-        // LLM no disponible o respuesta invÃ¡lida - usar fallback local inteligente
+        // LLM no disponible o respuesta inválida - usar fallback local inteligente
         throw new Error('Using local fallback');
       }
     } catch {
       // Usar fallback inteligente local (siempre funciona)
-      console.log('âœ… Usando anÃ¡lisis local enriquecido');
+      console.log('âœ… Usando análisis local enriquecido');
       const smartAnalysis = generateSmartAnalysis(myProfile, profileData);
       setAnalysis(smartAnalysis);
       saveAnalysis(profileId, JSON.stringify(smartAnalysis));
@@ -1997,7 +2001,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
   };
 
-  // Estado de carga con animaciÃ³n Ã©pica
+  // Estado de carga con animación épica
   if (isLoading) {
     return (
       <div className="rounded-2xl overflow-hidden border border-[#6161FF]/20">
@@ -2006,7 +2010,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     );
   }
 
-  // Mostrar anÃ¡lisis enriquecido
+  // Mostrar análisis enriquecido
   if (analysis) {
     return (
       <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20 space-y-4">
@@ -2016,7 +2020,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
             <Sparkles size={18} className="text-white" />
           </div>
           <div>
-            <span className="text-sm font-bold text-[#181B34] block">AnÃ¡lisis de Compatibilidad</span>
+            <span className="text-sm font-bold text-[#181B34] block">Análisis de Compatibilidad</span>
             <span className="text-xs text-[#7C8193]">Generado por Tribu X</span>
           </div>
         </div>
@@ -2058,7 +2062,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     );
   }
 
-  // BotÃ³n para generar anÃ¡lisis
+  // Botón para generar análisis
   return (
     <div className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-5 border border-[#6161FF]/20">
       <div className="flex items-center gap-3 mb-3">
@@ -2066,7 +2070,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
           <Sparkles size={18} className="text-white" />
         </div>
         <div>
-          <span className="text-sm font-bold text-[#181B34] block">Â¿Es buen match?</span>
+          <span className="text-sm font-bold text-[#181B34] block">¿Es buen match?</span>
           <span className="text-xs text-[#7C8193]">Descubre sinergias y oportunidades</span>
         </div>
       </div>

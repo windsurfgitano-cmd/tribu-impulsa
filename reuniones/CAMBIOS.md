@@ -8,6 +8,7 @@
 
 | # | Mejora | Fecha |
 |---|--------|-------|
+| 94 | **✅ UI FIX (MOJIBAKE + BANNERS): Corregidos textos con encoding roto (¿, Día, Gestión, etc.) y emojis en Dashboard. Eliminado banner duplicado de ubicación (se mantiene ProfileReminderBanner). Ajustado banner de perfil incompleto en TribeAssignmentsView** | 23 Dic |
 | 93 | **✅ DEPLOY PRODUCCIÓN + ESTADO PWA: Código limpio desplegado a main. Creado documento ESTADO_PWA_PRODUCCION_2025-12-23.md con roadmap completo para lanzamiento. 2 bloqueantes críticos identificados (MercadoPago + PDFs legales)** | 23 Dic |
 | 92 | **✅ FIX PRODUCCIÓN: Corregido import faltante de ProgressBanner en Dashboard.tsx. Build verificado exitosamente. Listo para deploy con código limpio (sin datos fake)** | 23 Dic |
 | 91 | **✅ ELIMINACIÓN TOTAL DE DATOS FAKE: Vaciados SEED_USERS, DUMMY_DATABASE, FILLER_EMAILS. Eliminadas funciones generateMockProfile y lógica de relleno en matchService. App usa EXCLUSIVAMENTE los 9 usuarios reales de Firebase** | 23 Dic |

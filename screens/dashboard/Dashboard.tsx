@@ -39,10 +39,10 @@ const Dashboard = () => {
   const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
 
-  // ðŸŽ‰ Confeti para nuevos registros
+  // 🎉 Confeti para nuevos registros
   const { triggerConfetti, ConfettiComponent } = useConfetti();
   
-  // Detectar si es un registro reciente (dentro de los Ãºltimos 30 segundos)
+  // Detectar si es un registro reciente (dentro de los últimos 30 segundos)
   useEffect(() => {
     const isNewRegistration = localStorage.getItem('tribu_new_registration');
     if (isNewRegistration) {
@@ -79,7 +79,7 @@ const Dashboard = () => {
   const handlePasswordChange = async (newPassword: string) => {
     if (currentUser) {
       changeUserPassword(currentUser.id, newPassword);
-      // Marcar que ya cambiÃ³ su contraseÃ±a (nunca mÃ¡s mostrar el popup)
+      // Marcar que ya cambió su contraseña (nunca más mostrar el popup)
       localStorage.setItem(`password_changed_${currentUser.id}`, 'true');
 
       // Sincronizar con Firebase
@@ -87,7 +87,7 @@ const Dashboard = () => {
         const { updateUserPassword } = await import('../../services/firebaseService');
         await updateUserPassword(currentUser.id, newPassword);
       } catch (err) {
-        console.log('âš ï¸ ContraseÃ±a guardada localmente');
+        console.log('⚠️ Contraseña guardada localmente');
       }
     }
     localStorage.removeItem('show_password_change');
@@ -104,7 +104,7 @@ const Dashboard = () => {
 
   return (
     <div className="pb-32 animate-fadeIn min-h-screen bg-[#F5F7FB]">
-      {/* ðŸŽ‰ Confeti de bienvenida para nuevos registros */}
+      {/* 🎉 Confeti de bienvenida para nuevos registros */}
       <ConfettiComponent />
 
       {/* Password Change Modal (first login) */}
@@ -115,26 +115,7 @@ const Dashboard = () => {
       {/* Onboarding Modal */}
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
 
-      {/* Banner de perfil incompleto */}
-      {!showOnboarding && !showPasswordChange && (!currentUser?.scope || (!currentUser?.comuna && currentUser?.scope === 'LOCAL') || (!currentUser?.selectedRegions?.length && currentUser?.scope === 'REGIONAL')) && (
-        <div className="mx-4 mt-4 p-4 bg-gradient-to-r from-[#FF9500] to-[#FF6B00] rounded-xl shadow-lg">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">ðŸ“</span>
-            <div className="flex-1">
-              <h3 className="font-bold text-white text-sm">Â¿DÃ³nde estÃ¡ tu negocio?</h3>
-              <p className="text-white/80 text-xs mt-1">
-                Completa tu ubicaciÃ³n para que el algoritmo encuentre matches cercanos a ti.
-              </p>
-              <button
-                onClick={() => navigate('/my-profile')}
-                className="mt-3 px-4 py-2 bg-white text-[#FF6B00] rounded-lg text-xs font-bold hover:bg-white/90 transition"
-              >
-                Completar perfil â†’
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Nota: el recordatorio de perfil incompleto se maneja con ProfileReminderBanner (evitamos duplicar banners). */}
 
       {/* Header - Liquid Glass iOS 26 with safe area */}
       <header className="px-5 pb-5 flex justify-between items-center sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-white/20"
@@ -168,25 +149,25 @@ const Dashboard = () => {
       {/* Banner de recordatorio si perfil incompleto */}
       <ProfileReminderBanner />
 
-      {/* Tip del DÃ­a */}
+      {/* Tip del Día */}
       <div className="px-4 mb-4">
         <div className="bg-gradient-to-r from-[#F5F7FB] to-white rounded-xl p-4 border border-[#E4E7EF]">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-[#FFCC00]/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg">ðŸ’¡</span>
+              <span className="text-lg">💡</span>
             </div>
             <div className="flex-1">
-              <p className="text-xs font-semibold text-[#7C8193] mb-1">TIP DEL DÃA</p>
+              <p className="text-xs font-semibold text-[#7C8193] mb-1">TIP DEL DÍA</p>
               <p className="text-sm text-[#181B34] leading-relaxed">
                 {(() => {
                   const tips = [
-                    "Los emprendedores que comparten 3+ veces por semana crecen un 40% mÃ¡s rÃ¡pido en redes.",
-                    "Una story mencionando a otro emprendedor genera 2x mÃ¡s engagement que una publicaciÃ³n normal.",
+                    "Los emprendedores que comparten 3+ veces por semana crecen un 40% más rápido en redes.",
+                    "Una story mencionando a otro emprendedor genera 2x más engagement que una publicación normal.",
                     "El mejor horario para compartir en Chile es entre 12:00 y 14:00 hrs.",
-                    "Agregar una recomendaciÃ³n genuina al compartir aumenta la credibilidad de ambos.",
-                    "Los emprendedores con checklist completo reciben 60% mÃ¡s shares de vuelta.",
-                    "Responder stories de tu tribu fortalece la relaciÃ³n y genera reciprocidad.",
-                    "Un mensaje de agradecimiento despuÃ©s de ser compartido genera conexiones duraderas."
+                    "Agregar una recomendación genuina al compartir aumenta la credibilidad de ambos.",
+                    "Los emprendedores con checklist completo reciben 60% más shares de vuelta.",
+                    "Responder stories de tu tribu fortalece la relación y genera reciprocidad.",
+                    "Un mensaje de agradecimiento después de ser compartido genera conexiones duraderas."
                   ];
                   const dayIndex = new Date().getDate() % tips.length;
                   return tips[dayIndex];
@@ -197,7 +178,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* CÃ³mo Funciona - Onboarding Accesible */}
+      {/* Cómo Funciona - Onboarding Accesible */}
       <div className="px-4 mb-4">
         <details open className="bg-gradient-to-r from-[#6161FF]/5 to-[#00CA72]/5 rounded-xl border border-[#6161FF]/20 overflow-hidden group">
           <summary className="p-4 cursor-pointer list-none flex items-center justify-between hover:bg-[#6161FF]/5 transition-colors">
@@ -206,8 +187,8 @@ const Dashboard = () => {
                 <HelpCircle size={18} className="text-white" />
               </div>
               <div>
-                <p className="font-semibold text-[#181B34]">Â¿CÃ³mo funciona Tribu Impulsa?</p>
-                <p className="text-xs text-[#7C8193]">GuÃ­a rÃ¡pida del sistema 10+10</p>
+                <p className="font-semibold text-[#181B34]">¿Cómo funciona Tribu Impulsa?</p>
+                <p className="text-xs text-[#7C8193]">Guía rápida del sistema 10+10</p>
               </div>
             </div>
             <ChevronRight size={20} className="text-[#7C8193] group-open:rotate-90 transition-transform" />
@@ -238,7 +219,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <p className="font-medium text-sm text-[#181B34]">Recibe Impulso</p>
-                  <p className="text-xs text-[#7C8193]">Otros 10 emprendedores diferentes te compartirÃ¡n a ti</p>
+                  <p className="text-xs text-[#7C8193]">Otros 10 emprendedores diferentes te compartirán a ti</p>
                 </div>
               </div>
               <div className="flex gap-3 items-start">
@@ -253,14 +234,14 @@ const Dashboard = () => {
             </div>
             <div className="bg-[#F5F7FB] rounded-lg p-3 mt-2">
               <p className="text-xs text-[#7C8193]">
-                ðŸ’¡ <span className="font-medium">Tip:</span> ConÃ©ctate por WhatsApp con tu Tribu para coordinar cÃ³mo compartirse mutuamente. Â¡La comunicaciÃ³n es clave!
+                💡 <span className="font-medium">Tip:</span> Conéctate por WhatsApp con tu Tribu para coordinar cómo compartirse mutuamente. ¡La comunicación es clave!
               </p>
             </div>
           </div>
         </details>
       </div>
 
-      {/* Logros y GamificaciÃ³n */}
+      {/* Logros y Gamificación */}
       <div className="px-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-semibold text-[#181B34]">Tus Logros</h2>
@@ -281,27 +262,27 @@ const Dashboard = () => {
           </div>
           <p className="text-[0.625rem] text-[#7C8193] mt-2">
             {tribeStats.total - tribeStats.completed > 0
-              ? `${tribeStats.total - tribeStats.completed} acciones mÃ¡s para completar este mes`
-              : 'Â¡Felicidades! Completaste todas las acciones'}
+              ? `${tribeStats.total - tribeStats.completed} acciones más para completar este mes`
+              : '¡Felicidades! Completaste todas las acciones'}
           </p>
         </div>
 
         {/* Badges Grid */}
         <div className="grid grid-cols-4 gap-2">
-          {/* Badge 1: Primera acciÃ³n */}
+          {/* Badge 1: Primera acción */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 1 ? 'bg-[#00CA72]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 1 ? 'bg-[#00CA72]' : 'bg-[#E4E7EF]'}`}>
-              <span className="text-lg">{tribeStats.completed >= 1 ? 'ðŸš€' : 'ðŸ”’'}</span>
+              <span className="text-lg">{tribeStats.completed >= 1 ? '🚀' : '🔒'}</span>
             </div>
             <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 1 ? 'text-[#00CA72] font-semibold' : 'text-[#B3B8C6]'}`}>
-              Primera acciÃ³n
+              Primera acción
             </span>
           </div>
 
           {/* Badge 2: 5 shares */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 5 ? 'bg-[#6161FF]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 5 ? 'bg-[#6161FF]' : 'bg-[#E4E7EF]'}`}>
-              <span className="text-lg">{tribeStats.completed >= 5 ? 'â­' : 'ðŸ”’'}</span>
+              <span className="text-lg">{tribeStats.completed >= 5 ? '⭐' : '🔒'}</span>
             </div>
             <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 5 ? 'text-[#6161FF] font-semibold' : 'text-[#B3B8C6]'}`}>
               5 shares
@@ -311,7 +292,7 @@ const Dashboard = () => {
           {/* Badge 3: 10 shares */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.completed >= 10 ? 'bg-[#E91E63]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.completed >= 10 ? 'bg-[#E91E63]' : 'bg-[#E4E7EF]'}`}>
-              <span className="text-lg">{tribeStats.completed >= 10 ? 'ðŸ”¥' : 'ðŸ”’'}</span>
+              <span className="text-lg">{tribeStats.completed >= 10 ? '🔥' : '🔒'}</span>
             </div>
             <span className={`text-[0.5625rem] text-center ${tribeStats.completed >= 10 ? 'text-[#E91E63] font-semibold' : 'text-[#B3B8C6]'}`}>
               En llamas
@@ -321,7 +302,7 @@ const Dashboard = () => {
           {/* Badge 4: Tribu perfecta */}
           <div className={`flex flex-col items-center p-2 rounded-xl ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]/10' : 'bg-[#F5F7FB]'}`}>
             <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-1 ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'bg-[#FFCC00]' : 'bg-[#E4E7EF]'}`}>
-              <span className="text-lg">{tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'ðŸ‘‘' : 'ðŸ”’'}</span>
+              <span className="text-lg">{tribeStats.pending === 0 && tribeStats.completed >= 20 ? '🏆' : '🔒'}</span>
             </div>
             <span className={`text-[0.5625rem] text-center ${tribeStats.pending === 0 && tribeStats.completed >= 20 ? 'text-[#FFCC00] font-semibold' : 'text-[#B3B8C6]'}`}>
               Tribu perfecta
@@ -334,17 +315,17 @@ const Dashboard = () => {
   );
 };
 
-// Componente de AdministraciÃ³n de MembresÃ­as
+// Componente de Administración de Membresías
 const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string; email: string; companyName: string }> }) => {
   const [memberships, setMemberships] = useState<Record<string, { status: string; paymentDate?: string; expiresAt?: string; amount?: number }>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'miembro' | 'invitado'>('all');
 
-  // Obtener precio desde configuraciÃ³n
+  // Obtener precio desde configuración
   const config = getAppConfig();
   const MEMBERSHIP_PRICE = config.membershipPrice;
 
-  // Cargar membresÃ­as - PRIORIDAD: Firebase > localStorage
+  // Cargar membresías - PRIORIDAD: Firebase > localStorage
   useEffect(() => {
     const loadMemberships = async () => {
       const membershipData: Record<string, { status: string; paymentDate?: string; expiresAt?: string; amount?: number }> = {};
@@ -380,10 +361,10 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
             }
           });
           loadedFromFirebase = true;
-          console.log('âœ… MembresÃ­as cargadas desde Firebase:', Object.keys(membershipData).length);
+          console.log('✅ Membresías cargadas desde Firebase:', Object.keys(membershipData).length);
         }
       } catch (err) {
-        console.log('âš ï¸ Error cargando desde Firebase, usando localStorage:', err);
+        console.log('⚠️ Error cargando desde Firebase, usando localStorage:', err);
       }
 
       // Si no se pudo cargar desde Firebase, usar localStorage
@@ -416,7 +397,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
     loadMemberships();
   }, [users]);
 
-  // Cambiar estado de membresÃ­a manualmente - SINCRONIZACIÃ“N COMPLETA
+  // Cambiar estado de membresía manualmente - SINCRONIZACIÓN COMPLETA
   const changeMembershipStatus = async (userId: string, newStatus: 'miembro' | 'invitado' | 'admin') => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
@@ -480,10 +461,10 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
           adminAction: true
         });
 
-        console.log(`âœ… Firebase actualizado + historial: ${user.name} â†’ ${newStatus}`);
+        console.log(`✅ Firebase actualizado + historial: ${user.name} → ${newStatus}`);
       }
     } catch (err) {
-      console.log('âš ï¸ Error sincronizando membresÃ­a con Firebase:', err);
+      console.log('⚠️ Error sincronizando membresía con Firebase:', err);
     }
 
     // 3. ACTUALIZAR ESTADO LOCAL INMEDIATAMENTE
@@ -503,10 +484,10 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
       }
     }));
 
-    alert(`âœ… ${user.name} ahora es ${newStatus.toUpperCase()}`);
+    alert(`✅ ${user.name} ahora es ${newStatus.toUpperCase()}`);
   };
 
-  // EstadÃ­sticas - USAR PRECIO DE CONFIGURACIÃ“N
+  // Estadísticas - USAR PRECIO DE CONFIGURACIÓN
   type MembershipData = { status: string; paymentDate?: string; expiresAt?: string; amount?: number };
   const membershipValues = Object.values(memberships) as MembershipData[];
   const stats = {
@@ -539,7 +520,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#181B34]">GestiÃ³n de MembresÃ­as</h1>
+        <h1 className="text-2xl font-bold text-[#181B34]">Gestión de Membresías</h1>
         <div className="flex gap-2">
           <select
             value={filter}
@@ -588,13 +569,13 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
       {/* MercadoPago Config */}
       <div className="bg-gradient-to-r from-[#009EE3]/5 to-[#009EE3]/10 rounded-xl p-5 border border-[#009EE3]/20">
         <h3 className="text-[#009EE3] font-semibold mb-3 flex items-center gap-2">
-          <CreditCard size={20} /> ConfiguraciÃ³n MercadoPago
+          <CreditCard size={20} /> Configuración MercadoPago
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-[#7C8193] mb-1">Modo:</p>
             <span className="px-3 py-1 rounded-full bg-[#FFCC00]/20 text-[#9D6B00] font-medium">
-              ðŸ§ª SANDBOX (Pruebas)
+              🧪 SANDBOX (Pruebas)
             </span>
           </div>
           <div>
@@ -603,7 +584,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
           </div>
         </div>
         <p className="text-xs text-[#7C8193] mt-3">
-          Para producciÃ³n, configura las credenciales reales en el archivo de configuraciÃ³n.
+          Para producción, configura las credenciales reales en el archivo de configuración.
         </p>
       </div>
 
@@ -637,7 +618,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
                     <span className={`px-2 py-1 rounded text-xs font-medium ${membership?.status === 'admin' ? 'bg-[#FFCC00]/20 text-[#9D6B00]' :
                       isMember ? 'bg-[#00CA72]/10 text-[#00CA72]' : 'bg-[#7C8193]/10 text-[#7C8193]'
                       }`}>
-                      {membership?.status === 'admin' ? 'ðŸ‘‘ Admin' : isMember ? 'âœ“ Miembro' : 'Invitado'}
+                      {membership?.status === 'admin' ? '👑 Admin' : isMember ? '✓ Miembro' : 'Invitado'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center text-sm text-[#434343]">
@@ -662,7 +643,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
                             onClick={() => changeMembershipStatus(user.id, 'admin')}
                             className="text-xs bg-[#FFCC00]/10 text-[#9D6B00] px-2 py-1 rounded hover:bg-[#FFCC00]/20"
                           >
-                            â†’ Admin
+                            → Admin
                           </button>
                           <button
                             onClick={() => changeMembershipStatus(user.id, 'invitado')}
@@ -677,7 +658,7 @@ const MembershipAdminTab = ({ users }: { users: Array<{ id: string; name: string
                           onClick={() => changeMembershipStatus(user.id, 'miembro')}
                           className="text-xs bg-[#7C8193]/10 text-[#7C8193] px-2 py-1 rounded hover:bg-[#7C8193]/20"
                         >
-                          â†’ Miembro
+                          → Miembro
                         </button>
                       )}
                     </div>

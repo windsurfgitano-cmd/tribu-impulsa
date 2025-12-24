@@ -64,18 +64,9 @@ initializeFirebase();
       console.log('⚠️ Limpieza de duplicados pendiente');
     }
 
-    // 🗑️ RESET COMPLETO: Borrar TODAS las cuentas
-    // ADVERTENCIA: Esto borra TODO de localStorage Y Firebase
-    try {
-      const { deleteAllAccounts } = await import('./services/realUsersData');
-      const result = await deleteAllAccounts();
-      console.log(`🗑️ RESET COMPLETADO: ${result.localDeleted} local + ${result.firebaseDeleted} Firebase eliminadas`);
-      if (result.errors.length > 0) {
-        console.warn('⚠️ Errores durante el reset:', result.errors);
-      }
-    } catch (resetErr) {
-      console.error('❌ Error en reset:', resetErr);
-    }
+    // 🗑️ RESET COMPLETO: DESACTIVADO
+    // El reset ya se ejecutó exitosamente
+    // Sistema limpio y listo para producción
 
     // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
     try {

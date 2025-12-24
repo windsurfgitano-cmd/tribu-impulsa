@@ -312,6 +312,91 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Tus Matches Recomendados - Diseño Original Restaurado */}
+      <div className="px-4 mb-8">
+        <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-[#181B34]">
+          <Sparkles size={18} className="text-[#FFCC00]" />
+          Tus Matches Recomendados
+        </h2>
+
+        {matches.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 text-center border border-[#E4E7EF]">
+            <Sparkles size={48} className="mx-auto mb-4 text-[#B3B8C6]" />
+            <p className="text-[#7C8193] mb-2">No hay matches disponibles aún</p>
+            <p className="text-xs text-[#B3B8C6]">Completa tu perfil para recibir recomendaciones personalizadas</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {matches.map((match) => (
+              <div
+                key={match.id}
+                className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 border border-[#E4E7EF] hover:border-[#6161FF]/30 overflow-hidden"
+              >
+                <div className="p-5">
+                  {/* Header con avatar */}
+                  <div className="flex gap-4 mb-4">
+                    <img
+                      src={match.targetProfile.avatarUrl}
+                      alt={match.targetProfile.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-md flex-shrink-0"
+                    />
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-bold text-lg leading-tight text-[#181B34] truncate pr-2">
+                          {match.targetProfile.companyName}
+                        </h3>
+
+                        {/* Badge de score */}
+                        <span
+                          className={`text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${match.affinityScore > 90
+                              ? 'bg-[#00CA72]/10 text-[#00CA72]'
+                              : 'bg-[#FFCC00]/10 text-[#9D6B00]'
+                            }`}
+                        >
+                          {match.affinityScore}%
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-[#7C8193] truncate mb-2">
+                        {match.targetProfile.name}
+                      </p>
+
+                      {/* Tags de categoría */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] bg-[#6161FF]/10 px-2 py-0.5 rounded text-[#6161FF] truncate max-w-[120px]">
+                          {match.targetProfile.category}
+                        </span>
+                        {match.targetProfile.subCategory && (
+                          <span className="text-[10px] bg-[#00CA72]/10 px-2 py-0.5 rounded text-[#00CA72] truncate max-w-[120px]">
+                            {match.targetProfile.subCategory}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer con razón del match y CTA */}
+                  <div className="pt-4 border-t border-[#E4E7EF] flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[#7C8193] text-xs flex-1 min-w-0">
+                      <TrendingUp size={14} className="flex-shrink-0" />
+                      <span className="italic truncate">{match.reason}</span>
+                    </div>
+
+                    <button
+                      onClick={() => navigate(`/profile/${match.targetProfile.id}`)}
+                      className="text-xs font-bold bg-[#6161FF] text-white px-4 py-2 rounded-lg hover:bg-[#5050DD] transition-colors shadow-md flex items-center gap-1 flex-shrink-0"
+                    >
+                      Ver Perfil <ArrowRight size={12} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };

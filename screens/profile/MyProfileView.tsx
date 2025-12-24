@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -32,8 +32,10 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from '../../utils/selectOptions';
 import { validateUserProfile, syncProfileCompletionState } from '../../utils/validation';
 import { changeUserPassword } from '../../services/realUsersData';
-import { syncProfileToCloud } from '../../services/firebaseService';
+import { syncProfileToCloud, getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
+import { getAppConfig } from '../../utils/storage';
+import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
 
 
 const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium' | 'large'; setFontSize: React.Dispatch<React.SetStateAction<'small' | 'medium' | 'large'>> }) => {

@@ -15,10 +15,281 @@ import {
   X
 } from 'lucide-react';
 import { MatchProfile } from '../../types';
-import { getProfileById } from '../../services/matchService';
+import { getProfileById, getMyProfile } from '../../services/matchService';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';
 import { BrandBadge } from '../../components/BrandBadge';
 
+// Componente de Análisis de Match con LLM
+const MATCH_ANALYSIS_STORAGE_KEY = 'tribu_match_analysis';
+const MATCH_ANALYSIS_MONTH_KEY = 'tribu_match_analysis_month';
+
+interface MatchAnalysis {
+  profileId: string;
+  analysis: string;
+  generatedAt: string;
+  month: string;
+}
+
+const getStoredAnalysis = (profileId: string): MatchAnalysis | null => {
+  const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+  const storedMonth = localStorage.getItem(MATCH_ANALYSIS_MONTH_KEY);
+
+  // Si cambió el mes, limpiar análisis antiguos
+  if (storedMonth !== currentMonth) {
+    localStorage.removeItem(MATCH_ANALYSIS_STORAGE_KEY);
+    localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
+    return null;
+  }
+
+  const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
+  return allAnalysis[profileId] || null;
+};
+
+const saveAnalysis = (profileId: string, analysis: string) => {
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const allAnalysis = JSON.parse(localStorage.getItem(MATCH_ANALYSIS_STORAGE_KEY) || '{}');
+
+  allAnalysis[profileId] = {
+    profileId,
+    analysis,
+    generatedAt: new Date().toISOString(),
+    month: currentMonth
+  };
+
+  localStorage.setItem(MATCH_ANALYSIS_STORAGE_KEY, JSON.stringify(allAnalysis));
+  localStorage.setItem(MATCH_ANALYSIS_MONTH_KEY, currentMonth);
+};
+
+// Estructura de análisis enriquecido
+interface EnrichedAnalysis {
+  insight: string;
+  opportunities: string[];
+  icebreaker: string;
+}
+
+const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; profileData: MatchProfile }) => {
+  const [analysis, setAnalysis] = useState<EnrichedAnalysis | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const myProfile = getMyProfile();
+
+  // Verificar si ya existe análisis guardado al montar
+  useEffect(() => {
+    const stored = getStoredAnalysis(profileId);
+    if (stored) {
+      try {
+        // Intentar parsear como objeto enriquecido
+        const parsed = typeof stored.analysis === 'string' && stored.analysis.startsWith('{')
+          ? JSON.parse(stored.analysis)
+          : null;
+        if (parsed && parsed.insight) {
+          setAnalysis(parsed);
+        } else {
+          // Migrar análisis antiguo a formato nuevo
+          setAnalysis({
+            insight: stored.analysis,
+            opportunities: ['Colaboración en redes sociales', 'Referidos mutuos'],
+            icebreaker: `¡Hola! Vi tu emprendimiento en Tribu Impulsa y creo que podríamos colaborar. ¿Te interesa conversar?`
+          });
+        }
+        setHasGenerated(true);
+      } catch {
+        setHasGenerated(false);
+      }
+    }
+  }, [profileId]);
+
+  // Generar análisis inteligente local - ESPECÍFICO para cada match
+  const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
+    const sameLocation = me.location === target.location;
+    const meCategory = me.category || 'emprendimiento';
+    const targetCategory = target.category || 'emprendimiento';
+    const meName = me.companyName || me.name;
+    const targetName = target.companyName || target.name;
+
+    // Insight ÚNICO basado en la combinación específica de categorías
+    let insight = '';
+
+    // Análisis específico por tipo de negocio
+    if (targetCategory.includes('Paisajismo') || targetCategory.includes('Jardín')) {
+      insight = `${targetName} puede atraer clientes que valoran el bienestar y la naturaleza - exactamente el perfil que busca servicios como los de ${meName}. Una colaboración donde ${targetName} recomiende tus servicios a sus clientes (y viceversa) podría generar leads de alta calidad para ambos.`;
+    } else if (targetCategory.includes('Belleza') || targetCategory.includes('Estética')) {
+      insight = `Los clientes de ${targetName} buscan verse y sentirse bien - una audiencia perfecta para ${meName}. Podrían crear experiencias conjuntas de bienestar o packs que combinen sus servicios para maximizar el valor percibido.`;
+    } else if (targetCategory.includes('Marketing') || targetCategory.includes('Digital')) {
+      insight = `${targetName} tiene expertise en visibilidad digital que podría potenciar la presencia online de ${meName}. A cambio, ${meName} podría ser un caso de éxito o referencia para ${targetName}.`;
+    } else if (targetCategory.includes('Consultoría') || targetCategory.includes('Coaching')) {
+      insight = `${targetName} trabaja con emprendedores que podrían necesitar exactamente lo que ofrece ${meName}. Esta conexión podría generar referidos de calidad en ambas direcciones.`;
+    } else if (targetCategory.includes('Salud') || targetCategory.includes('Kinesiología')) {
+      insight = `${targetName} y ${meName} comparten una audiencia interesada en bienestar integral. Sus clientes naturalmente podrían beneficiarse de ambos servicios, creando un ecosistema de salud completo.`;
+    } else if (targetCategory.includes('Gastronomía') || targetCategory.includes('Alimentos')) {
+      insight = `${targetName} tiene acceso a una audiencia que valora experiencias de calidad. Un evento conjunto o colaboración de contenido podría exponer ambas marcas a nuevos clientes potenciales.`;
+    } else {
+      insight = `${targetName} en ${targetCategory} y ${meName} en ${meCategory} tienen audiencias complementarias sin competir directamente. Sus clientes podrían beneficiarse de ambos servicios, creando oportunidades de referidos mutuos.`;
+    }
+
+    if (sameLocation) {
+      insight += ` Al estar ambos en ${me.location}, pueden coordinar eventos presenciales o activaciones conjuntas.`;
+    }
+
+    // Oportunidades ESPECÍFICAS para este match
+    const opportunities = [
+      `Sorteo conjunto: ${meName} regala un servicio/producto de ${targetName} a sus seguidores (y viceversa)`,
+      `Contenido colaborativo: Live de Instagram donde ambos comparten tips de sus industrias`,
+      `Pack especial: Clientes de ${targetName} reciben descuento exclusivo en ${meName}`
+    ];
+
+    // Mensaje rompehielos personalizado
+    const firstName = target.name?.split(' ')[0] || 'Hola';
+    const icebreaker = `¡Hola ${firstName}! 👋 Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! 🚀`;
+
+    return {
+      insight,
+      opportunities,
+      icebreaker
+    };
+  };
+
+  // Función para generar análisis con delay realista
+  const handleGenerateAnalysis = async () => {
+    setIsLoading(true);
+
+    // Delay variable de 3-5 segundos para simular "pensando"
+    const thinkingTime = 3000 + Math.random() * 2000;
+    await new Promise(resolve => setTimeout(resolve, thinkingTime));
+
+    try {
+      // Intentar usar Azure OpenAI primero
+      const { analyzeCompatibility } = await import('../../services/aiMatchingService');
+      const result = await analyzeCompatibility(
+        { id: myProfile.id, name: myProfile.name, companyName: myProfile.companyName, city: myProfile.location || '', category: myProfile.category, affinity: myProfile.category },
+        { id: profileData.id, name: profileData.name, companyName: profileData.companyName, city: profileData.location || '', category: profileData.category, affinity: profileData.category }
+      );
+
+      // Verificar que el resultado sea válido y no sea el mensaje de error genérico
+      const isValidResult = result &&
+        result.analysis &&
+        result.analysis !== 'Análisis no disponible' &&
+        result.opportunities &&
+        result.opportunities.length > 0;
+
+      if (isValidResult) {
+        // Usar icebreaker del LLM si existe, o generar uno básico
+        const llmIcebreaker = result.icebreaker ||
+          `¡Hola ${profileData.name.split(' ')[0]}! 👋 Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? 🤝`;
+
+        const enriched: EnrichedAnalysis = {
+          insight: result.analysis,
+          opportunities: result.opportunities,
+          icebreaker: llmIcebreaker
+        };
+        console.log('✅ Análisis LLM completo:', enriched);
+        setAnalysis(enriched);
+        saveAnalysis(profileId, JSON.stringify(enriched));
+      } else {
+        // LLM no disponible o respuesta inválida - usar fallback local inteligente
+        throw new Error('Using local fallback');
+      }
+    } catch {
+      // Usar fallback inteligente local (siempre funciona)
+      console.log('✅ Usando análisis local enriquecido');
+      const smartAnalysis = generateSmartAnalysis(myProfile, profileData);
+      setAnalysis(smartAnalysis);
+      saveAnalysis(profileId, JSON.stringify(smartAnalysis));
+    } finally {
+      setIsLoading(false);
+      setHasGenerated(true);
+    }
+  };
+
+  // Generar URL de WhatsApp con mensaje pre-escrito
+  const getWhatsAppUrl = () => {
+    if (!analysis) return '#';
+    const phone = profileData.phone?.replace(/\D/g, '') || '';
+    const message = encodeURIComponent(analysis.icebreaker);
+    return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
+  };
+
+  if (!analysis && !hasGenerated) {
+    return (
+      <div className="bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-6 border border-[#E4E7EF]">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#6161FF] to-[#00CA72] flex items-center justify-center flex-shrink-0">
+            <span className="text-white text-2xl">✨</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="font-bold text-[#181B34] mb-2">Análisis de Sinergia con IA</h3>
+            <p className="text-[#7C8193] text-sm mb-4">
+              Descubre por qué este match podría ser perfecto para tu negocio y obtén ideas concretas de colaboración.
+            </p>
+            <button
+              onClick={handleGenerateAnalysis}
+              disabled={isLoading}
+              className="px-6 py-2.5 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {isLoading ? 'Analizando...' : 'Generar Análisis'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E4E7EF] overflow-hidden">
+      <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] p-4">
+        <h3 className="font-bold text-white flex items-center gap-2">
+          <span className="text-xl">✨</span>
+          Análisis de Sinergia
+        </h3>
+      </div>
+
+      <div className="p-6 space-y-6">
+        {/* Insight Principal */}
+        <div>
+          <h4 className="font-semibold text-[#181B34] mb-2 flex items-center gap-2">
+            <span className="text-lg">💡</span>
+            Por qué este match funciona
+          </h4>
+          <p className="text-[#434343] leading-relaxed">{analysis?.insight}</p>
+        </div>
+
+        {/* Oportunidades Concretas */}
+        <div>
+          <h4 className="font-semibold text-[#181B34] mb-3 flex items-center gap-2">
+            <span className="text-lg">🚀</span>
+            Ideas de colaboración
+          </h4>
+          <div className="space-y-2">
+            {analysis?.opportunities.map((opp, idx) => (
+              <div key={idx} className="flex items-start gap-3 bg-[#F5F7FB] rounded-xl p-3">
+                <span className="text-[#6161FF] font-bold text-sm">{idx + 1}.</span>
+                <p className="text-[#434343] text-sm flex-1">{opp}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mensaje Rompehielos */}
+        <div>
+          <h4 className="font-semibold text-[#181B34] mb-2 flex items-center gap-2">
+            <span className="text-lg">💬</span>
+            Mensaje sugerido para WhatsApp
+          </h4>
+          <div className="bg-[#F5F7FB] rounded-xl p-4 border border-[#E4E7EF]">
+            <p className="text-[#434343] text-sm italic">{analysis?.icebreaker}</p>
+          </div>
+          <button
+            onClick={() => window.open(getWhatsAppUrl(), '_blank')}
+            className="mt-3 w-full py-3 bg-[#25D366] hover:bg-[#20BA5A] text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+          >
+            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" className="w-5 h-5 filter invert brightness-200" alt="ws" />
+            Enviar por WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ProfileDetail = () => {
   useSurveyGuard();
@@ -176,8 +447,8 @@ const ProfileDetail = () => {
             <div>
               <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {profile.tags.map(tag => (
-                  <span key={tag} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
+                {profile.tags.map((tag, idx) => (
+                  <span key={`${tag}-${idx}`} className="text-sm bg-[#F5F7FB] border border-[#E4E7EF] px-4 py-2 rounded-lg text-[#434343] hover:border-[#6161FF] hover:text-[#6161FF] transition-colors">
                     #{tag}
                   </span>
                 ))}

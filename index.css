@@ -1,7 +1,5 @@
-/* Tailwind CSS - Required directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind CSS v4 - Import */
+@import "tailwindcss";
 
 /* Tribu Impulsa - Paleta de colores monday.com */
 /* Build: 2025-12-23 20:15 - Tailwind CSS installed */

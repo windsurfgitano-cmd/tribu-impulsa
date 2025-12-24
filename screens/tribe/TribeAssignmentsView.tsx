@@ -849,38 +849,40 @@ const TribeAssignmentsView = () => {
           </div>
         )}
 
-        {/* Progress Card - Solid color */}
-        <div className="bg-[#6161FF] rounded-xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-white/80 text-xs font-medium">Avance mensual</span>
-            <span className="text-white text-xs">{Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length} de {assignments.toShare.length + assignments.shareWithMe.length}</span>
-          </div>
-          <div className="flex items-end gap-4">
-            <h2 className="text-4xl font-bold text-white">{completion}%</h2>
-            <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-white rounded-full transition-all duration-500"
-                style={{ width: `${completion}%` }}
-              />
+        {/* Progress Card - Diseño Original con Gradiente */}
+        <div className="bg-gradient-to-r from-[#6161FF] to-[#00CA72] rounded-2xl p-6 text-white shadow-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            
+            {/* Porcentaje grande */}
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/80 font-medium">
+                Avance mensual
+              </p>
+              <h2 className="text-5xl font-bold">{completion}%</h2>
+              <p className="text-white/80 text-sm">
+                {Object.values(checklist.toShare).filter(Boolean).length + Object.values(checklist.shareWithMe).filter(Boolean).length} de {assignments.toShare.length + assignments.shareWithMe.length} acciones realizadas
+              </p>
             </div>
+            
+            {/* Botones de acción */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="px-5 py-2.5 rounded-xl bg-white text-[#6161FF] font-semibold hover:bg-white/90 transition shadow-md"
+              >
+                Ver recomendaciones
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="px-5 py-2.5 rounded-xl border-2 border-white/30 text-white hover:bg-white/10 transition font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+                {isRefreshing ? 'Sincronizando...' : 'Sincronizar'}
+              </button>
+            </div>
+            
           </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex-1 py-2.5 rounded-lg bg-white border border-[#E4E7EF] text-sm font-medium text-[#181B34] hover:border-[#6161FF] transition"
-          >
-            Ver matches
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="py-2.5 px-4 rounded-lg bg-white border border-[#E4E7EF] text-sm text-[#7C8193] hover:border-[#6161FF] transition disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -130,56 +130,91 @@ export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'upd
   setCurrentUser(newUser.id);
   
   // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE (Auth + Firestore)
-  syncUserToFirebaseAuto(newUser).catch(err => 
-    console.error('⚠️ Error sincronizando usuario a Firebase:', err)
-  );
+  console.log('🚀 Iniciando sincronización automática a Firebase...');
+  syncUserToFirebaseAuto(newUser).catch(err => {
+    console.error('❌ ERROR CRÍTICO sincronizando usuario a Firebase:', err);
+    console.error('❌ Stack:', err.stack);
+    // Intentar de nuevo después de 2 segundos
+    setTimeout(() => {
+      console.log('🔄 Reintentando sincronización...');
+      syncUserToFirebaseAuto(newUser).catch(err2 => {
+        console.error('❌ SEGUNDO INTENTO FALLÓ:', err2);
+      });
+    }, 2000);
+  });
   
   return newUser;
 };
 
 // 🔥 Función para sincronizar usuario completo a Firebase (Authentication + Firestore)
 const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
+  console.log('📤 [SYNC] Iniciando sincronización para:', user.email);
+  
   try {
+    console.log('📤 [SYNC] Importando módulos Firebase...');
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
     const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
+    
+    console.log('📤 [SYNC] Obteniendo instancia de Firestore...');
     const db = getFirestoreInstance();
 
     if (!db) {
-      console.warn('⚠️ Firestore no disponible, usuario solo guardado localmente');
-      return;
+      console.error('❌ [SYNC] Firestore NO disponible - db es null/undefined');
+      throw new Error('Firestore instance is null');
     }
+    
+    console.log('✅ [SYNC] Firestore disponible');
 
     // 🔥 PASO 1: Crear en Firebase Authentication
     try {
       const auth = getAuth();
       if (user.password) {
-        console.log('🔐 Creando usuario en Firebase Authentication...');
+        console.log('🔐 [SYNC] Creando en Firebase Authentication...');
         const userCredential = await createUserWithEmailAndPassword(
           auth, 
           user.email, 
           user.password
         );
-        console.log('✅ Usuario creado en Firebase Authentication:', userCredential.user.uid);
+        console.log('✅ [SYNC] Auth creado - UID:', userCredential.user.uid);
+      } else {
+        console.warn('⚠️ [SYNC] Usuario sin contraseña, saltando Auth');
       }
     } catch (authError: any) {
       if (authError.code === 'auth/email-already-in-use') {
-        console.warn('⚠️ Email ya existe en Firebase Authentication');
+        console.log('ℹ️ [SYNC] Email ya existe en Auth (OK)');
       } else {
-        console.error('❌ Error creando en Authentication:', authError);
+        console.error('❌ [SYNC] Error en Auth:', authError.code, authError.message);
       }
     }
 
     // 🔥 PASO 2: Guardar en Firestore
-    await setDoc(doc(db, 'users', user.id), {
+    console.log('📦 [SYNC] Guardando en Firestore /users/' + user.id);
+    console.log('📦 [SYNC] Datos a guardar:', {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      companyName: user.companyName
+    });
+    
+    const userDoc = doc(db, 'users', user.id);
+    console.log('📦 [SYNC] Documento referencia creada');
+    
+    await setDoc(userDoc, {
       ...user,
       updatedAt: serverTimestamp(),
       syncedAt: new Date().toISOString()
     }, { merge: true });
 
-    console.log('✅ Usuario sincronizado completo (Auth + Firestore):', user.email);
-  } catch (error) {
-    console.error('❌ Error en sincronización automática:', error);
+    console.log('✅ [SYNC] ¡ÉXITO! Usuario guardado en Firestore:', user.email);
+    console.log('✅ [SYNC] Verifica en: https://console.firebase.google.com/u/0/project/tribu-impulsa/firestore/data/users/' + user.id);
+  } catch (error: any) {
+    console.error('❌ [SYNC] ERROR CRÍTICO en sincronización:');
+    console.error('❌ [SYNC] Tipo:', error.constructor.name);
+    console.error('❌ [SYNC] Mensaje:', error.message);
+    console.error('❌ [SYNC] Code:', error.code);
+    console.error('❌ [SYNC] Stack:', error.stack);
+    console.error('❌ [SYNC] Error completo:', error);
     throw error;
   }
 };

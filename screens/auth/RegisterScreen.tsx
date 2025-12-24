@@ -9,6 +9,38 @@ import { REGIONS } from '../../constants/geography';
 import { TRIBE_CATEGORY_OPTIONS } from '../../data/tribeCategories';
 import { SURVEY_CATEGORY_OPTIONS, SURVEY_AFFINITY_OPTIONS, SURVEY_SCOPE_OPTIONS, SURVEY_REVENUE_OPTIONS } from '../../constants/surveyOptions';
 
+// Funciones helper para normalizar valores
+const normalizeInstagram = (value: string): string => {
+  let normalized = value.trim();
+  if (normalized && !normalized.startsWith('@')) {
+    normalized = '@' + normalized;
+  }
+  return normalized;
+};
+
+const normalizePhone = (value: string): string => {
+  let normalized = value.trim().replace(/\s+/g, '');
+  if (normalized && !normalized.startsWith('+')) {
+    // Si empieza con 9, agregar +569
+    if (normalized.startsWith('9')) {
+      normalized = '+569' + normalized.substring(1);
+    } else if (!normalized.startsWith('569')) {
+      normalized = '+56' + normalized;
+    } else {
+      normalized = '+' + normalized;
+    }
+  }
+  return normalized;
+};
+
+const normalizeWebsite = (value: string): string => {
+  let normalized = value.trim();
+  if (normalized && !normalized.startsWith('http://') && !normalized.startsWith('https://')) {
+    normalized = 'https://' + normalized;
+  }
+  return normalized;
+};
+
 const RegisterScreen = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -70,6 +102,7 @@ const RegisterScreen = () => {
     } else if (step === 2) {
       if (!formData.companyName.trim()) newErrors.companyName = 'Requerido';
       if (!formData.city.trim()) newErrors.city = 'Requerido';
+      // No validar scope aquí, se valida en paso 4
     } else if (step === 3) {
       if (!formData.category) newErrors.category = 'Selecciona un giro';
     } else if (step === 4) {
@@ -95,25 +128,32 @@ const RegisterScreen = () => {
     if (step < totalSteps) {
       setStep(step + 1);
     } else {
+      // Normalizar valores antes de guardar
+      const normalizedPhone = normalizePhone(formData.phone);
+      const normalizedInstagram = normalizeInstagram(formData.instagram);
+      const normalizedFacebook = formData.facebook ? normalizeInstagram(formData.facebook) : null;
+      const normalizedTiktok = formData.tiktok ? normalizeInstagram(formData.tiktok) : null;
+      const normalizedWebsite = formData.website ? normalizeWebsite(formData.website) : null;
+
       // Guardar en databaseService (DB real) - incluir contraseña en el perfil
       const newUser = createUser({
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
+        phone: normalizedPhone,
         password: formData.password, // Contraseña incluida en el perfil
         companyName: formData.companyName,
         city: formData.city,
         sector: formData.sector || null,
-        instagram: formData.instagram,
-        facebook: formData.facebook || null,
-        tiktok: formData.tiktok || null,
-        website: formData.website || null,
+        instagram: normalizedInstagram,
+        facebook: normalizedFacebook,
+        tiktok: normalizedTiktok,
+        website: normalizedWebsite,
         category: formData.category,
         affinity: formData.affinity,
         scope: formData.scope,
         comuna: formData.comuna || undefined,
         selectedRegions: formData.selectedRegions.length > 0 ? formData.selectedRegions : undefined,
-        whatsapp: formData.phone // WhatsApp = teléfono por defecto
+        whatsapp: normalizedPhone // WhatsApp = teléfono por defecto
       });
 
       // Establecer usuario actual con el ID (NO email)
@@ -281,13 +321,18 @@ const RegisterScreen = () => {
                   <button
                     key={scope}
                     type="button"
-                    onClick={() => setFormData({ ...formData, scope: scope as typeof formData.scope })}
+                    onClick={() => setFormData({ ...formData, scope: scope as typeof formData.scope, comuna: '', selectedRegions: [] })}
                     className={`py-3 rounded-xl text-sm font-medium transition-all ${formData.scope === scope ? 'bg-[#6161FF] text-white' : 'bg-[#F5F7FB] border border-[#E4E7EF] text-[#434343] hover:border-[#6161FF]'}`}
                   >
                     {scope}
                   </button>
                 ))}
               </div>
+              {formData.scope === 'NACIONAL' && (
+                <p className="text-xs text-[#00CA72] bg-[#00CA72]/10 p-2 rounded-lg mt-2">
+                  ✅ Alcance nacional: Harás match con emprendedores de todo Chile
+                </p>
+              )}
             </div>
             {formData.scope === 'LOCAL' && (
               <div className="animate-fadeIn space-y-3">

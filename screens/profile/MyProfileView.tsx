@@ -450,10 +450,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               }
               setTimeout(() => setSaveMessage(null), 3000);
             }}
-            className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-[#181B34] hover:bg-white transition-colors border border-[#E4E7EF] flex items-center gap-2 shadow-md"
+            className="hidden"
           >
-            <RefreshCw size={18} />
-            <span className="text-sm font-medium">Sincronizar</span>
           </button>
         </div>
       </div>
@@ -873,9 +871,9 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
           {!isEditing && (
             <div className="space-y-8 w-full text-left">
               <div>
-                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Biografía</h3>
-                <p className="text-[#434343] leading-relaxed text-lg">
-                  {profile.bio}
+                <h3 className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-[0.2em]">Sobre mi negocio</h3>
+                <p className="text-[#434343] leading-relaxed text-base">
+                  {(profile as any).businessDescription || profile.bio || 'Sin descripción'}
                 </p>
               </div>
 

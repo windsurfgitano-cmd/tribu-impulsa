@@ -29,6 +29,7 @@ const LoginScreen = () => {
   // Estados del flujo - ahora incluye 'landing' como primera pantalla
   const [step, setStep] = useState<'landing' | 'email' | 'password' | 'register' | 'forgot'>('landing');
   const [resetSent, setResetSent] = useState(false);
+  const [resetClicks, setResetClicks] = useState(0);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -397,12 +398,36 @@ const LoginScreen = () => {
       </div>
 
       {/* Logo grande */}
-      <div className="mb-4 flex justify-center">
+      <div className="mb-4 flex justify-center relative">
         <img
           src="/NuevoLogo.png"
           alt="Tribu Impulsa"
           className="w-[90%] max-w-[380px] object-contain"
+          onClick={() => {
+            setResetClicks(prev => prev + 1);
+            setTimeout(() => setResetClicks(0), 2000); // Reset counter después de 2s
+            
+            if (resetClicks >= 4) { // 5 clicks totales
+              const confirmed = window.confirm('🗑️ ¿LIMPIAR TODO EL SISTEMA?\n\nEsto borrará:\n- Todas las cuentas locales\n- Datos de sesión\n- Cache de onboarding\n\n⚠️ NO SE PUEDE DESHACER');
+              
+              if (confirmed) {
+                console.log('🗑️ Limpiando sistema completo...');
+                localStorage.clear();
+                sessionStorage.clear();
+                console.log('✅ Sistema limpiado');
+                alert('✅ Sistema limpiado completamente\n\nLa página se recargará.');
+                window.location.reload();
+              }
+              setResetClicks(0);
+            }
+          }}
+          style={{ cursor: resetClicks > 0 ? 'pointer' : 'default' }}
         />
+        {resetClicks > 0 && (
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold animate-bounce">
+            {resetClicks}/5
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-[#E4E7EF]">

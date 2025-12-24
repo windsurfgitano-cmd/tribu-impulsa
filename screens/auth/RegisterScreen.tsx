@@ -141,18 +141,30 @@ const RegisterScreen = () => {
       setIsProcessing(true);
       const emailLower = formData.email.toLowerCase().trim();
       
+      console.log('🔍 Verificando duplicados para:', emailLower);
+      
+      // PASO 1: Verificar en localStorage
       let existingUser = getUserByEmail(emailLower);
-      if (!existingUser) {
-        // Verificar en Firebase también
-        existingUser = await getUserFromFirebaseByEmail(emailLower);
+      console.log('📦 Local:', existingUser ? 'ENCONTRADO' : 'No encontrado');
+      
+      // PASO 2: Verificar en Firebase (SIEMPRE, por si acaso)
+      console.log('☁️ Buscando en Firebase...');
+      const firebaseUser = await getUserFromFirebaseByEmail(emailLower);
+      console.log('☁️ Firebase:', firebaseUser ? 'ENCONTRADO' : 'No encontrado');
+      
+      if (firebaseUser) {
+        existingUser = firebaseUser;
       }
       
       if (existingUser) {
-        setErrors({ email: 'Este email ya está registrado' });
+        console.log('❌ Email duplicado detectado:', emailLower);
+        setErrors({ email: 'Este email ya está registrado. Por favor usa otro o inicia sesión.' });
         setStep(1); // Volver al paso del email
         setIsProcessing(false);
         return;
       }
+      
+      console.log('✅ Email disponible, procediendo con registro...');
 
       // Normalizar valores antes de guardar
       const normalizedPhone = normalizePhone(formData.phone);

@@ -105,6 +105,13 @@ export const getUserByEmail = (email: string): UserProfile | undefined => {
 };
 
 export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'surveyCompleted' | 'tribeAssigned'>): UserProfile => {
+  // ✅ VALIDACIÓN DE EMAIL DUPLICADO ANTES DE CREAR
+  const existingByEmail = getUserByEmail(userData.email);
+  if (existingByEmail) {
+    console.error('❌ INTENTO DE CREAR USUARIO DUPLICADO:', userData.email);
+    throw new Error(`Email ${userData.email} ya está registrado`);
+  }
+  
   const users = getAllUsers();
   const newUser: UserProfile = {
     ...userData,
@@ -115,11 +122,14 @@ export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'upd
     surveyCompleted: true,
     tribeAssigned: false
   };
+  
+  console.log('✅ Creando usuario:', newUser.email, 'ID:', newUser.id);
+  
   users.push(newUser);
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
   setCurrentUser(newUser.id);
   
-  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE
+  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE (Auth + Firestore)
   syncUserToFirebaseAuto(newUser).catch(err => 
     console.error('⚠️ Error sincronizando usuario a Firebase:', err)
   );
@@ -127,11 +137,12 @@ export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'upd
   return newUser;
 };
 
-// 🔥 Función para sincronizar usuario completo a Firebase
+// 🔥 Función para sincronizar usuario completo a Firebase (Authentication + Firestore)
 const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
   try {
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
     const db = getFirestoreInstance();
 
     if (!db) {
@@ -139,14 +150,34 @@ const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
       return;
     }
 
-    // Guardar usuario COMPLETO en Firebase
+    // 🔥 PASO 1: Crear en Firebase Authentication
+    try {
+      const auth = getAuth();
+      if (user.password) {
+        console.log('🔐 Creando usuario en Firebase Authentication...');
+        const userCredential = await createUserWithEmailAndPassword(
+          auth, 
+          user.email, 
+          user.password
+        );
+        console.log('✅ Usuario creado en Firebase Authentication:', userCredential.user.uid);
+      }
+    } catch (authError: any) {
+      if (authError.code === 'auth/email-already-in-use') {
+        console.warn('⚠️ Email ya existe en Firebase Authentication');
+      } else {
+        console.error('❌ Error creando en Authentication:', authError);
+      }
+    }
+
+    // 🔥 PASO 2: Guardar en Firestore
     await setDoc(doc(db, 'users', user.id), {
       ...user,
       updatedAt: serverTimestamp(),
       syncedAt: new Date().toISOString()
     }, { merge: true });
 
-    console.log('✅ Usuario sincronizado automáticamente a Firebase:', user.email);
+    console.log('✅ Usuario sincronizado completo (Auth + Firestore):', user.email);
   } catch (error) {
     console.error('❌ Error en sincronización automática:', error);
     throw error;
@@ -679,6 +710,11 @@ export const createReport = (fromUserId: string, targetUserId: string, reason: s
   reports.push(newReport);
   localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
   
+  // 🔥 SINCRONIZAR A FIREBASE
+  syncReportToFirebase(newReport).catch(err =>
+    console.error('⚠️ Error sincronizando reporte:', err)
+  );
+  
   // También crear notificación para admins
   createNotification({
     userId: 'admin',
@@ -700,17 +736,24 @@ export const updateReportStatus = (
   const index = reports.findIndex(r => r.id === reportId);
   if (index === -1) return null;
   
+  const resolvedAt = ['resolved', 'sanctioned', 'dismissed'].includes(status) 
+    ? new Date().toISOString() 
+    : undefined;
+  
   reports[index] = {
     ...reports[index],
     status,
     adminNotes: adminNotes || reports[index].adminNotes,
-    resolvedAt: ['resolved', 'sanctioned', 'dismissed'].includes(status) 
-      ? new Date().toISOString() 
-      : undefined,
+    resolvedAt,
     resolvedBy: 'admin'
   };
   
   localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
+  
+  // 🔥 SINCRONIZAR A FIREBASE
+  syncReportUpdateToFirebase(reportId, status, adminNotes, resolvedAt).catch(err =>
+    console.error('⚠️ Error sincronizando actualización de reporte:', err)
+  );
   
   // Notificar al reportador
   const fromUser = getUserById(reports[index].fromUserId);
@@ -730,6 +773,57 @@ export const updateReportStatus = (
   }
   
   return reports[index];
+};
+
+// 🔥 Funciones para sincronizar reportes a Firebase
+const syncReportToFirebase = async (report: Report): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    await setDoc(doc(db, 'reports', report.id), {
+      ...report,
+      updatedAt: serverTimestamp()
+    });
+
+    console.log('✅ Reporte sincronizado a Firebase');
+  } catch (error) {
+    console.error('❌ Error sincronizando reporte:', error);
+    throw error;
+  }
+};
+
+const syncReportUpdateToFirebase = async (
+  reportId: string,
+  status: string,
+  adminNotes?: string,
+  resolvedAt?: string
+): Promise<void> => {
+  try {
+    const { getFirestoreInstance } = await import('./firebaseService');
+    const { doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
+    const db = getFirestoreInstance();
+
+    if (!db) return;
+
+    const updateData: any = {
+      status,
+      updatedAt: serverTimestamp()
+    };
+    
+    if (adminNotes) updateData.adminNotes = adminNotes;
+    if (resolvedAt) updateData.resolvedAt = resolvedAt;
+
+    await updateDoc(doc(db, 'reports', reportId), updateData);
+
+    console.log('✅ Reporte actualizado en Firebase');
+  } catch (error) {
+    console.error('❌ Error actualizando reporte:', error);
+    throw error;
+  }
 };
 
 export const getReportsByStatus = (status: Report['status']): Report[] => {

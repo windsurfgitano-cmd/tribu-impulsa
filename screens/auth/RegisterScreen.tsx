@@ -102,8 +102,7 @@ const RegisterScreen = () => {
       if (!formData.termsAccepted) newErrors.termsAccepted = 'Debes aceptar los términos';
     } else if (step === 2) {
       if (!formData.companyName.trim()) newErrors.companyName = 'Requerido';
-      if (!formData.city.trim()) newErrors.city = 'Requerido';
-      // No validar scope aquí, se valida en paso 4
+      // city NO es obligatorio - se valida según scope en paso 4
     } else if (step === 3) {
       if (!formData.category) newErrors.category = 'Selecciona un giro';
     } else if (step === 4) {
@@ -112,16 +111,18 @@ const RegisterScreen = () => {
       // Validar alcance geográfico
       if (!formData.scope) {
         newErrors.scope = 'Selecciona tu alcance';
+      } else if (formData.scope === 'NACIONAL') {
+        // NACIONAL: No requiere NADA más geográficamente
+        console.log('✅ NACIONAL: Sin campos adicionales');
       } else if (formData.scope === 'LOCAL') {
-        // LOCAL: Requiere comuna
+        // LOCAL: Solo requiere comuna (región implícita)
         if (!formData.comuna) newErrors.comuna = 'Selecciona tu comuna';
       } else if (formData.scope === 'REGIONAL') {
-        // REGIONAL: Requiere regiones seleccionadas
+        // REGIONAL: Solo requiere regiones (sin comunas)
         if (formData.selectedRegions.length === 0) {
           newErrors.selectedRegions = 'Selecciona al menos una región';
         }
       }
-      // NACIONAL: No requiere validación adicional
     } else if (step === 5) {
       if (!formData.instagram.trim()) newErrors.instagram = 'Instagram es requerido';
     }

@@ -261,22 +261,22 @@ const LoginScreen = () => {
 
     // Validación según alcance geográfico
     if (registerData.scope === 'NACIONAL') {
-      // NACIONAL: No requiere ciudad, región ni comuna
-      // Se saltea todas las validaciones geográficas
+      // NACIONAL: No requiere NADA más geográficamente
+      console.log('✅ NACIONAL: Sin validaciones geográficas adicionales');
     } else if (registerData.scope === 'LOCAL') {
-      if (!registerData.city) {
-        setError('Por favor indica tu ciudad');
-        return;
-      }
+      // LOCAL: Solo requiere comuna (la región está implícita en la comuna)
       if (!registerData.comuna) {
-        setError('Por favor indica tu comuna para alcance LOCAL');
+        setError('Por favor selecciona tu comuna');
         return;
       }
+      console.log('✅ LOCAL: Comuna seleccionada');
     } else if (registerData.scope === 'REGIONAL') {
+      // REGIONAL: Solo requiere regiones seleccionadas
       if (registerData.selectedRegions.length === 0) {
-        setError('Por favor selecciona al menos una región para alcance REGIONAL');
+        setError('Por favor selecciona al menos una región');
         return;
       }
+      console.log('✅ REGIONAL: Regiones seleccionadas');
     }
 
     // Validar biografía y descripción
@@ -1035,70 +1035,30 @@ const LoginScreen = () => {
               </div>
             )}
 
-            {/* REGIONAL: Checkboxes de regiones + Región principal + Comuna */}
+            {/* REGIONAL: Solo checkboxes de regiones */}
             {registerData.scope === 'REGIONAL' && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Regiones donde operas *</label>
-                  <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto bg-[#F5F7FB] rounded-xl p-2">
-                    {REGIONS.map(region => (
-                      <label key={region.id} className="flex items-center gap-1.5 text-xs text-[#434343] cursor-pointer hover:text-[#6161FF]">
-                        <input
-                          type="checkbox"
-                          checked={registerData.selectedRegions.includes(region.shortName)}
-                          onChange={(e) => {
-                            const newRegions = e.target.checked
-                              ? [...registerData.selectedRegions, region.shortName]
-                              : registerData.selectedRegions.filter(r => r !== region.shortName);
-                            setRegisterData({ ...registerData, selectedRegions: newRegions });
-                          }}
-                          className="w-3.5 h-3.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
-                        />
-                        {region.shortName}
-                      </label>
-                    ))}
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Regiones donde operas *</label>
+                <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto bg-[#F5F7FB] rounded-xl p-2">
+                  {REGIONS.map(region => (
+                    <label key={region.id} className="flex items-center gap-1.5 text-xs text-[#434343] cursor-pointer hover:text-[#6161FF]">
+                      <input
+                        type="checkbox"
+                        checked={registerData.selectedRegions.includes(region.shortName)}
+                        onChange={(e) => {
+                          const newRegions = e.target.checked
+                            ? [...registerData.selectedRegions, region.shortName]
+                            : registerData.selectedRegions.filter(r => r !== region.shortName);
+                          setRegisterData({ ...registerData, selectedRegions: newRegions });
+                        }}
+                        className="w-3.5 h-3.5 rounded border-[#E4E7EF] text-[#6161FF] focus:ring-[#6161FF]/30"
+                      />
+                      {region.shortName}
+                    </label>
+                  ))}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Región principal *</label>
-                    <select
-                      value={registerData.selectedRegion}
-                      onChange={(e) => {
-                        const region = REGIONS.find(r => r.id === e.target.value);
-                        setRegisterData({ 
-                          ...registerData, 
-                          selectedRegion: e.target.value,
-                          city: region?.shortName || '',
-                          comuna: ''
-                        });
-                      }}
-                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                      required
-                    >
-                      <option value="">Selecciona región</option>
-                      {REGIONS.map(region => (
-                        <option key={region.id} value={region.id}>{region.shortName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Comuna principal *</label>
-                    <select
-                      value={registerData.comuna}
-                      onChange={(e) => setRegisterData({ ...registerData, comuna: e.target.value })}
-                      className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF] transition-all"
-                      required
-                      disabled={!registerData.selectedRegion}
-                    >
-                      <option value="">Selecciona comuna</option>
-                      {registerData.selectedRegion && REGIONS.find(r => r.id === registerData.selectedRegion)?.comunas.map(comuna => (
-                        <option key={comuna} value={comuna}>{comuna}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </>
+                <p className="text-[0.45rem] text-[#7C8193] mt-1">Selecciona todas las regiones donde ofreces tu servicio</p>
+              </div>
             )}
 
             {/* Facturación mensual */}

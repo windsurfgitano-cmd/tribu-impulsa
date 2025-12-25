@@ -357,18 +357,32 @@ export const getUserByEmail = (email: string): (UserProfile & { firstLogin?: boo
 // NUEVA: Obtener usuario desde Firebase y sincronizar a localStorage
 export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
   try {
+    console.log(`🔍 [FIREBASE-SEARCH] Buscando usuario: ${email}`);
     const { getFirestoreInstance } = await import('./firebaseService');
     const { collection, getDocs } = await import('firebase/firestore');
     const db = getFirestoreInstance();
 
-    if (!db) return null;
+    if (!db) {
+      console.error('❌ [FIREBASE-SEARCH] Firestore no disponible');
+      return null;
+    }
 
     // Buscar todos los usuarios y filtrar por email case-insensitive
     // Firebase no soporta case-insensitive queries directamente
     const emailLower = email.toLowerCase();
+    console.log(`🔍 [FIREBASE-SEARCH] Obteniendo todos los usuarios de Firestore...`);
     const querySnapshot = await getDocs(collection(db, 'users'));
+    
+    console.log(`📊 [FIREBASE-SEARCH] Total de usuarios en Firestore: ${querySnapshot.docs.length}`);
 
-    if (querySnapshot.empty) return null;
+    if (querySnapshot.empty) {
+      console.warn('⚠️ [FIREBASE-SEARCH] Firestore /users está vacío');
+      return null;
+    }
+
+    // Debug: Listar todos los emails en Firestore
+    const allEmails = querySnapshot.docs.map(doc => doc.data().email).filter(Boolean);
+    console.log(`📧 [FIREBASE-SEARCH] Emails en Firestore:`, allEmails);
 
     // Buscar el usuario con el email correcto (case-insensitive)
     const userDoc = querySnapshot.docs.find(doc => {
@@ -377,12 +391,15 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
     });
 
     if (!userDoc) {
-      console.log('🔍 Usuario no encontrado en Firebase con email:', email);
+      console.error(`❌ [FIREBASE-SEARCH] Usuario NO encontrado: ${email}`);
+      console.error(`❌ [FIREBASE-SEARCH] Email buscado (lowercase): ${emailLower}`);
+      console.error(`❌ [FIREBASE-SEARCH] Emails disponibles:`, allEmails);
       return null;
     }
 
     const userData = userDoc.data();
     const userId = userDoc.id;
+    console.log(`✅ [FIREBASE-SEARCH] Usuario encontrado: ${userData.email} (ID: ${userId})`);
 
     // Convertir datos de Firebase a formato UserProfile
     const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
@@ -438,8 +455,57 @@ export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserPr
   }
 };
 
-// Validar credenciales (contraseña universal TRIBU2026)
-export const validateCredentials = (email: string, password: string): (UserProfile & { firstLogin?: boolean }) | null => {
+// Validar credenciales usando Firebase Authentication
+export const validateCredentials = async (email: string, password: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
+  try {
+    console.log(`🔐 [VALIDATE] Validando credenciales para: ${email}`);
+    
+    // PASO 1: Intentar login con Firebase Authentication
+    const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
+    const auth = getAuth();
+    
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log(`✅ [VALIDATE] Autenticación exitosa: ${userCredential.user.uid}`);
+      
+      // PASO 2: Obtener perfil del usuario
+      let user = getUserByEmail(email);
+      
+      if (!user) {
+        console.log(`🔍 [VALIDATE] Usuario no encontrado localmente, buscando en Firestore...`);
+        user = await getUserFromFirebaseByEmail(email);
+      }
+      
+      if (!user) {
+        console.error(`❌ [VALIDATE] Usuario autenticado pero sin perfil en Firestore`);
+        return null;
+      }
+      
+      console.log(`✅ [VALIDATE] Credenciales válidas y perfil cargado`);
+      return user;
+      
+    } catch (authError: any) {
+      console.error(`❌ [VALIDATE] Error de autenticación: ${authError.code}`);
+      
+      if (authError.code === 'auth/wrong-password') {
+        console.error(`❌ [VALIDATE] Contraseña incorrecta`);
+      } else if (authError.code === 'auth/user-not-found') {
+        console.error(`❌ [VALIDATE] Usuario no encontrado en Authentication`);
+      } else if (authError.code === 'auth/invalid-credential') {
+        console.error(`❌ [VALIDATE] Credenciales inválidas`);
+      }
+      
+      return null;
+    }
+    
+  } catch (error) {
+    console.error(`❌ [VALIDATE] Error crítico validando credenciales:`, error);
+    return null;
+  }
+};
+
+// Validar credenciales (versión síncrona legacy - solo para compatibilidad)
+export const validateCredentialsSync = (email: string, password: string): (UserProfile & { firstLogin?: boolean }) | null => {
   const user = getUserByEmail(email);
   if (!user) return null;
 
@@ -1281,3 +1347,4 @@ export const deleteAllAccounts = async (): Promise<{
 };
 
 export default REAL_USERS;
+

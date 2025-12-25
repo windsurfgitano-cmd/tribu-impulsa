@@ -201,28 +201,23 @@ const LoginScreen = () => {
     }
 
     setIsLoading(true);
+    
+    console.log(`🔐 [LOGIN] Iniciando login para: ${email}`);
 
-    // Primero buscar localmente
-    let user = validateCredentials(email, password);
-    let existingUser = getUserByEmail(email);
+    try {
+      // Validar credenciales usando Firebase Authentication
+      const user = await validateCredentials(email, password);
 
-    // Si no está local, buscar en Firebase
-    if (!existingUser) {
-      console.log('🔍 Cargando usuario desde Firebase para login...');
-      existingUser = await getUserFromFirebaseByEmail(email);
-      // Re-validar credenciales después de cargar desde Firebase
-      if (existingUser) {
-        user = validateCredentials(email, password);
+      if (user) {
+        console.log(`✅ [LOGIN] Login exitoso: ${user.email}`);
+        completeLogin(user);
+      } else {
+        console.error(`❌ [LOGIN] Credenciales inválidas`);
+        setError('Email o contraseña incorrectos. Verifica tus datos e intenta de nuevo.');
       }
-    }
-
-    const isProfilePasswordValid = existingUser?.password && existingUser.password === password;
-
-    if (user || (existingUser && isProfilePasswordValid)) {
-      const loggedUser = user || existingUser;
-      completeLogin(loggedUser);
-    } else {
-      setError('Contraseña incorrecta');
+    } catch (error: any) {
+      console.error(`❌ [LOGIN] Error durante login:`, error);
+      setError('Error al iniciar sesión. Por favor, intenta de nuevo.');
     }
 
     setIsLoading(false);

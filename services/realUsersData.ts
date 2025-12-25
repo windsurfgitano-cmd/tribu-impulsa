@@ -731,13 +731,26 @@ export const emailExists = (email: string): boolean => {
 
 // Registrar nuevo usuario
 export const registerNewUser = async (userData: NewUserData): Promise<UserProfile | null> => {
-  // Verificar si el email ya existe
+  // ✅ VALIDACIÓN 1: Verificar si el email ya existe LOCALMENTE
   if (emailExists(userData.email)) {
-    console.log('⚠️ Email ya registrado');
+    console.log('⚠️ Email ya registrado localmente');
     return null;
   }
 
-  const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+  // ✅ VALIDACIÓN 2: Verificar si el email ya existe en FIREBASE AUTH
+  try {
+    const { getAuth, fetchSignInMethodsForEmail } = await import('firebase/auth');
+    const auth = getAuth();
+    const signInMethods = await fetchSignInMethodsForEmail(auth, userData.email);
+    if (signInMethods.length > 0) {
+      console.error('❌ [REGISTER] Email ya existe en Firebase Authentication');
+      alert('Este email ya está registrado. Por favor, inicia sesión.');
+      return null;
+    }
+  } catch (error: any) {
+    console.warn('⚠️ [REGISTER] No se pudo verificar email en Auth:', error.code);
+  }
+
   const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const newUser: UserProfile & { firstLogin: boolean; password: string } = {
@@ -779,40 +792,49 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     tribeAssigned: true
   };
 
-  users.push(newUser);
-  localStorage.setItem('tribu_users', JSON.stringify(users));
-
-  // Sincronizar con Firebase - GUARDAR TODOS LOS DATOS COMPLETOS
+  // 🔄 SINCRONIZACIÓN TRANSACCIONAL: Auth → Firestore → localStorage
+  let authUID: string | null = null;
+  let firestoreSaved = false;
+  
   try {
     const { getFirestoreInstance } = await import('./firebaseService');
-    const { doc, setDoc } = await import('firebase/firestore');
+    const { doc, setDoc, getDoc, updateDoc, increment } = await import('firebase/firestore');
     const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
     const db = getFirestoreInstance();
 
-    if (db) {
-      // 🔐 PASO 1: Crear usuario en Firebase Authentication
-      try {
-        const auth = getAuth();
-        console.log('🔐 [REGISTER] Creando usuario en Firebase Authentication...');
-        const userCredential = await createUserWithEmailAndPassword(
-          auth, 
-          newUser.email, 
-          newUser.password
-        );
-        console.log('✅ [REGISTER] Usuario creado en Authentication:', userCredential.user.uid);
-      } catch (authError: any) {
-        if (authError.code === 'auth/email-already-in-use') {
-          console.warn('⚠️ [REGISTER] Email ya existe en Authentication (OK, continuando)');
-        } else {
-          console.error('❌ [REGISTER] Error en Authentication:', authError);
-          throw authError;
-        }
-      }
+    if (!db) {
+      console.error('❌ [REGISTER] Firestore no disponible');
+      throw new Error('Firestore not initialized');
+    }
 
-      // 📦 PASO 2: Guardar usuario completo en Firestore
-      console.log('📦 [REGISTER] Guardando perfil completo en Firestore...');
+    // 🔐 PASO 1: Crear usuario en Firebase Authentication
+    console.log('🔐 [REGISTER] Paso 1/3: Creando en Firebase Authentication...');
+    const auth = getAuth();
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        newUser.email, 
+        newUser.password
+      );
+      authUID = userCredential.user.uid;
+      console.log(`✅ [REGISTER] Creado en Authentication: ${authUID}`);
+    } catch (authError: any) {
+      if (authError.code === 'auth/email-already-in-use') {
+        console.error('❌ [REGISTER] Email ya existe en Authentication');
+        alert('Este email ya está registrado. Por favor, inicia sesión.');
+        return null;
+      } else {
+        console.error('❌ [REGISTER] Error crítico en Authentication:', authError);
+        throw authError;
+      }
+    }
+
+    // 📦 PASO 2: Guardar usuario completo en Firestore
+    console.log('📦 [REGISTER] Paso 2/3: Guardando en Firestore...');
+    try {
       await setDoc(doc(db, 'users', newUser.id), {
         id: newUser.id,
+        authUID: authUID,
         email: newUser.email,
         name: newUser.name,
         companyName: newUser.companyName,
@@ -845,46 +867,70 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
         onboardingComplete: newUser.onboardingComplete,
         password: newUser.password,
         createdAt: newUser.createdAt,
+        updatedAt: new Date().toISOString(),
         source: 'app_registration'
       });
-      console.log('✅ [REGISTER] Usuario guardado en Firestore:', newUser.email);
-
-      // 📊 Actualizar contador global de perfiles
-      const { getDoc, updateDoc, increment } = await import('firebase/firestore');
-      const statsRef = doc(db, 'system_stats', 'global');
-      const statsDoc = await getDoc(statsRef);
-      
-      if (statsDoc.exists()) {
-        // ✅ Solo incrementar profilesCompleted si el perfil está completo
-        const updateData: any = {
-          membersActive: increment(1)
-        };
-        
-        if (newUser.profileComplete === true) {
-          updateData.profilesCompleted = increment(1);
-          console.log('📊 Contador de perfiles completos actualizado (+1)');
-        } else {
-          console.log('📊 Usuario registrado pero perfil incompleto, contador no incrementado');
-        }
-        
-        await updateDoc(statsRef, updateData);
-        console.log('📊 Contador de miembros activos actualizado (+1)');
-      } else {
-        // Crear documento si no existe
-        await setDoc(statsRef, {
-          profilesCompleted: newUser.profileComplete === true ? 1 : 0,
-          membersActive: 1,
-          profilesTarget: 1000
-        });
-        console.log('📊 Documento system_stats creado');
-      }
+      firestoreSaved = true;
+      console.log('✅ [REGISTER] Guardado en Firestore:', newUser.email);
+    } catch (firestoreError) {
+      console.error('❌ [REGISTER] Error guardando en Firestore:', firestoreError);
+      // Aquí deberíamos intentar rollback de Auth, pero es complicado
+      // Por ahora solo alertamos y dejamos la cuenta huérfana para limpiar después
+      alert('Error guardando perfil. Por favor, contacta a soporte.');
+      throw firestoreError;
     }
-  } catch (error) {
-    console.log('⚠️ Error sincronizando con Firebase:', error);
-  }
 
-  console.log(`✅ Nuevo usuario registrado: ${userData.email}`);
-  return newUser;
+    // 📊 PASO 3: Actualizar contador global
+    console.log('📊 [REGISTER] Paso 3/3: Actualizando contador...');
+    const statsRef = doc(db, 'system_stats', 'global');
+    const statsDoc = await getDoc(statsRef);
+    
+    if (statsDoc.exists()) {
+      const updateData: any = {
+        membersActive: increment(1)
+      };
+      
+      if (newUser.profileComplete === true) {
+        updateData.profilesCompleted = increment(1);
+        console.log('📊 Contador de perfiles completos +1');
+      }
+      
+      await updateDoc(statsRef, updateData);
+      console.log('📊 Contador actualizado');
+    } else {
+      await setDoc(statsRef, {
+        profilesCompleted: newUser.profileComplete === true ? 1 : 0,
+        membersActive: 1,
+        profilesTarget: 1000,
+        lastUpdated: new Date().toISOString()
+      });
+      console.log('📊 Documento system_stats creado');
+    }
+
+    // 💾 PASO 4: Guardar en localStorage SOLO SI FIREBASE TUVO ÉXITO
+    console.log('💾 [REGISTER] Paso 4/4: Guardando en localStorage...');
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    users.push(newUser);
+    localStorage.setItem('tribu_users', JSON.stringify(users));
+    console.log('✅ [REGISTER] Guardado en localStorage');
+
+    console.log(`✅ ✅ ✅ REGISTRO COMPLETO: ${userData.email}`);
+    return newUser;
+
+  } catch (error: any) {
+    console.error('❌ ❌ ❌ [REGISTER] ERROR CRÍTICO:', error);
+    
+    // Informar al usuario del error
+    if (error.code === 'permission-denied') {
+      alert('Error de permisos en Firebase. Por favor, contacta a soporte.');
+    } else if (error.code === 'unavailable') {
+      alert('Firebase no está disponible. Verifica tu conexión a internet.');
+    } else {
+      alert('Error al registrar usuario. Por favor, intenta de nuevo.');
+    }
+    
+    return null;
+  }
 };
 
 // Obtener total de usuarios

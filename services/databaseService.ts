@@ -27,7 +27,7 @@ export interface UserProfile {
   otherChannel?: string;
   whatsapp?: string;
   // Clasificación negocio (GIRO/RUBRO primero)
-  category: string;      // Giro/Rubro del negocio
+  category: string | string[];  // Giro/Rubro del negocio (puede ser múltiple)
   affinity: string;      // Con qué tipo de negocios quiere conectar
   scope?: 'LOCAL' | 'REGIONAL' | 'NACIONAL';
   // Geografía detallada

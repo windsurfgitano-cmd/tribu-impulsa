@@ -94,7 +94,7 @@ const LoginScreen = () => {
     companyName: '',
     instagram: '',
     phone: '',
-    category: '',
+    category: [] as string[],  // Categorías múltiples
     subcategory: '',
     affinity: '',
     password: '',
@@ -203,6 +203,8 @@ const LoginScreen = () => {
     setIsLoading(true);
     
     console.log(`🔐 [LOGIN] Iniciando login para: ${email}`);
+    console.log('[DEBUG] Password en login (length):', password?.length);
+    console.log('[DEBUG] Password tiene espacios:', password?.includes(' '));
 
     try {
       // Validar credenciales usando Firebase Authentication
@@ -243,7 +245,7 @@ const LoginScreen = () => {
     }
 
     // Validar TODOS los campos obligatorios
-    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || !registerData.category) {
+    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || registerData.category.length === 0) {
       setError('Por favor completa TODOS los campos obligatorios');
       return;
     }
@@ -325,7 +327,7 @@ const LoginScreen = () => {
         instagram: instagramHandle,
         phone: registerData.phone,
         category: fullCategory,
-        affinity: registerData.affinity || registerData.category,
+        affinity: registerData.affinity || (registerData.category[0] || ''),
         password: registerData.password,
         // Campos adicionales completos
         scope: registerData.scope,
@@ -863,17 +865,70 @@ const LoginScreen = () => {
               />
             </div>
 
-            {/* Rubro principal - SearchableSelect */}
+            {/* Rubro principal - Selección múltiple con checkboxes */}
             <div>
-              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">Rubro principal *</label>
-              <SearchableSelect
-                value={registerData.category}
-                onChange={(val) => setRegisterData({ ...registerData, category: val, subcategory: '' })}
-                options={CATEGORY_SELECT_OPTIONS}
-                placeholder="🔍 Escribe para buscar tu rubro..."
-                helperText="Escribe para filtrar o navega por categorías"
-                emptyStateText="No encontramos ese rubro. Prueba con otra palabra."
-              />
+              <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
+                Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona hasta 5)</span>
+              </label>
+              <p className="text-[0.5625rem] text-[#7C8193] mb-2">
+                {registerData.category.length === 0 ? 'Selecciona al menos 1 categoría' : `${registerData.category.length} de 5 seleccionadas`}
+              </p>
+              <div className="bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 max-h-[400px] overflow-y-auto">
+                {/* Agrupar categorías por group */}
+                {(() => {
+                  const grouped = CATEGORY_SELECT_OPTIONS.reduce((acc, opt) => {
+                    const group = opt.group || 'Otros';
+                    if (!acc[group]) acc[group] = [];
+                    acc[group].push(opt);
+                    return acc;
+                  }, {} as Record<string, typeof CATEGORY_SELECT_OPTIONS>);
+                  
+                  return Object.entries(grouped).map(([groupName, options]) => (
+                    <div key={groupName} className="mb-4 last:mb-0">
+                      <h4 className="font-bold text-[#181B34] mb-2 text-sm">{groupName}</h4>
+                      <div className="space-y-1.5 pl-2">
+                        {options.map((opt) => {
+                          const isSelected = registerData.category.includes(opt.value);
+                          const canSelect = registerData.category.length < 5 || isSelected;
+                          
+                          return (
+                            <label 
+                              key={opt.value}
+                              className={`flex items-start gap-2 cursor-pointer p-2 rounded-lg hover:bg-white/50 transition-colors ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={!canSelect}
+                                onChange={() => {
+                                  if (isSelected) {
+                                    // Deseleccionar
+                                    setRegisterData({
+                                      ...registerData,
+                                      category: registerData.category.filter(c => c !== opt.value)
+                                    });
+                                  } else if (registerData.category.length < 5) {
+                                    // Seleccionar (si no ha llegado al límite)
+                                    setRegisterData({
+                                      ...registerData,
+                                      category: [...registerData.category, opt.value]
+                                    });
+                                  }
+                                }}
+                                className="mt-0.5 h-4 w-4 text-[#6161FF] border-gray-300 rounded focus:ring-[#6161FF]"
+                              />
+                              <span className="text-sm text-[#434343] leading-tight">
+                                {opt.label}
+                                {opt.description && <span className="text-xs text-[#7C8193] block">{opt.description}</span>}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
 
             {/* Afinidad / Estilo de vida - SearchableSelect */}
@@ -1182,12 +1237,12 @@ const LoginScreen = () => {
                 isLoading || 
                 !registerData.name || 
                 !registerData.companyName || 
-                !registerData.category || 
+                registerData.category.length === 0 || 
                 !registerData.instagram || 
                 !registerData.phone || 
                 !registerData.scope ||
                 (registerData.scope === 'LOCAL' && (!registerData.selectedRegion || !registerData.comuna)) ||
-                (registerData.scope === 'REGIONAL' && (registerData.selectedRegions.length === 0 || !registerData.selectedRegion || !registerData.comuna)) ||
+                (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) ||
                 !registerData.revenue ||
                 registerData.bio.length < 50 ||
                 registerData.businessDescription.length < 60 ||

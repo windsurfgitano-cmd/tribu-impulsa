@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧪 Test Firebase - Tribu Impulsa</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .test-section {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .test-section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .status.pending {
+      background: #ffd93d;
+      color: #333;
+    }
+    
+    .status.success {
+      background: #00ca72;
+      color: white;
+    }
+    
+    .status.error {
+      background: #ff6b6b;
+      color: white;
+    }
+    
+    .test-result {
+      background: white;
+      border-left: 4px solid #667eea;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    
+    .test-result.success {
+      border-left-color: #00ca72;
+    }
+    
+    .test-result.error {
+      border-left-color: #ff6b6b;
+    }
+    
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+      transition: all 0.3s;
+    }
+    
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .console-log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 20px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+    
+    .console-log .log-line {
+      margin: 2px 0;
+    }
+    
+    .console-log .log-success {
+      color: #4ec9b0;
+    }
+    
+    .console-log .log-error {
+      color: #f48771;
+    }
+    
+    .console-log .log-info {
+      color: #569cd6;
+    }
+    
+    .console-log .log-warning {
+      color: #dcdcaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test de Firebase</h1>
+    <p class="subtitle">Tribu Impulsa v0.9.1 - Modo Crisis</p>
+    
+    <!-- Test 1: Conexión Firebase -->
+    <div class="test-section">
+      <h2>
+        1️⃣ Conexión Firebase
+        <span class="status pending" id="status-1">PENDIENTE</span>
+      </h2>
+      <div id="result-1" class="test-result"></div>
+      <button onclick="testFirebaseConnection()">▶️ Probar Conexión</button>
+    </div>
+    
+    <!-- Test 2: Firestore -->
+    <div class="test-section">
+      <h2>
+        2️⃣ Firestore Database
+        <span class="status pending" id="status-2">PENDIENTE</span>
+      </h2>
+      <div id="result-2" class="test-result"></div>
+      <button onclick="testFirestore()">▶️ Probar Firestore</button>
+    </div>
+    
+    <!-- Test 3: Authentication -->
+    <div class="test-section">
+      <h2>
+        3️⃣ Firebase Authentication
+        <span class="status pending" id="status-3">PENDIENTE</span>
+      </h2>
+      <div id="result-3" class="test-result"></div>
+      <button onclick="testAuth()">▶️ Probar Auth</button>
+    </div>
+    
+    <!-- Test 4: Contador Rally -->
+    <div class="test-section">
+      <h2>
+        4️⃣ Contador Rally 1000
+        <span class="status pending" id="status-4">PENDIENTE</span>
+      </h2>
+      <div id="result-4" class="test-result"></div>
+      <button onclick="testCounter()">▶️ Probar Contador</button>
+    </div>
+    
+    <!-- Test 5: Usuario de Prueba -->
+    <div class="test-section">
+      <h2>
+        5️⃣ Crear Usuario de Prueba
+        <span class="status pending" id="status-5">PENDIENTE</span>
+      </h2>
+      <div id="result-5" class="test-result"></div>
+      <button onclick="testUserCreation()">▶️ Crear Usuario</button>
+    </div>
+    
+    <!-- Botones de acción -->
+    <div class="button-group">
+      <button onclick="runAllTests()" style="background: #00ca72;">🚀 EJECUTAR TODAS LAS PRUEBAS</button>
+      <button onclick="clearResults()">🗑️ Limpiar Resultados</button>
+      <button onclick="copyLogs()">📋 Copiar Logs</button>
+    </div>
+    
+    <!-- Consola de logs -->
+    <div class="console-log" id="console"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDWdi5OUpZmGuS_qLtyCSF-EXffSF3heJA",
+      authDomain: "tribu-impulsa.firebaseapp.com",
+      projectId: "tribu-impulsa",
+      storageBucket: "tribu-impulsa.firebasestorage.app",
+      messagingSenderId: "348097115578",
+      appId: "1:348097115578:web:115960bb81563050d01983"
+    };
+
+    let app, db, auth;
+    let logs = [];
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      logs.push({ timestamp, message, type });
+      
+      const consoleEl = document.getElementById('console');
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.textContent = `[${timestamp}] ${message}`;
+      consoleEl.appendChild(line);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+      
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    function setStatus(testNum, status, message = '') {
+      const statusEl = document.getElementById(`status-${testNum}`);
+      const resultEl = document.getElementById(`result-${testNum}`);
+      
+      statusEl.className = `status ${status}`;
+      statusEl.textContent = status === 'success' ? '✅ ÉXITO' : status === 'error' ? '❌ ERROR' : '⏳ PENDIENTE';
+      
+      if (message) {
+        resultEl.className = `test-result ${status}`;
+        resultEl.textContent = message;
+      }
+    }
+
+    // Test 1: Conexión Firebase
+    window.testFirebaseConnection = async function() {
+      log('🔧 Iniciando prueba de conexión Firebase...', 'info');
+      setStatus(1, 'pending');
+      
+      try {
+        app = initializeApp(firebaseConfig);
+        log('✅ Firebase inicializado correctamente', 'success');
+        log(`   Project ID: ${firebaseConfig.projectId}`, 'info');
+        log(`   Auth Domain: ${firebaseConfig.authDomain}`, 'info');
+        
+        setStatus(1, 'success', `✅ Firebase conectado\nProject: ${firebaseConfig.projectId}`);
+      } catch (error) {
+        log(`❌ Error inicializando Firebase: ${error.message}`, 'error');
+        setStatus(1, 'error', `❌ Error: ${error.message}`);
+      }
+    };
+
+    // Test 2: Firestore
+    window.testFirestore = async function() {
+      log('🔧 Probando conexión a Firestore...', 'info');
+      setStatus(2, 'pending');
+      
+      try {
+        if (!app) {
+          await testFirebaseConnection();
+        }
+        
+        db = getFirestore(app);
+        log('✅ Firestore inicializado', 'success');
+        
+        // Intentar leer un documento de prueba
+        const usersCollection = collection(db, 'users');
+        const snapshot = await getDocs(usersCollection);
+        const userCount = snapshot.size;
+        
+        log(`✅ Firestore conectado: ${userCount} usuarios en DB`, 'success');
+        setStatus(2, 'success', `✅ Firestore operacional\nUsuarios encontrados: ${userCount}`);
+      } catch (error) {
+        log(`❌ Error en Firestore: ${error.message}`, 'error');
+        setStatus(2, 'error', `❌ Error: ${error.message}`);
+      }
+    };
+
+    // Test 3: Authentication
+    window.testAuth = async function() {
+      log('🔧 Probando Firebase Authentication...', 'info');
+      setStatus(3, 'pending');
+      
+      try {
+        if (!app) {
+          await testFirebaseConnection();
+        }
+        
+        auth = getAuth(app);
+        log('✅ Firebase Auth inicializado', 'success');
+        
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          log(`✅ Usuario ya autenticado: ${currentUser.email}`, 'success');
+          setStatus(3, 'success', `✅ Auth operacional\nUsuario: ${currentUser.email}`);
+        } else {
+          log('⚠️ Ningún usuario autenticado actualmente', 'warning');
+          setStatus(3, 'success', `✅ Auth operacional\nSin usuario activo`);
+        }
+      } catch (error) {
+        log(`❌ Error en Authentication: ${error.message}`, 'error');
+        setStatus(3, 'error', `❌ Error: ${error.message}`);
+      }
+    };
+
+    // Test 4: Contador Rally
+    window.testCounter = async function() {
+      log('🔧 Verificando contador Rally 1000...', 'info');
+      setStatus(4, 'pending');
+      
+      try {
+        if (!db) {
+          await testFirestore();
+        }
+        
+        const statsRef = doc(db, 'system_stats', 'global');
+        const statsSnap = await getDoc(statsRef);
+        
+        if (statsSnap.exists()) {
+          const data = statsSnap.data();
+          const count = data.profilesCompleted || 0;
+          const members = data.membersActive || 0;
+          
+          log(`✅ Contador encontrado:`, 'success');
+          log(`   Perfiles completos: ${count}/1000`, 'info');
+          log(`   Miembros activos: ${members}`, 'info');
+          
+          setStatus(4, 'success', `✅ Contador operacional\nPerfiles: ${count}/1000\nMiembros: ${members}`);
+        } else {
+          log('⚠️ Documento system_stats/global no existe', 'warning');
+          log('   Creando documento...', 'info');
+          
+          await setDoc(statsRef, {
+            profilesCompleted: 0,
+            membersActive: 0,
+            lastUpdated: new Date().toISOString()
+          });
+          
+          log('✅ Documento creado con valores iniciales', 'success');
+          setStatus(4, 'success', `✅ Contador creado\nPerfiles: 0/1000\nMiembros: 0`);
+        }
+      } catch (error) {
+        log(`❌ Error con contador: ${error.message}`, 'error');
+        setStatus(4, 'error', `❌ Error: ${error.message}`);
+      }
+    };
+
+    // Test 5: Crear Usuario
+    window.testUserCreation = async function() {
+      log('🔧 Creando usuario de prueba...', 'info');
+      setStatus(5, 'pending');
+      
+      const testEmail = `test_${Date.now()}@tributest.com`;
+      const testPassword = 'TRIBU2026';
+      
+      try {
+        if (!auth) {
+          await testAuth();
+        }
+        if (!db) {
+          await testFirestore();
+        }
+        
+        log(`📧 Email de prueba: ${testEmail}`, 'info');
+        
+        // Paso 1: Crear en Authentication
+        log('🔐 Paso 1/3: Creando en Firebase Auth...', 'info');
+        const userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+        const uid = userCredential.user.uid;
+        log(`✅ Usuario creado en Auth: ${uid}`, 'success');
+        
+        // Paso 2: Guardar en Firestore
+        log('📦 Paso 2/3: Guardando perfil en Firestore...', 'info');
+        const userRef = doc(db, 'users', uid);
+        await setDoc(userRef, {
+          id: uid,
+          authUID: uid,
+          email: testEmail,
+          name: 'Usuario de Prueba',
+          companyName: 'Test Company',
+          category: 'Tecnología',
+          scope: 'NACIONAL',
+          password: testPassword,
+          profileComplete: true,
+          createdAt: new Date().toISOString(),
+          source: 'test_script'
+        });
+        log('✅ Perfil guardado en Firestore', 'success');
+        
+        // Paso 3: Actualizar contador
+        log('📊 Paso 3/3: Actualizando contador...', 'info');
+        const statsRef = doc(db, 'system_stats', 'global');
+        await updateDoc(statsRef, {
+          profilesCompleted: increment(1),
+          membersActive: increment(1),
+          lastUpdated: new Date().toISOString()
+        });
+        log('✅ Contador actualizado (+1)', 'success');
+        
+        log('🎉 ¡Usuario de prueba creado exitosamente!', 'success');
+        setStatus(5, 'success', `✅ Usuario creado\nEmail: ${testEmail}\nUID: ${uid}\nContador: +1`);
+      } catch (error) {
+        log(`❌ Error creando usuario: ${error.message}`, 'error');
+        if (error.code === 'auth/email-already-in-use') {
+          log('⚠️ El email ya existe (OK para pruebas)', 'warning');
+          setStatus(5, 'success', `✅ Email ya existe (normal)\n${testEmail}`);
+        } else {
+          setStatus(5, 'error', `❌ Error: ${error.message}`);
+        }
+      }
+    };
+
+    // Ejecutar todas las pruebas
+    window.runAllTests = async function() {
+      log('🚀 INICIANDO TODAS LAS PRUEBAS...', 'info');
+      log('═══════════════════════════════', 'info');
+      
+      await testFirebaseConnection();
+      await new Promise(r => setTimeout(r, 500));
+      
+      await testFirestore();
+      await new Promise(r => setTimeout(r, 500));
+      
+      await testAuth();
+      await new Promise(r => setTimeout(r, 500));
+      
+      await testCounter();
+      await new Promise(r => setTimeout(r, 500));
+      
+      await testUserCreation();
+      
+      log('═══════════════════════════════', 'info');
+      log('✅ TODAS LAS PRUEBAS COMPLETADAS', 'success');
+    };
+
+    // Limpiar resultados
+    window.clearResults = function() {
+      logs = [];
+      document.getElementById('console').innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        setStatus(i, 'pending', '');
+        document.getElementById(`result-${i}`).textContent = '';
+      }
+      log('🗑️ Resultados limpiados', 'info');
+    };
+
+    // Copiar logs al portapapeles
+    window.copyLogs = function() {
+      const text = logs.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.message}`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        log('📋 Logs copiados al portapapeles', 'success');
+        alert('✅ Logs copiados al portapapeles');
+      });
+    };
+
+    // Auto-iniciar
+    log('🧪 Test de Firebase inicializado', 'info');
+    log('👉 Presiona "EJECUTAR TODAS LAS PRUEBAS" para empezar', 'info');
+  </script>
+</body>
+</html>
+

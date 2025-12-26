@@ -61,12 +61,22 @@ export const uploadAvatarToSupabase = async (userId: string, file: File): Promis
   try {
     console.log('📤 Subiendo avatar a Supabase Storage...');
     
+    // Obtener el auth.uid() del usuario autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Usuario no autenticado en Supabase');
+    }
+    
+    console.log(`🔐 Usuario autenticado: ${user.id}`);
+    
     // Comprimir imagen (500x500)
     const compressedFile = await compressImage(file, 500, 500);
     
-    // Generar nombre único
-    const fileName = `${userId}_${Date.now()}.jpg`;
-    const filePath = `${userId}/${fileName}`;
+    // Generar nombre único usando auth.uid()
+    const fileName = `${user.id}_${Date.now()}.jpg`;
+    const filePath = `${user.id}/${fileName}`;
+    
+    console.log(`📂 Ruta de subida: ${filePath}`);
     
     // Subir a Supabase Storage
     const { data, error } = await supabase.storage
@@ -88,7 +98,7 @@ export const uploadAvatarToSupabase = async (userId: string, file: File): Promis
     
     console.log('✅ Avatar subido a Supabase:', publicUrl);
     
-    // Actualizar URL en la tabla users
+    // Actualizar URL en la tabla users (usar userId de localStorage para la DB)
     const { error: updateError } = await supabase
       .from('users')
       .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
@@ -112,12 +122,22 @@ export const uploadCoverToSupabase = async (userId: string, file: File): Promise
   try {
     console.log('📤 Subiendo cover a Supabase Storage...');
     
+    // Obtener el auth.uid() del usuario autenticado
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('Usuario no autenticado en Supabase');
+    }
+    
+    console.log(`🔐 Usuario autenticado: ${user.id}`);
+    
     // Comprimir imagen (1200x400)
     const compressedFile = await compressImage(file, 1200, 400);
     
-    // Generar nombre único
-    const fileName = `${userId}_${Date.now()}.jpg`;
-    const filePath = `${userId}/${fileName}`;
+    // Generar nombre único usando auth.uid()
+    const fileName = `${user.id}_${Date.now()}.jpg`;
+    const filePath = `${user.id}/${fileName}`;
+    
+    console.log(`📂 Ruta de subida: ${filePath}`);
     
     // Subir a Supabase Storage
     const { data, error } = await supabase.storage
@@ -139,7 +159,7 @@ export const uploadCoverToSupabase = async (userId: string, file: File): Promise
     
     console.log('✅ Cover subido a Supabase:', publicUrl);
     
-    // Actualizar URL en la tabla users
+    // Actualizar URL en la tabla users (usar userId de localStorage para la DB)
     const { error: updateError } = await supabase
       .from('users')
       .update({ cover_url: publicUrl, updated_at: new Date().toISOString() })

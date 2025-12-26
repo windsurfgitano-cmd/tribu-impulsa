@@ -172,102 +172,96 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     }, 1500);
   };
 
-  // Manejar upload de foto de perfil - SUBE A FIREBASE STORAGE
+  // Manejar upload de foto de perfil - SUBE A SUPABASE STORAGE
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
     try {
-      setSaveMessage('ðŸ“· Subiendo foto a la nube...');
+      setSaveMessage('Subiendo foto a Supabase...');
 
-      const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
-
-      // Validar archivo
-      const validation = validateImageFile(file);
-      if (!validation.valid) {
-        setSaveMessage(`âŒ ${validation.error}`);
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setSaveMessage('Formato no valido. Usa JPG, PNG, WEBP o GIF');
         setTimeout(() => setSaveMessage(null), 3000);
         return;
       }
 
-      // Subir a Firebase Storage (ya comprime automáticamente)
-      const result = await uploadProfileImage(currentUser.id, file, 'avatar');
-
-      if (result.success && result.url) {
-        setProfile({ ...profile, avatarUrl: result.url });
-
-        // También actualizar en localStorage
-        const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-        const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
-        if (userIndex !== -1) {
-          users[userIndex].avatarUrl = result.url;
-          localStorage.setItem('tribu_users', JSON.stringify(users));
-        }
-
-        setSaveMessage('âœ… Foto subida correctamente');
-      } else {
-        setSaveMessage(`âŒ ${result.error || 'Error al subir foto'}`);
+      // Validar tamaño (máx 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSaveMessage('La imagen es muy grande. Maximo 5MB');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
       }
 
+      // Subir a Supabase Storage
+      const { uploadAvatarToSupabase } = await import('../../services/supabaseStorage');
+      const url = await uploadAvatarToSupabase(currentUser.id, file);
+
+      // Actualizar estado local
+      setProfile({ ...profile, avatarUrl: url });
+
+      // También actualizar en localStorage
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex].avatarUrl = url;
+        localStorage.setItem('tribu_users', JSON.stringify(users));
+      }
+
+      setSaveMessage('Foto subida correctamente');
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
       console.error('Error upload foto:', err);
-      setSaveMessage('âŒ Error al subir imagen');
+      setSaveMessage('Error al subir imagen');
       setTimeout(() => setSaveMessage(null), 3000);
     }
   };
-
-  // Manejar upload de banner/cover - SUBE A FIREBASE STORAGE
+  // Manejar upload de banner/cover - SUBE A SUPABASE STORAGE
   const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser) return;
 
     try {
-      setSaveMessage('ðŸ–¼ï¸ Subiendo banner a la nube...');
+      setSaveMessage('Subiendo banner a Supabase...');
 
-      const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
-
-      // Validar archivo
-      const validation = validateImageFile(file);
-      if (!validation.valid) {
-        setSaveMessage(`âŒ ${validation.error}`);
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setSaveMessage('Formato no valido. Usa JPG, PNG, WEBP o GIF');
         setTimeout(() => setSaveMessage(null), 3000);
         return;
       }
 
-      // Subir a Firebase Storage
-      const result = await uploadProfileImage(currentUser.id, file, 'cover');
-
-      if (result.success && result.url) {
-        setProfile({ ...profile, coverUrl: result.url });
-
-        // También actualizar en localStorage
-        const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-        const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
-        if (userIndex !== -1) {
-          users[userIndex].coverUrl = result.url;
-          localStorage.setItem('tribu_users', JSON.stringify(users));
-        }
-
-        setSaveMessage('âœ… Banner subido correctamente');
-      } else {
-        setSaveMessage(`âŒ ${result.error || 'Error al subir banner'}`);
+      // Validar tamaño (máx 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setSaveMessage('La imagen es muy grande. Maximo 10MB');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
       }
 
+      // Subir a Supabase Storage
+      const { uploadCoverToSupabase } = await import('../../services/supabaseStorage');
+      const url = await uploadCoverToSupabase(currentUser.id, file);
+
+      // Actualizar estado local
+      setProfile({ ...profile, coverUrl: url });
+
+      // También actualizar en localStorage
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex].coverUrl = url;
+        localStorage.setItem('tribu_users', JSON.stringify(users));
+      }
+
+      setSaveMessage('Banner subido correctamente');
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
       console.error('Error upload banner:', err);
-      setSaveMessage('âŒ Error al subir banner');
+      setSaveMessage('Error al subir banner');
       setTimeout(() => setSaveMessage(null), 3000);
-    }
-  };
-
-  // Agregar etiqueta
-  const handleAddTag = () => {
-    if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
-      setProfile({ ...profile, tags: [...profile.tags, newTag.trim()] });
-      setNewTag('');
-      setShowTagInput(false);
     }
   };
 

@@ -456,8 +456,9 @@ export const validateCredentials = async (email: string, password: string): Prom
         ? supabaseUser.category 
         : [supabaseUser.category || 'General'];
       
+      // ✅ USAR auth.uid() COMO ID PRINCIPAL (fuente de verdad)
       const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
-        id: supabaseUser.id,
+        id: authUser.id, // ✅ Usar auth.uid() como ID (no supabaseUser.id)
         email: supabaseUser.email,
         name: supabaseUser.name,
         companyName: supabaseUser.company_name,
@@ -491,15 +492,19 @@ export const validateCredentials = async (email: string, password: string): Prom
         password: password
       };
       
-      // Actualizar localStorage
-      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-      const existingIndex = users.findIndex((u: UserProfile) => u.id === userProfile.id);
+      // Actualizar localStorage - Limpiar usuarios duplicados con el mismo email
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]') as UserProfile[];
+      // Eliminar cualquier usuario con el mismo email pero diferente ID (limpiar duplicados)
+      const filteredUsers = users.filter((u: UserProfile) => u.email.toLowerCase() !== email.toLowerCase() || u.id === authUser.id);
+      // Buscar si ya existe un usuario con este ID
+      const existingIndex = filteredUsers.findIndex((u: UserProfile) => u.id === authUser.id);
       if (existingIndex >= 0) {
-        users[existingIndex] = userProfile;
+        filteredUsers[existingIndex] = userProfile;
       } else {
-        users.push(userProfile);
+        filteredUsers.push(userProfile);
       }
-      localStorage.setItem('tribu_users', JSON.stringify(users));
+      localStorage.setItem('tribu_users', JSON.stringify(filteredUsers));
+      console.log(`✅ [SUPABASE-LOGIN] localStorage sincronizado con auth.uid(): ${authUser.id}`);
       
       console.log(`✅ [SUPABASE-LOGIN] Credenciales válidas y perfil cargado`);
       return userProfile;

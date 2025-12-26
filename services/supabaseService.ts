@@ -124,6 +124,20 @@ export const getCurrentUser = async () => {
   return user;
 };
 
+export const getCurrentAuthUserId = async (): Promise<string | null> => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      console.error('❌ No hay usuario autenticado:', error);
+      return null;
+    }
+    return user.id;
+  } catch (error) {
+    console.error('❌ Error obteniendo auth.uid():', error);
+    return null;
+  }
+};
+
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
   return supabase.auth.onAuthStateChange((_event, session) => {
     callback(session?.user ?? null);
@@ -682,6 +696,7 @@ export default {
   signOut,
   getCurrentSession,
   getCurrentUser,
+  getCurrentAuthUserId,
   onAuthStateChange,
   sendPasswordResetEmail,
   // Users

@@ -358,11 +358,19 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
     while (!supabaseSaved && retries > 0) {
       try {
-        const { supabase } = await import('../../services/supabaseService');
+        const { supabase, getCurrentAuthUserId } = await import('../../services/supabaseService');
 
         setSaveMessage('Guardando en Supabase... (intento ' + (4 - retries) + '/3)');
 
-        // 1. Guardar en Supabase (FUENTE DE VERDAD)
+        // ✅ Obtener auth.uid() real del usuario autenticado
+        const authUserId = await getCurrentAuthUserId();
+        if (!authUserId) {
+          throw new Error('Usuario no autenticado en Supabase');
+        }
+
+        console.log(`🔐 Actualizando perfil con auth.uid(): ${authUserId}`);
+
+        // 1. Guardar en Supabase (FUENTE DE VERDAD) - Buscar por auth_uid
         const { error } = await supabase
           .from('users')
           .update({
@@ -389,12 +397,12 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             revenue: profileData.revenue,
             updated_at: new Date().toISOString()
           })
-          .eq('id', currentUser.id);
+          .eq('auth_uid', authUserId); // ✅ Usar auth_uid en lugar de id
 
         if (error) throw error;
 
-        // 2. Sincronizar a localStorage (CACHÉ)
-        const updated = updateUser(currentUser.id, profileData);
+        // 2. Sincronizar a localStorage (CACHÉ) - Usar auth.uid() como ID
+        const updated = updateUser(authUserId, profileData);
         
         if (!updated) {
           console.warn('No se pudo actualizar localStorage, pero Supabase se guardó correctamente');
@@ -402,7 +410,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
         supabaseSaved = true;
         setSaveMessage('Perfil guardado en Supabase');
-        console.log('Perfil actualizado en Supabase');
+        console.log(`✅ Perfil actualizado en Supabase con auth.uid(): ${authUserId}`);
       } catch (error) {
         retries--;
         console.error('Error guardando en Supabase (quedan ' + retries + ' intentos):', error);

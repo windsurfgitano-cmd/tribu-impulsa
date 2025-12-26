@@ -636,17 +636,17 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
 const ENABLE_FIRESTORE_USERS = true; // Feature Flag: E2P2 Step 1.3
 
 export const forceReloadRealUsers = async (): Promise<void> => {
-  console.log('🔄 Sincronizando usuarios desde Firebase...');
+  console.log('🔄 Sincronizando usuarios desde Supabase...');
 
     try {
       const firebaseUsers = await loadUsersFromFirebase();
 
-    // Usar Firebase como única fuente de verdad
+    // Usar Supabase como única fuente de verdad
       if (firebaseUsers.length > 0) {
-      console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Firestore.`);
+      console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Supabase.`);
         localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
       } else {
-      console.warn('⚠️ No hay usuarios en Firestore. localStorage vacío.');
+      console.warn('⚠️ No hay usuarios en Supabase. localStorage vacío.');
       localStorage.setItem('tribu_users', JSON.stringify([]));
       }
     } catch (error) {
@@ -833,8 +833,8 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     if (existingUser) {
       console.error('❌ [SUPABASE-REGISTER] Email ya existe en Supabase');
       alert('Este email ya está registrado. Por favor, inicia sesión.');
-      return null;
-    }
+    return null;
+  }
 
     // Preparar datos del usuario
     const categoryArray = Array.isArray(userData.category) 
@@ -860,10 +860,10 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
     console.log('📦 [SUPABASE-REGISTER] Paso 2/3: Creando perfil en Supabase...');
     const supabaseUser = await createUserProfile({
       auth_uid: authUser.id,
-      email: userData.email.toLowerCase(),
-      name: userData.name,
+    email: userData.email.toLowerCase(),
+    name: userData.name,
       company_name: userData.companyName,
-      phone: userData.phone,
+    phone: userData.phone,
       whatsapp: userData.phone,
       instagram: instagramHandle,
       website: userData.website || '',
@@ -872,17 +872,17 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
       category: categoryArray,
       affinity: userData.affinity || categoryArray[0] || 'Emprendimiento',
       sub_category: userData.affinity || categoryArray[0],
-      scope: userData.scope || 'NACIONAL',
-      city: userData.city || 'Chile',
-      comuna: userData.comuna || '',
+    scope: userData.scope || 'NACIONAL',
+    city: userData.city || 'Chile',
+    comuna: userData.comuna || '',
       selected_regions: userData.selectedRegions || [],
-      bio: userData.bio || '',
+    bio: userData.bio || '',
       business_description: userData.businessDescription || '',
-      revenue: userData.revenue || '',
+    revenue: userData.revenue || '',
       avatar_url: getAvatarUrl(userData.name, instagramHandle),
       company_logo_url: getLogoUrl(userData.companyName),
       cover_url: getCoverUrl(categoryArray[0] || 'default'),
-      followers: 500,
+    followers: 500,
       status: userData.status || 'active',
       role: 'user',
       profile_complete: userData.profileComplete || false,
@@ -934,13 +934,13 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
       surveyCompleted: supabaseUser.survey_completed,
       tribeAssigned: supabaseUser.tribe_assigned,
       createdAt: supabaseUser.created_at,
-      firstLogin: !userData.password,
+    firstLogin: !userData.password,
       password: password
-    };
+  };
 
     const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
     users.push(localUser);
-    localStorage.setItem('tribu_users', JSON.stringify(users));
+  localStorage.setItem('tribu_users', JSON.stringify(users));
     console.log('✅ [SUPABASE-REGISTER] Guardado en localStorage');
 
     console.log(`✅ ✅ ✅ REGISTRO COMPLETO CON SUPABASE: ${userData.email}`);
@@ -954,9 +954,9 @@ export const registerNewUser = async (userData: NewUserData): Promise<UserProfil
       alert('Este email ya está registrado. Por favor, inicia sesión.');
     } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
       alert('Error de conexión. Verifica tu internet e intenta de nuevo.');
-    } else {
+        } else {
       alert('Error al registrar usuario. Por favor, intenta de nuevo.');
-    }
+      }
     
     return null;
   }

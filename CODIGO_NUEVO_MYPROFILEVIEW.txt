@@ -1,0 +1,84 @@
+// REEMPLAZAR EN screens/profile/MyProfileView.tsx
+// Líneas 352-404
+
+// BUSCAR ESTA SECCIÓN:
+// const updated = updateUser(currentUser.id, profileData);
+// 
+// if (updated) {
+//   // Sincronizar con Firebase - OBLIGATORIO, con reintentos
+//   ...todo el bloque hasta...
+// setIsEditing(false);
+
+// REEMPLAZAR CON:
+
+    // SUPABASE COMO FUENTE DE VERDAD: Guardar primero en Supabase, luego en localStorage
+    let supabaseSaved = false;
+    let retries = 3;
+
+    while (!supabaseSaved && retries > 0) {
+      try {
+        const { supabase } = await import('../../services/supabaseService');
+
+        setSaveMessage('Guardando en Supabase... (intento ' + (4 - retries) + '/3)');
+
+        // 1. Guardar en Supabase (FUENTE DE VERDAD)
+        const { error } = await supabase
+          .from('users')
+          .update({
+            name: profileData.name,
+            company_name: profileData.companyName,
+            bio: profileData.bio,
+            business_description: profileData.businessDescription,
+            phone: profileData.phone,
+            whatsapp: profileData.whatsapp,
+            instagram: profileData.instagram,
+            tiktok: profileData.tiktok,
+            facebook: profileData.facebook,
+            twitter: profileData.twitter,
+            website: profileData.website,
+            city: profileData.city,
+            location: profileData.location,
+            avatar_url: profileData.avatarUrl,
+            cover_url: profileData.coverUrl,
+            category: profileData.category,
+            affinity: profileData.affinity,
+            scope: profileData.scope,
+            comuna: profileData.comuna,
+            selected_regions: profileData.selectedRegions,
+            revenue: profileData.revenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentUser.id);
+
+        if (error) throw error;
+
+        // 2. Sincronizar a localStorage (CACHÉ)
+        const updated = updateUser(currentUser.id, profileData);
+        
+        if (!updated) {
+          console.warn('No se pudo actualizar localStorage, pero Supabase se guardó correctamente');
+        }
+
+        supabaseSaved = true;
+        setSaveMessage('Perfil guardado en Supabase');
+        console.log('Perfil actualizado en Supabase');
+      } catch (error) {
+        retries--;
+        console.error('Error guardando en Supabase (quedan ' + retries + ' intentos):', error);
+        if (retries > 0) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    }
+
+    if (!supabaseSaved) {
+      setSaveMessage('Error al guardar. Por favor intenta de nuevo.');
+      setIsSaving(false);
+      return;
+    }
+
+    setTimeout(() => setSaveMessage(null), 3000);
+    setIsSaving(false);
+    setIsEditing(false);
+  };
+

@@ -32,9 +32,9 @@ initializeFirebase();
     await ensureInitialized();
     console.log('✅ Producción inicializada');
 
-    // Cargar usuarios REALES + sincronizar con Firebase
+    // Cargar usuarios REALES + sincronizar con Supabase
     await forceReloadRealUsers();
-    console.log('✅ Usuarios cargados y sincronizados');
+    console.log('✅ Usuarios cargados y sincronizados con Supabase');
 
     // 🧹 LIMPIEZA AUTOMÁTICA: DESACTIVADA
     // La limpieza automática estaba borrando perfiles completos por error
@@ -72,12 +72,12 @@ initializeFirebase();
     // El reset ya se ejecutó exitosamente
     // Sistema limpio y listo para producción
 
-    // Sincronizar fotos de perfil desde Firebase (para ver fotos actualizadas)
+    // Sincronizar fotos de perfil desde Supabase Storage (para ver fotos actualizadas)
     try {
       const { syncPhotosFromFirebase } = await import('./services/firebaseService');
       const photosUpdated = await syncPhotosFromFirebase();
       if (photosUpdated > 0) {
-        console.log(`✅ ${photosUpdated} fotos actualizadas desde Firebase`);
+        console.log(`✅ ${photosUpdated} fotos actualizadas desde Supabase Storage`);
       }
     } catch (photoErr) {
       console.log('⚠️ Sync de fotos pendiente');

@@ -340,13 +340,29 @@ const ProfileDetail = () => {
           <div className="text-center mb-8 w-full">
             <h2 className="text-3xl font-bold text-[#181B34] mb-1 tracking-tight">{profile.companyName}</h2>
             <p className="text-[#7C8193] font-medium text-lg">{profile.name}</p>
-            <div className="flex justify-center gap-2 mt-4 flex-wrap">
-              <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 px-4 py-1.5 rounded-full text-[#6161FF]">
-                {profile.category}
-              </span>
-              <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 px-4 py-1.5 rounded-full text-[#00CA72]">
-                {profile.subCategory}
-              </span>
+            
+            {/* Categorías con formato de bullet points */}
+            <div className="mt-4">
+              <div className="bg-[#F5F7FB] rounded-xl p-4 border border-[#E4E7EF] text-left">
+                <h4 className="text-xs font-bold uppercase text-[#7C8193] mb-2 tracking-wide text-center">Giros Comerciales</h4>
+                <ul className="space-y-1.5">
+                  {(profile.category || 'Emprendimiento')
+                    .split(',')
+                    .map((cat: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm text-[#434343]">
+                        <span className="text-[#6161FF] mt-0.5">•</span>
+                        <span className="flex-1">{cat.trim()}</span>
+                      </li>
+                    ))}
+                </ul>
+                {profile.subCategory && (
+                  <div className="mt-3 pt-3 border-t border-[#E4E7EF]">
+                    <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 px-3 py-1 rounded-full text-[#00CA72]">
+                      {profile.subCategory}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -56,7 +56,14 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const [editSelectedRegionForComuna, setEditSelectedRegionForComuna] = useState<string>('');
   const [editSelectedRegions, setEditSelectedRegions] = useState<string[]>(currentUser?.selectedRegions || []);
   const [editComuna, setEditComuna] = useState<string>(currentUser?.comuna || '');
-  const [editCategory, setEditCategory] = useState<string>(currentUser?.category || '');
+  const [editCategory, setEditCategory] = useState<string[]>(
+    Array.isArray(currentUser?.category) 
+      ? currentUser.category 
+      : currentUser?.category 
+        ? currentUser.category.split(',').map(c => c.trim()) 
+        : []
+  );
+  const [categorySearchTerm, setCategorySearchTerm] = useState<string>('');
   const [editAffinity, setEditAffinity] = useState<string>(currentUser?.affinity || '');
   const [editRevenue, setEditRevenue] = useState<string>(currentUser?.revenue || '');
 
@@ -271,8 +278,47 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
   const handleSave = async () => {
     if (!currentUser) return;
+    
+    // ✅ VALIDACIÓN ESTRICTA: NO permitir guardar perfiles incompletos
+    const validationErrors: string[] = [];
+    
+    if (!profile.name || profile.name.trim().length < 2) {
+      validationErrors.push('Nombre completo (mínimo 2 caracteres)');
+    }
+    if (!profile.companyName || profile.companyName.trim().length < 2) {
+      validationErrors.push('Nombre del emprendimiento (mínimo 2 caracteres)');
+    }
+    if (editCategory.length === 0) {
+      validationErrors.push('Al menos 1 categoría/giro comercial');
+    }
+    if (!profile.instagram || profile.instagram.trim().length < 2) {
+      validationErrors.push('Instagram');
+    }
+    if (!profile.phone && !profile.whatsapp) {
+      validationErrors.push('Teléfono/WhatsApp');
+    }
+    if (!editScope || (editScope === 'LOCAL' && !editComuna) || (editScope === 'REGIONAL' && editSelectedRegions.length === 0)) {
+      validationErrors.push('Alcance geográfico completo');
+    }
+    if (!profile.bio || profile.bio.trim().length < 50) {
+      validationErrors.push('Biografía (mínimo 50 caracteres)');
+    }
+    const businessDesc = (profile as any).businessDescription || '';
+    if (!businessDesc || businessDesc.trim().length < 60) {
+      validationErrors.push('Descripción del negocio (mínimo 60 caracteres)');
+    }
+    if (!editRevenue) {
+      validationErrors.push('Rango de ingresos/facturación');
+    }
+    
+    if (validationErrors.length > 0) {
+      setSaveMessage('❌ Completa todos los campos requeridos');
+      alert(`⚠️ PERFIL INCOMPLETO\n\nDebe completar los siguientes campos:\n\n• ${validationErrors.join('\n• ')}\n\n❌ NO se puede guardar un perfil incompleto.`);
+      return;
+    }
+    
     setIsSaving(true);
-    setSaveMessage('ðŸ’¾ Guardando cambios...');
+    setSaveMessage('ðŸ'¾ Guardando cambios...');
 
     // Datos a guardar (incluye campos de matching y redes sociales)
     const profileData = {
@@ -295,8 +341,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       coverUrl: profile.coverUrl,
       tags: profile.tags,
       // Campos de MATCHING - usando los selectores
-      category: editCategory || profile.category,
-      affinity: editAffinity || (profile as any).affinity || profile.category,
+      category: editCategory.length > 0 ? editCategory : (Array.isArray(profile.category) ? profile.category : [profile.category]),
+      affinity: editAffinity || (profile as any).affinity || (Array.isArray(editCategory) && editCategory.length > 0 ? editCategory[0] : profile.category),
       scope: editScope,
       comuna: editComuna,
       selectedRegions: editSelectedRegions,
@@ -508,20 +554,28 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </>
             )}
 
-            {/* Badge de categoría (solo lectura) - mostrar giro principal limpio */}
+            {/* Badge de categoría (solo lectura) - mostrar giros con bullet points */}
             {!isEditing && (
-              <div className="flex justify-center gap-2 mt-4 flex-wrap">
-                {/* Giro principal */}
-                <span className="text-xs font-semibold bg-[#6161FF]/10 border border-[#6161FF]/30 text-[#6161FF] px-3 py-1.5 rounded-full">
-                  {(editCategory || profile.category || '').split(' - ')[0].split('  ')[0] || 'Emprendimiento'}
-                </span>
-                {/* Subcategoría si existe */}
-                {((editCategory || profile.category || '').includes(' - ') || (editCategory || profile.category || '').includes('  ')) && (
-                  <span className="text-xs font-semibold bg-[#00CA72]/10 border border-[#00CA72]/30 text-[#00CA72] px-3 py-1.5 rounded-full">
-                    {(editCategory || profile.category || '').split(' - ')[1]?.split('  ')[0] ||
-                      (editCategory || profile.category || '').split('  ')[1] || ''}
-                  </span>
-                )}
+              <div className="mt-4">
+                <div className="bg-[#F5F7FB] rounded-xl p-4 border border-[#E4E7EF]">
+                  <h4 className="text-xs font-bold uppercase text-[#7C8193] mb-2 tracking-wide">Giros Comerciales</h4>
+                  <ul className="space-y-1.5">
+                    {(() => {
+                      const categories = Array.isArray(editCategory) 
+                        ? editCategory 
+                        : typeof editCategory === 'string' && editCategory
+                          ? editCategory.split(',').map(c => c.trim())
+                          : ['Emprendimiento'];
+                      
+                      return categories.map((cat: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-[#434343]">
+                          <span className="text-[#6161FF] mt-0.5">•</span>
+                          <span className="flex-1">{cat}</span>
+                        </li>
+                      ));
+                    })()}
+                  </ul>
+                </div>
               </div>
             )}
 
@@ -617,17 +671,95 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
                 <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸŽ¯ Categoría e Intereses (para Matching)</h4>
                 <div>
-                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/Categoría del Negocio</label>
-                  <select
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value)}
-                    className="w-full bg-white text-[#181B34] rounded-lg p-3 outline-none border border-[#E4E7EF] focus:border-[#6161FF]"
-                  >
-                    <option value="">Selecciona tu giro...</option>
-                    {[...TRIBE_CATEGORY_OPTIONS].sort((a, b) => a.localeCompare(b, 'es')).map((cat, idx) => (
-                      <option key={idx} value={cat}>{cat}</option>
-                    ))}
-                  </select>
+                  <label className="text-xs font-bold uppercase text-[#7C8193] mb-1.5 block">
+                    Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona hasta 5)</span>
+                  </label>
+                  <p className="text-[0.5625rem] text-[#7C8193] mb-2">
+                    {editCategory.length === 0 ? 'Selecciona al menos 1 categoría' : `${editCategory.length} de 5 seleccionadas`}
+                  </p>
+                  
+                  {/* Filtro de búsqueda */}
+                  <div className="mb-3">
+                    <input
+                      type="text"
+                      placeholder="🔍 Buscar giro comercial..."
+                      value={categorySearchTerm}
+                      onChange={(e) => setCategorySearchTerm(e.target.value)}
+                      className="w-full bg-white border border-[#E4E7EF] rounded-xl p-3 text-sm text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
+                    />
+                  </div>
+                  
+                  <div className="bg-white border border-[#E4E7EF] rounded-xl p-4 max-h-[400px] overflow-y-auto">
+                    {/* Agrupar categorías por group */}
+                    {(() => {
+                      const searchTerm = categorySearchTerm.toLowerCase();
+                      const grouped = CATEGORY_SELECT_OPTIONS.reduce((acc, opt) => {
+                        // Filtrar por término de búsqueda
+                        if (searchTerm && !opt.label.toLowerCase().includes(searchTerm) && 
+                            !(opt.description || '').toLowerCase().includes(searchTerm) &&
+                            !(opt.group || '').toLowerCase().includes(searchTerm)) {
+                          return acc;
+                        }
+                        
+                        const group = opt.group || 'Otros';
+                        if (!acc[group]) acc[group] = [];
+                        acc[group].push(opt);
+                        return acc;
+                      }, {} as Record<string, typeof CATEGORY_SELECT_OPTIONS>);
+                      
+                      const hasResults = Object.keys(grouped).length > 0;
+                      
+                      if (!hasResults && searchTerm) {
+                        return (
+                          <div className="text-center py-8 text-[#7C8193]">
+                            <p className="text-sm">No se encontraron giros que coincidan con "{searchTerm}"</p>
+                            <p className="text-xs mt-1">Intenta con otro término</p>
+                          </div>
+                        );
+                      }
+                      
+                      return Object.entries(grouped).map(([groupName, options]) => (
+                        <div key={groupName} className="mb-4 last:mb-0">
+                          <h4 className="font-bold text-[#181B34] mb-2 text-sm">{groupName}</h4>
+                          <div className="space-y-1.5 pl-2">
+                            {options.map((opt) => {
+                              const isSelected = editCategory.includes(opt.value);
+                              const canSelect = editCategory.length < 5 || isSelected;
+                              
+                              return (
+                                <label 
+                                  key={opt.value}
+                                  className={`flex items-start gap-2 cursor-pointer p-2 rounded-lg hover:bg-[#F5F7FB]/50 transition-colors ${!canSelect ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    disabled={!canSelect}
+                                    onChange={() => {
+                                      if (isSelected) {
+                                        // Deseleccionar
+                                        setEditCategory(editCategory.filter(c => c !== opt.value));
+                                      } else if (editCategory.length < 5) {
+                                        // Seleccionar (si no ha llegado al límite)
+                                        setEditCategory([...editCategory, opt.value]);
+                                      }
+                                    }}
+                                    className="mt-0.5 h-4 w-4 text-[#6161FF] border-gray-300 rounded focus:ring-[#6161FF]"
+                                  />
+                                  <div className="flex-1">
+                                    <div className="text-sm text-[#181B34] font-medium">{opt.label}</div>
+                                    {opt.description && (
+                                      <div className="text-xs text-[#7C8193] mt-0.5">{opt.description}</div>
+                                    )}
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
                 </div>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Afinidad/Intereses</label>
@@ -860,7 +992,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                 </a>
               )}
               <a
-                href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Conoce a ${profile.companyName} (${profile.category}). Mira su perfil en Tribu Impulsa.`)}`}
+                href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hola ${profile.name}, vi tu perfil en Tribu Impulsa y me gustaría conectar contigo.`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00CA72] text-white font-semibold hover:bg-[#00B366] transition shadow-md"

@@ -151,26 +151,26 @@ const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
   console.log('📤 [SYNC] Iniciando sincronización para:', user.email);
   
   try {
-    console.log('📤 [SYNC] Importando módulos Firebase...');
+    console.log('📤 [SYNC] Importando módulos Supabase...');
     const { getFirestoreInstance } = await import('./firebaseService');
     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
     const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
     
-    console.log('📤 [SYNC] Obteniendo instancia de Firestore...');
+    console.log('📤 [SYNC] Obteniendo instancia de Supabase...');
     const db = getFirestoreInstance();
 
     if (!db) {
-      console.error('❌ [SYNC] Firestore NO disponible - db es null/undefined');
-      throw new Error('Firestore instance is null');
+      console.error('❌ [SYNC] Supabase NO disponible - db es null/undefined');
+      throw new Error('Supabase instance is null');
     }
     
-    console.log('✅ [SYNC] Firestore disponible');
+    console.log('✅ [SYNC] Supabase disponible');
 
-    // 🔥 PASO 1: Crear en Firebase Authentication
+    // 🔥 PASO 1: Crear en Supabase Authentication (respaldo en Firebase)
     try {
       const auth = getAuth();
       if (user.password) {
-        console.log('🔐 [SYNC] Creando en Firebase Authentication...');
+        console.log('🔐 [SYNC] Creando en Supabase Authentication...');
         const userCredential = await createUserWithEmailAndPassword(
           auth, 
           user.email, 
@@ -188,8 +188,8 @@ const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
       }
     }
 
-    // 🔥 PASO 2: Guardar en Firestore
-    console.log('📦 [SYNC] Guardando en Firestore /users/' + user.id);
+    // 🔥 PASO 2: Guardar en Supabase DB
+    console.log('📦 [SYNC] Guardando en Supabase /users/' + user.id);
     console.log('📦 [SYNC] Datos a guardar:', {
       id: user.id,
       email: user.email,
@@ -206,7 +206,7 @@ const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
       syncedAt: new Date().toISOString()
     }, { merge: true });
 
-    console.log('✅ [SYNC] ¡ÉXITO! Usuario guardado en Firestore:', user.email);
+    console.log('✅ [SYNC] ¡ÉXITO! Usuario guardado en Supabase:', user.email);
     console.log('✅ [SYNC] Verifica en: https://console.firebase.google.com/u/0/project/tribu-impulsa/firestore/data/users/' + user.id);
   } catch (error: any) {
     console.error('❌ [SYNC] ERROR CRÍTICO en sincronización:');

@@ -1,0 +1,85 @@
+// REEMPLAZAR EN screens/profile/MyProfileView.tsx
+// Líneas 440-499
+
+// BUSCAR:
+// <button
+//   onClick={async () => {
+//     setSaveMessage('Sincronizando con la nube...');
+//     try {
+//       const { syncUserToFirebase } = await import('../../services/firebaseService');
+//       ...hasta...
+//     }}
+//     className="hidden"
+
+// REEMPLAZAR CON:
+
+          <button
+            onClick={async () => {
+              setSaveMessage('Sincronizando con Supabase...');
+              try {
+                const { supabase } = await import('../../services/supabaseService');
+                const { getUserByEmail } = await import('../../services/supabaseService');
+                const { setCurrentUser } = await import('../../services/databaseService');
+                const { getStoredSession } = await import('../../utils/storage');
+                const localUser = getCurrentUser();
+
+                // PASO 1: Subir datos locales a Supabase
+                if (localUser) {
+                  setSaveMessage('Subiendo datos locales a Supabase...');
+                  const { error } = await supabase
+                    .from('users')
+                    .update({
+                      name: localUser.name,
+                      company_name: localUser.companyName,
+                      bio: localUser.bio,
+                      phone: localUser.phone,
+                      whatsapp: localUser.whatsapp,
+                      instagram: localUser.instagram,
+                      website: localUser.website,
+                      city: localUser.city,
+                      category: localUser.category,
+                      affinity: localUser.affinity,
+                      scope: localUser.scope,
+                      comuna: localUser.comuna,
+                      selected_regions: localUser.selectedRegions,
+                      revenue: localUser.revenue,
+                      avatar_url: localUser.avatarUrl,
+                      cover_url: localUser.coverUrl,
+                      updated_at: new Date().toISOString()
+                    })
+                    .eq('id', localUser.id);
+                  
+                  if (error) throw error;
+                  console.log('Datos locales subidos a Supabase');
+                }
+
+                // PASO 2: Descargar datos frescos de Supabase
+                setSaveMessage('Descargando datos de Supabase...');
+                const session = getStoredSession();
+                if (session?.email) {
+                  const freshUser = await getUserByEmail(session.email);
+                  if (freshUser) {
+                    setCurrentUser(freshUser.id);
+                    setProfile(getMyProfile());
+                    const user = getCurrentUser();
+                    if (user) {
+                      setEditScope(user.scope || 'NACIONAL');
+                      setEditSelectedRegions(user.selectedRegions || []);
+                      setEditComuna(user.comuna || '');
+                      setEditCategory(Array.isArray(user.category) ? user.category : [user.category]);
+                      setEditAffinity(user.affinity || '');
+                      setEditRevenue(user.revenue || '');
+                    }
+                    setSaveMessage('Sincronización completa');
+                  } else {
+                    setSaveMessage('No se encontró usuario en Supabase');
+                  }
+                }
+              } catch (error) {
+                console.error('Error sincronizando:', error);
+                setSaveMessage('Error al sincronizar');
+              }
+              setTimeout(() => setSaveMessage(null), 3000);
+            }}
+            className="hidden"
+

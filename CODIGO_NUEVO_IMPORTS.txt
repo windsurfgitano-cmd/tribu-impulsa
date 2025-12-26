@@ -1,0 +1,9 @@
+// REEMPLAZAR EN screens/profile/MyProfileView.tsx
+// Línea 35
+
+// BUSCAR:
+import { syncProfileToCloud, getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
+
+// REEMPLAZAR CON:
+import { getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
+

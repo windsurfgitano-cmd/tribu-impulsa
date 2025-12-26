@@ -127,10 +127,13 @@ export const ProminentProfileCard: React.FC<ProminentProfileCardProps> = ({
             </h3>
             <p className="text-sm text-gray-500 truncate">por {ownerName}</p>
             
-            {/* Categoría */}
+            {/* Categoría - mostrar primera si hay múltiples */}
             <div className="flex items-center gap-1 mt-1">
               <Store size={12} className="text-indigo-500" />
-              <span className="text-xs text-indigo-600 font-medium truncate">{category}</span>
+              <span className="text-xs text-indigo-600 font-medium truncate">
+                {category.split(',')[0].trim()}
+                {category.split(',').length > 1 && ` +${category.split(',').length - 1}`}
+              </span>
             </div>
           </div>
         </div>

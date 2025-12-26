@@ -1,0 +1,105 @@
+// REEMPLAZAR EN screens/profile/MyProfileView.tsx
+// Líneas 175-263
+
+// BUSCAR:
+// const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+// ...hasta...
+// const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+// ...hasta el final de esa función
+
+// REEMPLAZAR CON:
+
+  // Manejar upload de foto de perfil - SUBE A SUPABASE STORAGE
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setSaveMessage('Subiendo foto a Supabase...');
+
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setSaveMessage('Formato no válido. Usa JPG, PNG, WEBP o GIF');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Validar tamaño (máx 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setSaveMessage('La imagen es muy grande. Máximo 5MB');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Subir a Supabase Storage
+      const { uploadAvatarToSupabase } = await import('../../services/supabaseStorage');
+      const url = await uploadAvatarToSupabase(currentUser.id, file);
+
+      // Actualizar estado local
+      setProfile({ ...profile, avatarUrl: url });
+
+      // También actualizar en localStorage
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex].avatarUrl = url;
+        localStorage.setItem('tribu_users', JSON.stringify(users));
+      }
+
+      setSaveMessage('Foto subida correctamente');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err) {
+      console.error('Error upload foto:', err);
+      setSaveMessage('Error al subir imagen');
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
+
+  // Manejar upload de banner/cover - SUBE A SUPABASE STORAGE
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+
+    try {
+      setSaveMessage('Subiendo banner a Supabase...');
+
+      // Validar tipo de archivo
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        setSaveMessage('Formato no válido. Usa JPG, PNG, WEBP o GIF');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Validar tamaño (máx 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setSaveMessage('La imagen es muy grande. Máximo 10MB');
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Subir a Supabase Storage
+      const { uploadCoverToSupabase } = await import('../../services/supabaseStorage');
+      const url = await uploadCoverToSupabase(currentUser.id, file);
+
+      // Actualizar estado local
+      setProfile({ ...profile, coverUrl: url });
+
+      // También actualizar en localStorage
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const userIndex = users.findIndex((u: { id: string }) => u.id === currentUser.id);
+      if (userIndex !== -1) {
+        users[userIndex].coverUrl = url;
+        localStorage.setItem('tribu_users', JSON.stringify(users));
+      }
+
+      setSaveMessage('Banner subido correctamente');
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (err) {
+      console.error('Error upload banner:', err);
+      setSaveMessage('Error al subir banner');
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
+

@@ -865,7 +865,7 @@ const LoginScreen = () => {
               />
             </div>
 
-            {/* Rubro principal - Selección múltiple con checkboxes */}
+            {/* Rubro principal - Selección múltiple con checkboxes Y FILTRO */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
                 Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona hasta 5)</span>
@@ -873,15 +873,46 @@ const LoginScreen = () => {
               <p className="text-[0.5625rem] text-[#7C8193] mb-2">
                 {registerData.category.length === 0 ? 'Selecciona al menos 1 categoría' : `${registerData.category.length} de 5 seleccionadas`}
               </p>
+              
+              {/* Filtro de búsqueda */}
+              <div className="mb-3">
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar giro comercial..."
+                  value={registerData.subcategory || ''}
+                  onChange={(e) => setRegisterData({ ...registerData, subcategory: e.target.value })}
+                  className="w-full bg-white border border-[#E4E7EF] rounded-xl p-3 text-sm text-[#181B34] placeholder-[#B3B8C6] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30 focus:border-[#6161FF]"
+                />
+              </div>
+              
               <div className="bg-[#F5F7FB] border border-[#E4E7EF] rounded-xl p-4 max-h-[400px] overflow-y-auto">
                 {/* Agrupar categorías por group */}
                 {(() => {
+                  const searchTerm = (registerData.subcategory || '').toLowerCase();
                   const grouped = CATEGORY_SELECT_OPTIONS.reduce((acc, opt) => {
+                    // Filtrar por término de búsqueda
+                    if (searchTerm && !opt.label.toLowerCase().includes(searchTerm) && 
+                        !(opt.description || '').toLowerCase().includes(searchTerm) &&
+                        !(opt.group || '').toLowerCase().includes(searchTerm)) {
+                      return acc;
+                    }
+                    
                     const group = opt.group || 'Otros';
                     if (!acc[group]) acc[group] = [];
                     acc[group].push(opt);
                     return acc;
                   }, {} as Record<string, typeof CATEGORY_SELECT_OPTIONS>);
+                  
+                  const hasResults = Object.keys(grouped).length > 0;
+                  
+                  if (!hasResults && searchTerm) {
+                    return (
+                      <div className="text-center py-8 text-[#7C8193]">
+                        <p className="text-sm">No se encontraron giros que coincidan con "{searchTerm}"</p>
+                        <p className="text-xs mt-1">Intenta con otro término</p>
+                      </div>
+                    );
+                  }
                   
                   return Object.entries(grouped).map(([groupName, options]) => (
                     <div key={groupName} className="mb-4 last:mb-0">

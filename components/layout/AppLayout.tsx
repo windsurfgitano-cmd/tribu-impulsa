@@ -167,7 +167,7 @@ const AppLayout = () => {
             onClick={() => setShowMenu(false)}
           />
           <div className="absolute top-0 left-0 h-full w-80 max-w-[85vw] md:max-w-md bg-white shadow-2xl animate-slideIn">
-            <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#00CA72]">
+            <div className="p-6 bg-gradient-to-r from-[#6161FF] to-[#FB275D]">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-white">Menú</h2>
                 <button
@@ -198,8 +198,11 @@ const AppLayout = () => {
                 disabled
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-100 cursor-not-allowed opacity-60"
               >
-                <div className="w-10 h-10 rounded-lg bg-gray-300 flex items-center justify-center">
-                  <span className="text-lg">ðŸŽ“</span>
+                <div className="w-10 h-10 rounded-lg bg-gray-400 flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                  </svg>
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-gray-500">Santander Academia</p>

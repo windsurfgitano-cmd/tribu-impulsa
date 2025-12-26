@@ -32,7 +32,7 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from '../../utils/selectOptions';
 import { validateUserProfile, syncProfileCompletionState } from '../../utils/validation';
 import { changeUserPassword } from '../../services/realUsersData';
-import { syncProfileToCloud, getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
+import { getNotificationStatus, requestNotificationPermission, clearFCMToken } from '../../services/firebaseService';
 import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 import { getAppConfig, clearStoredSession } from '../../utils/storage';
 import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
@@ -349,53 +349,70 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       revenue: editRevenue,
     };
 
-    // Guardar cambios localmente
-    const updated = updateUser(currentUser.id, profileData);
+    // SUPABASE COMO FUENTE DE VERDAD: Guardar primero en Supabase, luego en localStorage
+    let supabaseSaved = false;
+    let retries = 3;
 
-    if (updated) {
-      // Sincronizar con Firebase - OBLIGATORIO, con reintentos
-      let firebaseSaved = false;
-      let retries = 3;
+    while (!supabaseSaved && retries > 0) {
+      try {
+        const { supabase } = await import('../../services/supabaseService');
 
-      while (!firebaseSaved && retries > 0) {
-        try {
-          const { syncProfileToCloud, logInteraction, syncUserToFirebase } = await import('../../services/firebaseService');
+        setSaveMessage('Guardando en Supabase... (intento ' + (4 - retries) + '/3)');
 
-          setSaveMessage(`â˜ï¸ Guardando en la nube... (intento ${4 - retries}/3)`);
+        // 1. Guardar en Supabase (FUENTE DE VERDAD)
+        const { error } = await supabase
+          .from('users')
+          .update({
+            name: profileData.name,
+            company_name: profileData.companyName,
+            bio: profileData.bio,
+            business_description: profileData.businessDescription,
+            phone: profileData.phone,
+            whatsapp: profileData.whatsapp,
+            instagram: profileData.instagram,
+            tiktok: profileData.tiktok,
+            facebook: profileData.facebook,
+            twitter: profileData.twitter,
+            website: profileData.website,
+            city: profileData.city,
+            location: profileData.location,
+            avatar_url: profileData.avatarUrl,
+            cover_url: profileData.coverUrl,
+            category: profileData.category,
+            affinity: profileData.affinity,
+            scope: profileData.scope,
+            comuna: profileData.comuna,
+            selected_regions: profileData.selectedRegions,
+            revenue: profileData.revenue,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', currentUser.id);
 
-          // Sincronizar a la colección users (PRINCIPAL)
-          await syncUserToFirebase(currentUser.id, profileData);
+        if (error) throw error;
 
-          // Sincronizar perfil completo
-          await syncProfileToCloud({
-            id: currentUser.id,
-            ...profileData,
-            subCategory: profile.subCategory,
-          });
+        // 2. Sincronizar a localStorage (CACHÉ)
+        const updated = updateUser(currentUser.id, profileData);
+        
+        if (!updated) {
+          console.warn('No se pudo actualizar localStorage, pero Supabase se guardó correctamente');
+        }
 
-          // Registrar la interacción
-          await logInteraction(currentUser.id, 'profile_updated', {
-            fields: Object.keys(profileData),
-            timestamp: new Date().toISOString()
-          });
-
-          firebaseSaved = true;
-          setSaveMessage('âœ… Perfil guardado y sincronizado');
-        } catch (error) {
-          retries--;
-          console.error(`âŒ Error guardando en Firebase (quedan ${retries} intentos):`, error);
-          if (retries > 0) {
-            await new Promise(r => setTimeout(r, 1000)); // Esperar 1s antes de reintentar
-          }
+        supabaseSaved = true;
+        setSaveMessage('Perfil guardado en Supabase');
+        console.log('Perfil actualizado en Supabase');
+      } catch (error) {
+        retries--;
+        console.error('Error guardando en Supabase (quedan ' + retries + ' intentos):', error);
+        if (retries > 0) {
+          await new Promise(r => setTimeout(r, 1000));
         }
       }
+    }
 
-      if (!firebaseSaved) {
-        // Si después de 3 intentos no se guardó, mostrar advertencia CLARA
-        setSaveMessage('âš ï¸ Guardado local. Presiona Sincronizar para subir a la nube.');
-      }
-    } else {
-      setSaveMessage('âŒ Error al guardar');
+    if (!supabaseSaved) {
+      setSaveMessage('Error al guardar. Por favor intenta de nuevo.');
+      setIsSaving(false);
+      return;
     }
 
     setTimeout(() => setSaveMessage(null), 3000);

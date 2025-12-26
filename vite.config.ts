@@ -17,7 +17,13 @@ export default defineConfig(({ mode }) => {
           name: 'inject-sw-version',
           closeBundle() {
             const swSourcePath = path.resolve(__dirname, 'public/sw.js');
-            const swDestPath = path.resolve(__dirname, 'dist/sw.js');
+            const distDir = path.resolve(__dirname, 'dist');
+            const swDestPath = path.resolve(distDir, 'sw.js');
+            
+            // Crear carpeta dist si no existe
+            if (!fs.existsSync(distDir)) {
+              fs.mkdirSync(distDir, { recursive: true });
+            }
             
             // Copiar sw.js de public/ a dist/
             if (fs.existsSync(swSourcePath)) {

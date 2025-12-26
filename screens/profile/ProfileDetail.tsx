@@ -540,26 +540,26 @@ interface ActivityItem {
 }
 
 const ACTIVITY_CONFIG: Record<string, { icon: string; color: string; priority: number }> = {
-  share_reminder: { icon: 'ðŸ“¤', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 1 },
+  share_reminder: { icon: '“¤', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 1 },
   report_warning: { icon: 'âš ï¸', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
-  report_received: { icon: 'ðŸ“‹', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
-  thanks_received: { icon: 'ðŸ’œ', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 2 },
+  report_received: { icon: '“‹', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  thanks_received: { icon: '’œ', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 2 },
   like_received: { icon: 'â¤ï¸', color: 'bg-[#FB275D]/10 text-[#E91E63]', priority: 2 },
-  shared_you: { icon: 'ðŸ”„', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
-  new_assignment: { icon: 'ðŸŽ¯', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 0 },
-  month_start: { icon: 'ðŸ“…', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
+  shared_you: { icon: '”„', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
+  new_assignment: { icon: 'Ž¯', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 0 },
+  month_start: { icon: '“…', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 1 },
   mid_month: { icon: 'â°', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 1 },
-  month_end: { icon: 'ðŸ', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
-  streak_achieved: { icon: 'ðŸ”¥', color: 'bg-[#FF6B35]/10 text-[#FF6B35]', priority: 2 },
-  compliance_low: { icon: 'ðŸ“‰', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
-  compliance_high: { icon: 'ðŸ†', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 2 },
-  new_member: { icon: 'ðŸ‘‹', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 3 },
-  profile_viewed: { icon: 'ðŸ‘€', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 3 },
-  tribe_updated: { icon: 'ðŸ”„', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 1 },
-  welcome: { icon: 'ðŸŽ‰', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 0 },
-  tip: { icon: 'ðŸ’¡', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 3 },
-  achievement: { icon: 'ðŸ…', color: 'bg-[#FFD700]/10 text-[#B8860B]', priority: 2 },
-  system: { icon: 'ðŸ“¢', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 2 }
+  month_end: { icon: '', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  streak_achieved: { icon: '”¥', color: 'bg-[#FF6B35]/10 text-[#FF6B35]', priority: 2 },
+  compliance_low: { icon: '“‰', color: 'bg-[#FB275D]/10 text-[#FB275D]', priority: 0 },
+  compliance_high: { icon: '†', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 2 },
+  new_member: { icon: '‘‹', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 3 },
+  profile_viewed: { icon: '‘€', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 3 },
+  tribe_updated: { icon: '”„', color: 'bg-[#6161FF]/10 text-[#6161FF]', priority: 1 },
+  welcome: { icon: 'Ž‰', color: 'bg-[#00CA72]/10 text-[#00CA72]', priority: 0 },
+  tip: { icon: '’¡', color: 'bg-[#FFCC00]/10 text-[#9D6B00]', priority: 3 },
+  achievement: { icon: '…', color: 'bg-[#FFD700]/10 text-[#B8860B]', priority: 2 },
+  system: { icon: '“¢', color: 'bg-[#7C8193]/10 text-[#7C8193]', priority: 2 }
 };
 
 // ============================================
@@ -633,7 +633,7 @@ const generateInitialActivities = (): ActivityItem[] => {
       description: 'Tu comunidad de emprendedores te espera. Revisa tu tribu 10+10 y comienza a compartir.',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
-      icon: 'ðŸŽ‰',
+      icon: 'Ž‰',
       color: 'bg-[#00CA72]/10 text-[#00CA72]',
       actionUrl: '/tribe'
     },
@@ -644,7 +644,7 @@ const generateInitialActivities = (): ActivityItem[] => {
       description: 'Tienes 10 cuentas para impulsar y 10 que te impulsarán. ¡Revísalas!',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
-      icon: 'ðŸŽ¯',
+      icon: 'Ž¯',
       color: 'bg-[#6161FF]/10 text-[#6161FF]',
       actionUrl: '/tribe'
     },
@@ -655,7 +655,7 @@ const generateInitialActivities = (): ActivityItem[] => {
       description: 'Las historias de Instagram tienen más alcance. Comparte contenido de tu tribu en historias.',
       timestamp: new Date().toLocaleDateString('es-CL'),
       isRead: false,
-      icon: 'ðŸ’¡',
+      icon: '’¡',
       color: 'bg-[#FFCC00]/10 text-[#9D6B00]'
     }
   ];
@@ -788,7 +788,7 @@ const ActivityView = () => {
       <div className="px-4 py-4 space-y-3">
         {filteredActivities.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-4xl mb-3">ðŸ“­</div>
+            <div className="text-4xl mb-3">“­</div>
             <p className="text-[#7C8193]">No hay actividades {filter === 'unread' ? 'sin leer' : ''}</p>
           </div>
         ) : (
@@ -1035,7 +1035,7 @@ const DirectoryView = () => {
                   </span>
                   {user.affinity && (
                     <span className="text-[0.625rem] font-medium bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full">
-                      ðŸŽ¯ {user.affinity}
+                      Ž¯ {user.affinity}
                     </span>
                   )}
                 </div>
@@ -1062,7 +1062,7 @@ const TUTORIAL_STEPS = [
     id: 'welcome',
     title: '¡Conoce a tu Tribu!',
     subtitle: 'Bienvenido/a a la comunidad de emprendedores',
-    content: 'ðŸŽ¯ Tribu Impulsa es una red de apoyo mutuo donde emprendedores se impulsan entre sí.\n\nCada mes recibes TU TRIBU: un grupo de emprendedores seleccionados especialmente para ti.',
+    content: 'Ž¯ Tribu Impulsa es una red de apoyo mutuo donde emprendedores se impulsan entre sí.\n\nCada mes recibes TU TRIBU: un grupo de emprendedores seleccionados especialmente para ti.',
     iconType: 'zap',
     color: 'from-[#6161FF] to-[#00CA72]'
   },
@@ -1070,7 +1070,7 @@ const TUTORIAL_STEPS = [
     id: 'howItWorks',
     title: '¿Cómo funciona?',
     subtitle: 'Es simple: dar y recibir',
-    content: 'ðŸ“¤ YO DOY: Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)\n\nðŸ“¥ YO RECIBO: 10 emprendedores diferentes comparten TU contenido en sus redes\n\n¡Así todos ganamos exposición!',
+    content: '“¤ YO DOY: Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)\n\n“¥ YO RECIBO: 10 emprendedores diferentes comparten TU contenido en sus redes\n\n¡Así todos ganamos exposición!',
     iconType: 'users',
     color: 'from-[#00CA72] to-[#4AE698]'
   },
@@ -1078,7 +1078,7 @@ const TUTORIAL_STEPS = [
     id: 'matching',
     title: 'Matching Inteligente',
     subtitle: 'El algoritmo trabaja por ti',
-    content: 'ðŸ§  Nuestro algoritmo te conecta con emprendedores:\n\nâœ“ Complementarios a tu negocio (no competencia)\nâœ“ De la zona geográfica que tú hayas elegido\nâœ“ Con intereses y afinidades similares\n\nEl 1Â° de cada mes recibes una NUEVA Tribu.',
+    content: ' Nuestro algoritmo te conecta con emprendedores:\n\nâœ“ Complementarios a tu negocio (no competencia)\nâœ“ De la zona geográfica que tú hayas elegido\nâœ“ Con intereses y afinidades similares\n\nEl 1Â° de cada mes recibes una NUEVA Tribu.',
     iconType: 'zap',
     color: 'from-[#A78BFA] to-[#C9A8FF]'
   },
@@ -1094,7 +1094,7 @@ const TUTORIAL_STEPS = [
     id: 'start',
     title: '¡Listo para empezar!',
     subtitle: 'Tu Tribu te está esperando',
-    content: 'ðŸš€ Ya tienes todo lo que necesitas:\n\n1. Revisa tu Tribu del mes\n2. Comparte a tus 10 asignados\n3. Conéctate por WhatsApp\n4. ¡Crece junto a la comunidad!\n\n¿Empezamos?',
+    content: 'š€ Ya tienes todo lo que necesitas:\n\n1. Revisa tu Tribu del mes\n2. Comparte a tus 10 asignados\n3. Conéctate por WhatsApp\n4. ¡Crece junto a la comunidad!\n\n¿Empezamos?',
     iconType: 'user',
     color: 'from-[#E91E63] to-[#FF6B9D]'
   }
@@ -1276,7 +1276,7 @@ const PasswordChangeModal = ({ onComplete, onSkip }: { onComplete: (newPass: str
       >
         <div className="p-6">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#FFCC00] to-[#FFE066] flex items-center justify-center text-3xl shadow-lg">
-            ðŸ”
+            ”
           </div>
           <h2 className="text-xl font-bold text-[#181B34] text-center mb-2">¡Bienvenido/a a Tribu!</h2>
           <p className="text-[#7C8193] text-center text-sm mb-4">

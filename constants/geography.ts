@@ -30,7 +30,7 @@ export const REGIONS: Region[] = [
     id: 'antofagasta',
     name: 'Región de Antofagasta',
     shortName: 'Antofagasta',
-    comunas: ['Antofagasta', 'Calama', 'María Elena', 'Mejillones', 'Ollagüe', 'San Pedro de Atacama', 'Sierra Gorda', 'Taltal', 'Tocopilla']
+    comunas: ['Antofagasta', 'Calama', 'María Elena', 'Mejillones', 'Ollage', 'San Pedro de Atacama', 'Sierra Gorda', 'Taltal', 'Tocopilla']
   },
   {
     id: 'atacama',

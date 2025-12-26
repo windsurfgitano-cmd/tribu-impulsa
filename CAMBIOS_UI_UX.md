@@ -25,7 +25,7 @@ href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/[^0-9]
 **Archivo**: `components/layout/AppLayout.tsx` (línea 201)
 
 **Antes**:
-- Emoji con caracteres raros: `ðŸŽ"`
+- Emoji con caracteres raros: `Ž"`
 - Fondo gris claro
 
 **Después**:

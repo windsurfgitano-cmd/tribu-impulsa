@@ -70,8 +70,8 @@ const AdminSettingsTab = () => {
               onChange={(e) => setConfig({ ...config, mercadopagoMode: e.target.value })}
               className="w-full bg-[#F5F7FB] border border-[#E4E7EF] rounded-lg p-3 text-[#181B34] focus:outline-none focus:ring-2 focus:ring-[#6161FF]/30"
             >
-              <option value="sandbox">ðŸ§ª Sandbox (Pruebas)</option>
-              <option value="production">ðŸš€ ProducciÃ³n (Real)</option>
+              <option value="sandbox"> Sandbox (Pruebas)</option>
+              <option value="production">š€ ProducciÃ³n (Real)</option>
             </select>
           </div>
         </div>

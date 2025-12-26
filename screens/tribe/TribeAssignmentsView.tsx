@@ -187,7 +187,7 @@ const TribeAssignmentsView = () => {
           if (milestoneReached > previousMilestone && current < target) {
             milestoneRef.current = milestoneReached;
             const milestoneCount = milestoneReached * milestoneStep;
-            setShowMilestoneToast(`ðŸŽ‰ Â¡${milestoneCount} perfiles completos!`);
+            setShowMilestoneToast(`Ž‰ Â¡${milestoneCount} perfiles completos!`);
             setTimeout(() => setShowMilestoneToast(null), 4000);
           }
         }, error => {
@@ -233,7 +233,7 @@ const TribeAssignmentsView = () => {
           setAnalysisResult({
             insight: result.analysis,
             opportunities: result.opportunities || ['ColaboraciÃ³n en redes sociales', 'Referidos mutuos', 'Contenido conjunto'],
-            icebreaker: result.icebreaker || `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ðŸ‘‹ Soy parte de tu Tribu Impulsa. Me encanta lo que haces en ${analysisProfile.companyName}. Â¿Exploramos una colaboraciÃ³n? ðŸš€`
+            icebreaker: result.icebreaker || `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ‘‹ Soy parte de tu Tribu Impulsa. Me encanta lo que haces en ${analysisProfile.companyName}. Â¿Exploramos una colaboraciÃ³n? š€`
           });
         } else {
           // Fallback local
@@ -244,7 +244,7 @@ const TribeAssignmentsView = () => {
               `Live de Instagram donde ambos comparten tips de sus industrias`,
               `Pack especial: Clientes de uno reciben descuento exclusivo en el otro`
             ],
-            icebreaker: `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ðŸ‘‹ Soy de ${myProfile.companyName} y te encontrÃ© en Tribu Impulsa. Me parece genial lo que hacen en ${analysisProfile.companyName}. Â¿Te interesarÃ­a explorar una colaboraciÃ³n? ðŸš€`
+            icebreaker: `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ‘‹ Soy de ${myProfile.companyName} y te encontrÃ© en Tribu Impulsa. Me parece genial lo que hacen en ${analysisProfile.companyName}. Â¿Te interesarÃ­a explorar una colaboraciÃ³n? š€`
           });
         }
       } catch {
@@ -252,7 +252,7 @@ const TribeAssignmentsView = () => {
         setAnalysisResult({
           insight: `${analysisProfile.companyName} y ${myProfile.companyName} tienen potencial de colaboraciÃ³n. Ambos pueden beneficiarse de exponer sus marcas a nuevas audiencias.`,
           opportunities: ['ColaboraciÃ³n en redes sociales', 'Referidos mutuos', 'Contenido conjunto'],
-          icebreaker: `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ðŸ‘‹ Soy parte de tu Tribu Impulsa. Â¿Te interesa explorar una colaboraciÃ³n? ðŸš€`
+          icebreaker: `Â¡Hola ${analysisProfile.name.split(' ')[0]}! ‘‹ Soy parte de tu Tribu Impulsa. Â¿Te interesa explorar una colaboraciÃ³n? š€`
         });
       } finally {
         setIsAnalyzing(false);
@@ -394,7 +394,7 @@ const TribeAssignmentsView = () => {
   // Copiar al portapapeles
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    setToastMessage('ðŸ“‹ Enlace copiado');
+    setToastMessage('“‹ Enlace copiado');
     setTimeout(() => setToastMessage(null), 2000);
   };
 
@@ -468,12 +468,12 @@ const TribeAssignmentsView = () => {
                         </button>
                       )}
                       <a
-                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Â¡Hola ${profile.name.split(' ')[0]}! ðŸ‘‹ Soy parte de tu Tribu Impulsa este mes. Te acabo de compartir en mis redes ðŸš€ Â¿Me cuentas cÃ³mo te va con tu emprendimiento ${profile.companyName}?`)}`}
+                        href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Â¡Hola ${profile.name.split(' ')[0]}! ‘‹ Soy parte de tu Tribu Impulsa este mes. Te acabo de compartir en mis redes š€ Â¿Me cuentas cÃ³mo te va con tu emprendimiento ${profile.companyName}?`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                       >
-                        ðŸ’¬ WhatsApp
+                        ’¬ WhatsApp
                       </a>
                     </>
                   )}
@@ -481,12 +481,12 @@ const TribeAssignmentsView = () => {
                   {/* ME IMPULSAN: WhatsApp para agradecer/preguntar */}
                   {!isToShare && (
                     <a
-                      href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Â¡Hola ${profile.name.split(' ')[0]}! ðŸ‘‹ Vi que somos parte de la misma Tribu Impulsa este mes. Â¿Ya pudiste compartirme en tus redes? ðŸ™ Â¡Muchas gracias de antemano!`)}`}
+                      href={`https://wa.me/${(profile.phone || profile.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Â¡Hola ${profile.name.split(' ')[0]}! ‘‹ Vi que somos parte de la misma Tribu Impulsa este mes. Â¿Ya pudiste compartirme en tus redes? ™ Â¡Muchas gracias de antemano!`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[0.75rem] px-3 py-2 rounded-lg bg-[#25D366] text-white font-medium"
                     >
-                      ðŸ’¬ Enviar WhatsApp
+                      ’¬ Enviar WhatsApp
                     </a>
                   )}
 
@@ -496,7 +496,7 @@ const TribeAssignmentsView = () => {
                     onClick={() => setAnalysisProfile(profile)}
                     className="text-[0.75rem] px-3 py-2 rounded-lg bg-gradient-to-r from-[#6161FF] to-[#A78BFA] text-white font-medium"
                   >
-                    ðŸ”® AnÃ¡lisis TRIBU X
+                    ”® AnÃ¡lisis TRIBU X
                   </button>
 
                   {/* Ver perfil */}
@@ -583,7 +583,7 @@ const TribeAssignmentsView = () => {
             onClick={e => e.stopPropagation()}
           >
             <h3 className="text-lg font-bold text-[#181B34] mb-2">
-              {showShareModal.type === 'shared_to' ? 'ðŸ“¤ Registrar que compartiste' : 'ðŸ“¥ Registrar que te compartieron'}
+              {showShareModal.type === 'shared_to' ? '“¤ Registrar que compartiste' : '“¥ Registrar que te compartieron'}
             </h3>
             <p className="text-sm text-[#7C8193] mb-4">
               {showShareModal.type === 'shared_to'
@@ -674,7 +674,7 @@ const TribeAssignmentsView = () => {
                     {/* Hero del anÃ¡lisis */}
                     <div className="text-center mb-2">
                       <h1 className="text-xl font-bold text-[#181B34] mb-1">
-                        ðŸ”® AnÃ¡lisis de Sinergia
+                        ”® AnÃ¡lisis de Sinergia
                       </h1>
                       <p className="text-sm text-[#7C8193]">
                         <span className="font-semibold text-[#6161FF]">{analysisProfile.companyName}</span> Ã— <span className="font-semibold text-[#8B5CF6]">Tu Negocio</span>
@@ -685,7 +685,7 @@ const TribeAssignmentsView = () => {
                     <div className="bg-white rounded-2xl p-4 border border-[#E4E7EF] shadow-lg">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] flex items-center justify-center">
-                          <span className="text-white text-sm">ðŸ’¡</span>
+                          <span className="text-white text-sm">’¡</span>
                         </div>
                         <h2 className="text-sm font-bold uppercase tracking-wide text-[#6161FF]">Insight de IA</h2>
                       </div>
@@ -702,7 +702,7 @@ const TribeAssignmentsView = () => {
                     <div className="bg-gradient-to-br from-[#6161FF]/5 via-[#8B5CF6]/5 to-[#C026D3]/5 rounded-2xl p-4 border border-[#8B5CF6]/20">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00CA72] to-[#00B366] flex items-center justify-center">
-                          <span className="text-white text-sm">ðŸŽ¯</span>
+                          <span className="text-white text-sm">Ž¯</span>
                         </div>
                         <h2 className="text-sm font-bold uppercase tracking-wide text-[#00CA72]">Oportunidades de ColaboraciÃ³n</h2>
                       </div>
@@ -735,7 +735,7 @@ const TribeAssignmentsView = () => {
                     <div className="bg-gradient-to-br from-[#25D366]/10 to-[#25D366]/5 rounded-2xl p-4 border border-[#25D366]/30 shadow-sm">
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-8 h-8 rounded-full bg-[#25D366] flex items-center justify-center">
-                          <span className="text-white text-sm">ðŸ’¬</span>
+                          <span className="text-white text-sm">’¬</span>
                         </div>
                         <div>
                           <h2 className="text-sm font-bold uppercase tracking-wide text-[#25D366]">Rompe el Hielo</h2>
@@ -761,7 +761,7 @@ const TribeAssignmentsView = () => {
                     {/* Footer con tips */}
                     <div className="bg-[#F5F7FB] rounded-xl p-3 border border-[#E4E7EF]">
                       <p className="text-[10px] text-[#7C8193] text-center">
-                        <span className="font-semibold text-[#6161FF]">Pro tip:</span> Personaliza el mensaje antes de enviarlo para hacerlo mÃ¡s autÃ©ntico ðŸŽ¯
+                        <span className="font-semibold text-[#6161FF]">Pro tip:</span> Personaliza el mensaje antes de enviarlo para hacerlo mÃ¡s autÃ©ntico Ž¯
                       </p>
                     </div>
                   </>
@@ -887,8 +887,8 @@ const TribeAssignmentsView = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {renderList('Me impulsan a mÃ­', 'ðŸ“¥ LlÃ¡malos para preguntarles si ya te compartieron', assignments.shareWithMe, 'shareWithMe')}
-          {renderList('Yo debo impulsar', 'ðŸ“¤ Comparte sus cuentas en tu IG antes del dÃ­a 20', assignments.toShare, 'toShare')}
+          {renderList('Me impulsan a mÃ­', '“¥ LlÃ¡malos para preguntarles si ya te compartieron', assignments.shareWithMe, 'shareWithMe')}
+          {renderList('Yo debo impulsar', '“¤ Comparte sus cuentas en tu IG antes del dÃ­a 20', assignments.toShare, 'toShare')}
         </div>
         {reports.length > 0 && (
           <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
@@ -905,7 +905,7 @@ const TribeAssignmentsView = () => {
                   </div>
                   <p className="text-[#434343] text-sm mb-3">{report.reason}</p>
                   <a
-                    href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`ðŸš¨ REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
+                    href={`https://wa.me/${getAppConfig().whatsappSupport.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`š¨ REPORTE TRIBU IMPULSA\n\nEmprendimiento: ${report.targetName || 'N/A'}\nResponsable: ${report.targetOwner || 'N/A'}\nMotivo: ${report.reason}\nFecha: ${report.timestamp}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 text-xs px-3 py-1.5 bg-[#00CA72] text-white rounded-full hover:bg-[#00B366] transition"
@@ -1134,7 +1134,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     if (!file || !currentUser) return;
 
     try {
-      setSaveMessage('ðŸ“· Subiendo foto a la nube...');
+      setSaveMessage('“· Subiendo foto a la nube...');
 
       const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
 
@@ -1179,7 +1179,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     if (!file || !currentUser) return;
 
     try {
-      setSaveMessage('ðŸ–¼ï¸ Subiendo banner a la nube...');
+      setSaveMessage('–¼ï¸ Subiendo banner a la nube...');
 
       const { uploadProfileImage, validateImageFile } = await import('../../services/firebaseService');
 
@@ -1235,7 +1235,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const handleSave = async () => {
     if (!currentUser) return;
     setIsSaving(true);
-    setSaveMessage('ðŸ’¾ Guardando cambios...');
+    setSaveMessage('’¾ Guardando cambios...');
 
     // Datos a guardar (incluye campos de matching y redes sociales)
     const profileData = {
@@ -1266,8 +1266,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       revenue: editRevenue,
     };
 
-    // ðŸ” DEBUG: Verificar quÃ© se estÃ¡ guardando
-    console.log('ðŸ’¾ GUARDANDO PERFIL - Campos crÃ­ticos:', {
+    // ” DEBUG: Verificar quÃ© se estÃ¡ guardando
+    console.log('’¾ GUARDANDO PERFIL - Campos crÃ­ticos:', {
       bio: {
         value: profileData.bio,
         length: profileData.bio?.length || 0,
@@ -1317,7 +1317,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
           firebaseSaved = true;
           setSaveMessage('âœ… Perfil guardado y sincronizado');
 
-          // ðŸ” DEBUG: Verificar quÃ© se cargÃ³ desde Firebase
+          // ” DEBUG: Verificar quÃ© se cargÃ³ desde Firebase
           try {
             const firestore = await import('firebase/firestore');
             const { getFirestoreInstance } = await import('../../services/firebaseService');
@@ -1362,7 +1362,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               setEditCategory(reloadedUser.category || '');
               setEditAffinity(reloadedUser.affinity || '');
               
-              console.log('ðŸ”„ Perfil recargado despuÃ©s de guardar');
+              console.log('”„ Perfil recargado despuÃ©s de guardar');
             }
           }
         } catch (error) {
@@ -1579,7 +1579,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
           {/* Mensaje de guardado */}
           {saveMessage && (
-            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('âœ…') || saveMessage.includes('ðŸ“·')
+            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('âœ…') || saveMessage.includes('“·')
               ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30'
               : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
               }`}>
@@ -1646,7 +1646,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
               {/* CategorÃ­a y Afinidad - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸŽ¯ CategorÃ­a e Intereses (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Ž¯ CategorÃ­a e Intereses (para Matching)</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1 block">Giro/CategorÃ­a del Negocio</label>
                   <select
@@ -1692,7 +1692,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
               {/* GeografÃ­a - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸ“ Alcance GeogrÃ¡fico (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">“ Alcance GeogrÃ¡fico (para Matching)</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -2031,7 +2031,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                     onClick={() => setShowSecretInput(!showSecretInput)}
                     className="text-xs text-[#B3B8C6] hover:text-[#7C8193] transition-colors"
                   >
-                    ðŸ” Acceso administrador
+                    ” Acceso administrador
                   </button>
                   {showSecretInput && (
                     <div className="mt-2 space-y-2 animate-fadeIn">
@@ -2326,7 +2326,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
               <>
                 <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-xl p-3 mb-2">
                   <p className="text-[#00CA72] font-bold text-center">
-                    ðŸŽ‰ Trial Activo - CÃ­rculo Emprendedor
+                    Ž‰ Trial Activo - CÃ­rculo Emprendedor
                   </p>
                   <p className="text-xs text-[#7C8193] text-center mt-1">
                     PromociÃ³n Beta Tribu Impulsa
@@ -2425,7 +2425,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       duration: '6 meses',
       months: 6,
       description: 'Â¡1 mes gratis!',
-      badge: 'ðŸ”¥ Popular',
+      badge: '”¥ Popular',
       savings: 19950
     },
     {
@@ -2436,7 +2436,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       duration: '12 meses',
       months: 12,
       description: 'Â¡3 meses gratis!',
-      badge: 'ðŸ’Ž Mejor valor',
+      badge: '’Ž Mejor valor',
       savings: 59890
     }
   ];
@@ -2468,7 +2468,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       }
 
       // Llamar al endpoint de crear preferencia
-      console.log('ðŸ” Iniciando pago MercadoPago (PaywallScreen):', {
+      console.log('” Iniciando pago MercadoPago (PaywallScreen):', {
         userId,
         userEmail,
         planId: plan.id
@@ -2484,9 +2484,9 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         })
       });
 
-      console.log('ðŸ“¥ Response status:', response.status, response.statusText);
+      console.log('“¥ Response status:', response.status, response.statusText);
       const data = await response.json();
-      console.log('ðŸ“¦ Response data:', data);
+      console.log('“¦ Response data:', data);
 
       if (!response.ok) {
         console.error('âŒ Error en respuesta:', data);
@@ -2596,7 +2596,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
           {isTrialAvailable && (
             <div className="relative rounded-xl border-2 border-[#00CA72] bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 p-4 mb-4">
               <span className="absolute -top-2.5 left-3 bg-[#00CA72] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                ðŸŽ OFERTA ÃšNICA
+                Ž OFERTA ÃšNICA
               </span>
               <div className="text-center mb-3">
                 <p className="text-2xl font-black text-[#00CA72]">$1</p>
@@ -2794,7 +2794,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
     // Mensaje rompehielos personalizado
     const firstName = target.name?.split(' ')[0] || 'Hola';
-    const icebreaker = `Â¡Hola ${firstName}! ðŸ‘‹ Soy de ${meName} y te encontrÃ© en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrÃ­an beneficiarse mutuamente. Â¿Te interesarÃ­a explorar un sorteo cruzado o alguna colaboraciÃ³n? Â¡Creo que podrÃ­a funcionar muy bien! ðŸš€`;
+    const icebreaker = `Â¡Hola ${firstName}! ‘‹ Soy de ${meName} y te encontrÃ© en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrÃ­an beneficiarse mutuamente. Â¿Te interesarÃ­a explorar un sorteo cruzado o alguna colaboraciÃ³n? Â¡Creo que podrÃ­a funcionar muy bien! š€`;
 
     return {
       insight,
@@ -2829,7 +2829,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       if (isValidResult) {
         // Usar icebreaker del LLM si existe, o generar uno bÃ¡sico
         const llmIcebreaker = result.icebreaker ||
-          `Â¡Hola ${profileData.name.split(' ')[0]}! ðŸ‘‹ Vi tu negocio ${profileData.companyName} y me encantÃ³. Â¿Te interesa explorar una colaboraciÃ³n? ðŸ¤`;
+          `Â¡Hola ${profileData.name.split(' ')[0]}! ‘‹ Vi tu negocio ${profileData.companyName} y me encantÃ³. Â¿Te interesa explorar una colaboraciÃ³n? `;
 
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
@@ -2889,13 +2889,13 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
         {/* Insight principal */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">ðŸ’¡ Insight</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">’¡ Insight</h4>
           <p className="text-sm text-[#434343] leading-relaxed">{analysis.insight}</p>
         </div>
 
         {/* Oportunidades */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2">ðŸŽ¯ Oportunidades concretas</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2">Ž¯ Oportunidades concretas</h4>
           <ul className="space-y-2">
             {analysis.opportunities.map((opp, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-[#434343]">
@@ -2908,7 +2908,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
         {/* Romper el hielo */}
         <div className="bg-[#25D366]/10 rounded-xl p-4 border border-[#25D366]/30">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">ðŸ’¬ Rompe el hielo</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">’¬ Rompe el hielo</h4>
           <p className="text-sm text-[#434343] leading-relaxed mb-3 italic">"{analysis.icebreaker}"</p>
           <a
             href={getWhatsAppUrl()}

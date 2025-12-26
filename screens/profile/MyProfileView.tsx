@@ -382,11 +382,8 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             whatsapp: profileData.whatsapp,
             instagram: profileData.instagram,
             tiktok: profileData.tiktok,
-            facebook: profileData.facebook,
-            twitter: profileData.twitter,
             website: profileData.website,
             city: profileData.city,
-            location: profileData.location,
             avatar_url: profileData.avatarUrl,
             cover_url: profileData.coverUrl,
             category: profileData.category,
@@ -397,7 +394,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             revenue: profileData.revenue,
             updated_at: new Date().toISOString()
           })
-          .eq('auth_uid', authUserId); // ✅ Usar auth_uid en lugar de id
+          .eq('auth_uid', authUserId); // Usar auth_uid en lugar de id
 
         if (error) throw error;
 
@@ -628,7 +625,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
           {/* Mensaje de guardado */}
           {saveMessage && (
-            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('') || saveMessage.includes('ðŸ“·')
+            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('guardado') || saveMessage.includes('Guardando')
               ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30'
               : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
               }`}>
@@ -697,7 +694,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
               {/* Categoría y Afinidad - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸŽ¯ Categoría e Intereses (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">Categoria e Intereses (para Matching)</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-1.5 block">
                     Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona hasta 5)</span>
@@ -824,7 +821,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
               {/* Geografía - SELECTORES para matching */}
               <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-3">
-                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">ðŸ“ Alcance Geográfico (para Matching)</h4>
+                <h4 className="text-xs font-bold uppercase text-[#6161FF] tracking-wide">“ Alcance Geográfico (para Matching)</h4>
                 <div>
                   <label className="text-xs font-bold uppercase text-[#7C8193] mb-2 block">Alcance del Servicio</label>
                   <div className="grid grid-cols-3 gap-2">
@@ -1119,7 +1116,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               </div>
             </div>
 
-            {/* SECCIü“N MEMBRESüA */}
+            {/* SECCI“N MEMBRESA */}
             <MembershipSection userId={currentUser?.id || ''} />
 
             {/* Botón de Notificaciones Push */}
@@ -1190,7 +1187,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                     onClick={() => setShowSecretInput(!showSecretInput)}
                     className="text-xs text-[#B3B8C6] hover:text-[#7C8193] transition-colors"
                   >
-                    ðŸ” Acceso administrador
+                    ” Acceso administrador
                   </button>
                   {showSecretInput && (
                     <div className="mt-2 space-y-2 animate-fadeIn">
@@ -1485,7 +1482,7 @@ const MembershipSection = ({ userId }: { userId: string }) => {
               <>
                 <div className="bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 rounded-xl p-3 mb-2">
                   <p className="text-[#00CA72] font-bold text-center">
-                    ðŸŽ‰ Trial Activo - Círculo Emprendedor
+                    Trial Activo - Circulo Emprendedor
                   </p>
                   <p className="text-xs text-[#7C8193] text-center mt-1">
                     Promoción Beta Tribu Impulsa
@@ -1587,7 +1584,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       duration: '6 meses',
       months: 6,
       description: '¡1 mes gratis!',
-      badge: 'ðŸ”¥ Popular',
+      badge: 'Popular',
       savings: 19950
     },
     {
@@ -1598,7 +1595,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       duration: '12 meses',
       months: 12,
       description: '¡3 meses gratis!',
-      badge: 'ðŸ’Ž Mejor valor',
+      badge: 'Mejor valor',
       savings: 59890
     }
   ];
@@ -1630,7 +1627,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       }
 
       // Llamar al endpoint de crear preferencia
-      console.log('ðŸ” Iniciando pago MercadoPago (PaywallScreen):', {
+      console.log('” Iniciando pago MercadoPago (PaywallScreen):', {
         userId,
         userEmail,
         planId: plan.id
@@ -1646,9 +1643,9 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
         })
       });
 
-      console.log('ðŸ“¥ Response status:', response.status, response.statusText);
+      console.log('“¥ Response status:', response.status, response.statusText);
       const data = await response.json();
-      console.log('ðŸ“¦ Response data:', data);
+      console.log('“¦ Response data:', data);
 
       if (!response.ok) {
         console.error('âŒ Error en respuesta:', data);
@@ -1758,7 +1755,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
           {isTrialAvailable && (
             <div className="relative rounded-xl border-2 border-[#00CA72] bg-gradient-to-r from-[#00CA72]/10 to-[#6161FF]/10 p-4 mb-4">
               <span className="absolute -top-2.5 left-3 bg-[#00CA72] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                ðŸŽ OFERTA üšNICA
+                 OFERTA UNICA
               </span>
               <div className="text-center mb-3">
                 <p className="text-2xl font-black text-[#00CA72]">$1</p>
@@ -2080,7 +2077,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     }
   }, [profileId]);
 
-  // Generar análisis inteligente local - ESPECüFICO para cada match
+  // Generar análisis inteligente local - ESPECFICO para cada match
   const generateSmartAnalysis = (me: MatchProfile, target: MatchProfile): EnrichedAnalysis => {
     const sameLocation = me.location === target.location;
     const meCategory = me.category || 'emprendimiento';
@@ -2088,7 +2085,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     const meName = me.companyName || me.name;
     const targetName = target.companyName || target.name;
 
-    // Insight üšNICO basado en la combinación específica de categorías
+    // Insight šNICO basado en la combinación específica de categorías
     let insight = '';
 
     // Análisis específico por tipo de negocio
@@ -2112,7 +2109,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       insight += ` Al estar ambos en ${me.location}, pueden coordinar eventos presenciales o activaciones conjuntas.`;
     }
 
-    // Oportunidades ESPECüFICAS para este match
+    // Oportunidades ESPECFICAS para este match
     const opportunities = [
       `Sorteo conjunto: ${meName} regala un servicio/producto de ${targetName} a sus seguidores (y viceversa)`,
       `Contenido colaborativo: Live de Instagram donde ambos comparten tips de sus industrias`,
@@ -2121,7 +2118,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
     // Mensaje rompehielos personalizado
     const firstName = target.name?.split(' ')[0] || 'Hola';
-    const icebreaker = `¡Hola ${firstName}! ðŸ‘‹ Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! ðŸš€`;
+    const icebreaker = `¡Hola ${firstName}! ‘‹ Soy de ${meName} y te encontré en Tribu Impulsa. Me parece que lo que hacen en ${targetName} es genial y creo que nuestras audiencias podrían beneficiarse mutuamente. ¿Te interesaría explorar un sorteo cruzado o alguna colaboración? ¡Creo que podría funcionar muy bien! `;
 
     return {
       insight,
@@ -2156,7 +2153,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       if (isValidResult) {
         // Usar icebreaker del LLM si existe, o generar uno básico
         const llmIcebreaker = result.icebreaker ||
-          `¡Hola ${profileData.name.split(' ')[0]}! ðŸ‘‹ Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? ðŸ¤`;
+          `¡Hola ${profileData.name.split(' ')[0]}! ‘‹ Vi tu negocio ${profileData.companyName} y me encantó. ¿Te interesa explorar una colaboración? `;
 
         const enriched: EnrichedAnalysis = {
           insight: result.analysis,
@@ -2216,13 +2213,13 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
         {/* Insight principal */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">ðŸ’¡ Insight</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#6161FF] mb-2">’¡ Insight</h4>
           <p className="text-sm text-[#434343] leading-relaxed">{analysis.insight}</p>
         </div>
 
         {/* Oportunidades */}
         <div className="bg-white rounded-xl p-4 border border-[#E4E7EF]">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2">ðŸŽ¯ Oportunidades concretas</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#00CA72] mb-2"> Oportunidades concretas</h4>
           <ul className="space-y-2">
             {analysis.opportunities.map((opp, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-[#434343]">
@@ -2235,7 +2232,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
 
         {/* Romper el hielo */}
         <div className="bg-[#25D366]/10 rounded-xl p-4 border border-[#25D366]/30">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">ðŸ’¬ Rompe el hielo</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-[#25D366] mb-2">’¬ Rompe el hielo</h4>
           <p className="text-sm text-[#434343] leading-relaxed mb-3 italic">"{analysis.icebreaker}"</p>
           <a
             href={getWhatsAppUrl()}

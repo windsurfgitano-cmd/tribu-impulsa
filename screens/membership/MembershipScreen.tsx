@@ -50,7 +50,7 @@ export const MembershipScreen = () => {
         if (isActive) {
           // Dar tiempo para ver la página antes de redirigir
           setTimeout(() => {
-            navigate('/dashboard');
+            navigate('/searching'); // 🎥 Mostrar video de carga
           }, 1500);
         }
       }
@@ -67,8 +67,8 @@ export const MembershipScreen = () => {
       if (membership) {
         syncMembershipToLocalCache(currentUser.id, membership);
         localStorage.setItem(`trial_used_${currentUser.id}`, 'true');
-        // Ir directo al dashboard sin video de loading
-        navigate('/dashboard');
+        // 🎥 Mostrar video de carga antes de ir al dashboard
+        navigate('/searching');
       } else {
         alert('No se pudo activar el trial. Intenta de nuevo.');
       }

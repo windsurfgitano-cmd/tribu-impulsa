@@ -440,6 +440,9 @@ const LoginScreen = () => {
     };
     localStorage.setItem(SURVEY_STORAGE_KEY, JSON.stringify(surveyData));
 
+    // 🎥 MOSTRAR VIDEO DE CARGA antes de ir al dashboard
+    navigate('/searching');
+
     // Solo mostrar popup de cambio de contraseña si:
     // 1. Es firstLogin Y
     // 2. La contraseña actual es TRIBU2026 (no la ha cambiado)

@@ -18,6 +18,7 @@ import { MatchProfile } from '../../types';
 import { getProfileById, getMyProfile } from '../../services/matchService';
 import { useSurveyGuard } from '../../hooks/useSurveyGuard';
 import { BrandBadge } from '../../components/BrandBadge';
+import { TribalLoadingAnimation } from '../../components/TribalAnimation';
 
 // Componente de Análisis de Match con LLM
 const MATCH_ANALYSIS_STORAGE_KEY = 'tribu_match_analysis';
@@ -209,6 +210,23 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
     return phone ? `https://wa.me/${phone}?text=${message}` : `https://wa.me/?text=${message}`;
   };
 
+  // 🎨 MOSTRAR ANIMACIÓN DE HEXÁGONOS MIENTRAS ANALIZA
+  if (isLoading) {
+    return (
+      <div className="bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-6 border border-[#E4E7EF]">
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="mb-4">
+            <TribalLoadingAnimation size="small" />
+          </div>
+          <h3 className="font-bold text-[#181B34] mb-2">Analizando sinergia con IA...</h3>
+          <p className="text-[#7C8193] text-sm text-center max-w-md">
+            Nuestro algoritmo está evaluando las oportunidades de colaboración entre ambos negocios
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!analysis && !hasGenerated) {
     return (
       <div className="bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-6 border border-[#E4E7EF]">
@@ -226,7 +244,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
               disabled={isLoading}
               className="px-6 py-2.5 bg-gradient-to-r from-[#6161FF] to-[#00CA72] text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50"
             >
-              {isLoading ? 'Analizando...' : 'Generar Análisis'}
+              Generar Análisis
             </button>
           </div>
         </div>

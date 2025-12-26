@@ -156,7 +156,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
       const { updateUserPassword } = await import('../../services/firebaseService');
       const synced = await updateUserPassword(user.id, newPassword);
       if (synced) {
-        console.log('âœ… Contraseña sincronizada con Firebase');
+        console.log(' Contraseña sincronizada con Firebase');
       }
     } catch (err) {
       console.log('âš ï¸ Contraseña guardada localmente (Firebase no disponible):', err);
@@ -315,13 +315,13 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     }
     
     if (validationErrors.length > 0) {
-      setSaveMessage('❌ Completa todos los campos requeridos');
-      alert(`⚠️ PERFIL INCOMPLETO\n\nDebe completar los siguientes campos:\n\n• ${validationErrors.join('\n• ')}\n\n❌ NO se puede guardar un perfil incompleto.`);
+      setSaveMessage('Completa todos los campos requeridos');
+      alert(`⚠️ PERFIL INCOMPLETO\n\nDebe completar los siguientes campos:\n\n• ${validationErrors.join('\n• ')}\n\n NO se puede guardar un perfil incompleto.`);
       return;
     }
     
     setIsSaving(true);
-    setSaveMessage('ðŸ'¾ Guardando cambios...');
+    setSaveMessage('Guardando cambios...');
 
     // Datos a guardar (incluye campos de matching y redes sociales)
     const profileData = {
@@ -466,7 +466,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
                 // PASO 1: PRIMERO subir datos locales a Firebase (para no perderlos)
                 if (localUser) {
-                  setSaveMessage('â¬†ï¸ Subiendo datos locales a la nube...');
+                  setSaveMessage(' Subiendo datos locales a la nube...');
                   await syncUserToFirebase(localUser.id, {
                     name: localUser.name,
                     companyName: localUser.companyName,
@@ -485,11 +485,11 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                     avatarUrl: localUser.avatarUrl,
                     coverUrl: localUser.coverUrl,
                   });
-                  console.log('âœ… Datos locales subidos a Firebase');
+                  console.log('Datos locales subidos a Firebase');
                 }
 
                 // PASO 2: Luego descargar datos frescos de Firebase
-                setSaveMessage('â¬‡ï¸ Descargando datos de la nube...');
+                setSaveMessage(' Descargando datos de la nube...');
                 const session = getStoredSession();
                 if (session?.email) {
                   const freshUser = await getUserFromFirebaseByEmail(session.email);
@@ -505,7 +505,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                       setEditAffinity(user.affinity || '');
                       setEditRevenue(user.revenue || '');
                     }
-                    setSaveMessage('âœ… Sincronización completa');
+                    setSaveMessage('Sincronizacion completa');
                   } else {
                     setSaveMessage('âš ï¸ No se encontró usuario en la nube');
                   }
@@ -620,7 +620,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
 
           {/* Mensaje de guardado */}
           {saveMessage && (
-            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('âœ…') || saveMessage.includes('ðŸ“·')
+            <div className={`w-full p-3 rounded-xl text-center text-sm font-medium mb-4 ${saveMessage.includes('') || saveMessage.includes('ðŸ“·')
               ? 'bg-[#E6FFF3] text-[#008A4E] border border-[#00CA72]/30'
               : 'bg-[#FFF0F3] text-[#FB275D] border border-[#FB275D]/30'
               }`}>
@@ -1165,7 +1165,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                       window.location.href = '/';
                     }, 100);
                   } catch (error) {
-                    console.error('❌ Error cerrando sesión:', error);
+                    console.error(' Error cerrando sesión:', error);
                     // Intentar redireccionar de todas formas
                     window.location.href = '/';
                   }
@@ -1252,7 +1252,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
                       <p className="text-[#FB275D] text-sm">{passwordError}</p>
                     )}
                     {passwordSuccess && (
-                      <p className="text-[#00CA72] text-sm">âœ… Contraseña actualizada correctamente</p>
+                      <p className="text-[#00CA72] text-sm"> Contraseña actualizada correctamente</p>
                     )}
                     <div className="flex gap-3 pt-2">
                       <button
@@ -1649,7 +1649,7 @@ const SubscriptionManager = ({ userId, currentPlan, expiresAt }: { userId: strin
       }
 
       if (data.initPoint) {
-        console.log('âœ… Redirigiendo a MercadoPago:', data.initPoint);
+        console.log(' Redirigiendo a MercadoPago:', data.initPoint);
         // Redirigir a MercadoPago
         window.location.href = data.initPoint;
       } else {
@@ -2155,7 +2155,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
           opportunities: result.opportunities,
           icebreaker: llmIcebreaker
         };
-        console.log('âœ… Análisis LLM completo:', enriched);
+        console.log(' Análisis LLM completo:', enriched);
         setAnalysis(enriched);
         saveAnalysis(profileId, JSON.stringify(enriched));
       } else {
@@ -2164,7 +2164,7 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
       }
     } catch {
       // Usar fallback inteligente local (siempre funciona)
-      console.log('âœ… Usando análisis local enriquecido');
+      console.log(' Usando análisis local enriquecido');
       const smartAnalysis = generateSmartAnalysis(myProfile, profileData);
       setAnalysis(smartAnalysis);
       saveAnalysis(profileId, JSON.stringify(smartAnalysis));

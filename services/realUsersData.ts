@@ -70,248 +70,13 @@ export interface RealUser extends Omit<UserProfile, 'id' | 'createdAt'> {
 }
 
 // ===============================================
-// USUARIOS REALES - 9 CLIENTES AUTORIZADOS
+// USUARIOS - SUPABASE ES LA UNICA FUENTE DE VERDAD
+// Los usuarios se cargan desde Supabase, no desde este array
 // ===============================================
-export const REAL_USERS: RealUser[] = [
-  {
-    email: 'guille@elevatecreativo.com',
-    name: 'Guillermo García',
-    companyName: 'Elevate Agencia de Marketing',
-    instagram: '@elevate.agencia',
-    phone: '+56979777906',
-    whatsapp: '+56979777906',
-    website: 'https://elevatecreativo.com',
-    category: 'Servicios Profesionales',
-    affinity: 'Negocios',
-    bio: 'Somos una empresa de servicios de agencia de marketing y asesoría comercial',
-    businessDescription: 'Aprendemos del negocio del cliente para poder hacer acciones que realmente impactan las ventas.',
-    city: 'Santiago',
-    scope: 'NACIONAL',
-    revenue: '500000',
-    avatarUrl: getAvatarUrl('Guillermo García'),
-    companyLogoUrl: getLogoUrl('Elevate Agencia de Marketing'),
-    coverUrl: getCoverUrl('Servicios Profesionales'),
-    status: 'active',
-    followers: 5000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    onboardingComplete: true,
-    termsAccepted: true
-  },
-  {
-    email: 'rincondeoz@gmail.com',
-    name: 'Oscar Zambrano',
-    companyName: 'El Rey de las Páginas',
-    instagram: '@rincondeoz',
-    phone: '+56912345678',
-    whatsapp: '+56912345678',
-    website: 'https://rincondeoz.com',
-    category: 'Servicios Profesionales',
-    affinity: 'Digital y Tecnología',
-    bio: 'Desarrollo web y soluciones digitales para emprendedores',
-    businessDescription: 'Creamos páginas web profesionales y soluciones digitales que ayudan a los emprendedores a crecer online.',
-    city: 'Santiago',
-    scope: 'NACIONAL',
-    revenue: '300000',
-    avatarUrl: getAvatarUrl('Oscar Zambrano'),
-    companyLogoUrl: getLogoUrl('El Rey de las Páginas'),
-    coverUrl: getCoverUrl('Servicios Profesionales'),
-    status: 'active',
-    followers: 2000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    onboardingComplete: true,
-    termsAccepted: true
-  },
-  {
-    email: 'windsurfgitano@gmail.com',
-    name: 'Oscar Zambrano',
-    companyName: 'Zambrano Ztudios',
-    instagram: '@zambranoz',
-    phone: '+56987654321',
-    whatsapp: '+56987654321',
-    website: '',
-    category: 'Arte, Diseño y Creatividad',
-    affinity: 'Diseño y Creatividad',
-    bio: 'Estudio creativo especializado en diseño gráfico y branding',
-    businessDescription: 'Transformamos ideas en identidades visuales únicas que conectan con tu audiencia y destacan tu marca.',
-    city: 'Santiago',
-    scope: 'REGIONAL',
-    selectedRegions: ['Metropolitana'],
-    revenue: '200000',
-    avatarUrl: getAvatarUrl('Oscar Zambrano'),
-    companyLogoUrl: getLogoUrl('Zambrano Ztudios'),
-    coverUrl: getCoverUrl('Arte, Diseño y Creatividad'),
-    status: 'active',
-    followers: 1500,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    onboardingComplete: true,
-    termsAccepted: true
-  },
-  {
-    email: 'doraluz@terraflorpaisajismo.cl',
-    name: 'Doraluz Galleguillos',
-    companyName: 'Terraflor Paisajismo',
-    instagram: '@terraflorpaisajismochile',
-    phone: '+56976160566',
-    whatsapp: '+56976160566',
-    website: 'https://www.terraflorpaisajismo.cl',
-    category: 'Construcción y Mantención',
-    affinity: 'Impacto y Propósito',
-    bio: 'Diseño de jardines y paisajismo sustentable',
-    businessDescription: 'En Terraflor embellecemos tus proyectos con paisajismo inteligente y sustentable.',
-    city: 'Santiago',
-    scope: 'REGIONAL',
-    selectedRegions: ['Metropolitana'],
-    revenue: '500000',
-    avatarUrl: getAvatarUrl('Doraluz Galleguillos'),
-    companyLogoUrl: getLogoUrl('Terraflor Paisajismo'),
-    coverUrl: getCoverUrl('Construcción y Mantención'),
-    status: 'active',
-    followers: 5000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    role: 'admin'
-  },
-  {
-    email: 'admin@tribuimpulsa.cl',
-    name: 'Admin Tribu',
-    companyName: 'Tribu Impulsa',
-    instagram: '@tribuimpulsa',
-    phone: '+56900000000',
-    whatsapp: '+56900000000',
-    website: 'https://tribuimpulsa.cl',
-    category: 'Plataforma',
-    affinity: 'Todos',
-    bio: 'Administrador de la plataforma Tribu Impulsa',
-    businessDescription: 'Plataforma que conecta emprendedores para impulsar sus negocios mediante colaboración mutua.',
-    city: 'Santiago',
-    scope: 'NACIONAL',
-    revenue: '0',
-    avatarUrl: getAvatarUrl('Admin Tribu'),
-    companyLogoUrl: getLogoUrl('Tribu Impulsa'),
-    coverUrl: getCoverUrl('Plataforma'),
-    status: 'active',
-    followers: 1000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    role: 'admin'
-  },
-  {
-    email: 'dafnafinkelstein@gmail.com',
-    name: 'Dafna Finkelstein',
-    companyName: 'By Turquía',
-    instagram: '@byturquia',
-    phone: '+56992767707',
-    whatsapp: '+56992767707',
-    website: 'https://www.byturquia.com',
-    category: 'Moda Mujer',
-    affinity: 'Diseño y Creatividad',
-    bio: 'Joyería artesanal inspirada en Turquía. Piezas únicas con historia.',
-    businessDescription: 'Joyas de plata 925 enchapadas en oro de 18 quilates y piedras semipreciosas. Joyas pensadas en mujeres fuertes.',
-    city: 'Santiago',
-    scope: 'NACIONAL',
-    revenue: '100000',
-    avatarUrl: getAvatarUrl('Dafna Finkelstein'),
-    companyLogoUrl: getLogoUrl('By Turquía'),
-    coverUrl: getCoverUrl('Moda Mujer'),
-    status: 'active',
-    followers: 10000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: true,
-    tribeAssigned: true,
-    role: 'admin'
-  },
-  {
-    email: 'qa_dummy@tribuimpulsa.cl',
-    name: 'QA Dummy',
-    companyName: 'QA Tribu Labs',
-    instagram: '@qatribu',
-    phone: '+56999999999',
-    whatsapp: '+56999999999',
-    website: '',
-    category: 'Tecnología',
-    affinity: 'Digital y Tecnología',
-    bio: 'Usuario de prueba para QA y testing de la plataforma',
-    businessDescription: 'Perfil de prueba utilizado para verificar funcionalidades y flujos de la plataforma Tribu Impulsa.',
-    city: 'Santiago',
-    scope: 'LOCAL',
-    comuna: 'Santiago',
-    revenue: '50000',
-    avatarUrl: getAvatarUrl('QA Dummy'),
-    companyLogoUrl: getLogoUrl('QA Tribu Labs'),
-    coverUrl: getCoverUrl('Tecnología'),
-    status: 'inactive',
-    followers: 100,
-    firstLogin: true,
-    password: '123123',
-    surveyCompleted: false,
-    tribeAssigned: false
-  },
-  {
-    email: 'ergoguillermogarcia@gmail.com',
-    name: 'Guillermo García',
-    companyName: 'Pausa Coaching',
-    instagram: '@pausacoaching',
-    phone: '+56979777906',
-    whatsapp: '+56979777906',
-    website: '',
-    category: 'Servicios Profesionales',
-    affinity: 'Bienestar y Salud',
-    bio: 'Coaching para personas o grupos de personas',
-    businessDescription: 'Coaching con tiempo de duración específico para ayudarte a alcanzar tus objetivos personales y profesionales.',
-    city: 'Santiago',
-    scope: 'REGIONAL',
-    selectedRegions: ['Metropolitana'],
-    revenue: '100000',
-    avatarUrl: getAvatarUrl('Guillermo García'),
-    companyLogoUrl: getLogoUrl('Pausa Coaching'),
-    coverUrl: getCoverUrl('Servicios Profesionales'),
-    status: 'active',
-    followers: 1000,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: false,
-    tribeAssigned: true
-  },
-  {
-    email: 'chileimpresiones3d@gmail.com',
-    name: 'Oscar Zambrano',
-    companyName: 'Chile Impresiones 3D',
-    instagram: '@chileimpresiones3d',
-    phone: '+56912345678',
-    whatsapp: '+56912345678',
-    website: '',
-    category: 'Tecnología',
-    affinity: 'Digital y Tecnología',
-    bio: 'Impresión 3D profesional para proyectos personales y empresariales',
-    businessDescription: 'Servicio de impresión 3D de alta calidad.',
-    city: 'Santiago',
-    scope: 'NACIONAL',
-    revenue: '150000',
-    avatarUrl: getAvatarUrl('Oscar Zambrano'),
-    companyLogoUrl: getLogoUrl('Chile Impresiones 3D'),
-    coverUrl: getCoverUrl('Tecnología'),
-    status: 'active',
-    followers: 800,
-    firstLogin: false,
-    password: UNIVERSAL_PASSWORD,
-    surveyCompleted: false,
-    tribeAssigned: true
-  }
-];
+// SUPABASE ES LA UNICA FUENTE DE VERDAD
+// Los usuarios se cargan desde Supabase, no desde este array
+// ===============================================
+export const REAL_USERS: RealUser[] = [];
 
 // ===============================================
 // FUNCIONES DE AUTENTICACIÓN Y GESTIÓN
@@ -638,147 +403,88 @@ export const migrateUsersToFirebase = async (): Promise<{ migrated: number; exis
 // CARGA DE USUARIOS - FIREBASE ES LA FUENTE DE VERDAD
 // ===============================================
 
-const ENABLE_FIRESTORE_USERS = true; // Feature Flag: E2P2 Step 1.3
-
+// SUPABASE ES LA UNICA FUENTE DE VERDAD
 export const forceReloadRealUsers = async (): Promise<void> => {
   console.log('🔄 Sincronizando usuarios desde Supabase...');
 
-    try {
-      const firebaseUsers = await loadUsersFromFirebase();
+  try {
+    const supabaseUsers = await loadUsersFromSupabase();
 
-    // Usar Supabase como única fuente de verdad
-      if (firebaseUsers.length > 0) {
-      console.log(`✅ ${firebaseUsers.length} usuarios cargados desde Supabase.`);
-        localStorage.setItem('tribu_users', JSON.stringify(firebaseUsers));
-      } else {
-      console.warn('⚠️ No hay usuarios en Supabase. localStorage vacío.');
+    if (supabaseUsers.length > 0) {
+      console.log(`✅ ${supabaseUsers.length} usuarios cargados desde Supabase.`);
+      localStorage.setItem('tribu_users', JSON.stringify(supabaseUsers));
+    } else {
+      console.warn('⚠️ No hay usuarios en Supabase. localStorage vacio.');
       localStorage.setItem('tribu_users', JSON.stringify([]));
-      }
-    } catch (error) {
-      console.error('❌ Error leyendo Firestore:', error);
-    console.warn('⚠️ No se pudo cargar usuarios. localStorage vacío.');
+    }
+  } catch (error) {
+    console.error('❌ Error leyendo Supabase:', error);
+    console.warn('⚠️ No se pudo cargar usuarios. localStorage vacio.');
     localStorage.setItem('tribu_users', JSON.stringify([]));
   }
 };
 
-// Cargar usuarios desde Firebase
-const loadUsersFromFirebase = async (): Promise<(UserProfile & { password: string; firstLogin: boolean })[]> => {
+// Cargar usuarios desde SUPABASE (unica fuente de verdad)
+const loadUsersFromSupabase = async (): Promise<(UserProfile & { password: string; firstLogin: boolean })[]> => {
   try {
-    const { getFirestoreInstance } = await import('./firebaseService');
-    const { collection, getDocs } = await import('firebase/firestore');
-    const db = getFirestoreInstance();
+    const { getAllUsers } = await import('./supabaseService');
+    const supabaseUsers = await getAllUsers();
 
-    if (!db) return [];
-
-    const snapshot = await getDocs(collection(db, 'users'));
-    if (snapshot.empty) return [];
+    if (!supabaseUsers || supabaseUsers.length === 0) return [];
 
     const users: (UserProfile & { password: string; firstLogin: boolean })[] = [];
 
-    snapshot.forEach(doc => {
-      const data = doc.data();
+    for (const data of supabaseUsers) {
+      const categoryArray = Array.isArray(data.category) ? data.category : [data.category || 'General'];
+      
       users.push({
-        id: doc.id,
+        id: data.auth_uid || data.id, // Usar auth_uid como ID principal
         email: data.email || '',
         name: data.name || '',
-        companyName: data.companyName || data.name || '',
+        companyName: data.company_name || data.name || '',
         instagram: data.instagram || '',
         phone: data.phone || '',
-        category: data.category || 'General',
-        affinity: data.subCategory || data.category || 'Emprendimiento',
+        whatsapp: data.whatsapp || data.phone || '',
+        website: data.website || '',
+        linkedin: data.linkedin || '',
+        tiktok: data.tiktok || '',
+        category: categoryArray.join(', '),
+        affinity: data.affinity || categoryArray[0] || 'Emprendimiento',
+        scope: data.scope || 'NACIONAL',
+        city: data.city || 'Chile',
+        comuna: data.comuna || '',
+        selectedRegions: data.selected_regions || [],
         bio: data.bio || '',
-        businessDescription: data.businessDescription || '',
-        city: data.location || 'Chile',
-        avatarUrl: data.avatarUrl || getAvatarUrl(data.name || '', data.instagram || ''),
-        companyLogoUrl: getLogoUrl(data.companyName || ''),
-        coverUrl: data.coverUrl || getCoverUrl('default'),
+        businessDescription: data.business_description || '',
+        revenue: data.revenue || '',
+        avatarUrl: data.avatar_url || getAvatarUrl(data.name || ''),
+        companyLogoUrl: data.company_logo_url || getLogoUrl(data.company_name || ''),
+        coverUrl: data.cover_url || getCoverUrl('default'),
         status: data.status || 'active',
         followers: data.followers || 500,
-        password: data.password || UNIVERSAL_PASSWORD,
-        firstLogin: data.firstLogin !== false,
-        createdAt: data.createdAt || new Date().toISOString(),
-        surveyCompleted: true,
-        tribeAssigned: true
+        profileComplete: data.profile_complete || false,
+        onboardingComplete: data.onboarding_complete || false,
+        termsAccepted: data.terms_accepted || false,
+        password: UNIVERSAL_PASSWORD, // No guardamos passwords reales
+        firstLogin: false,
+        createdAt: data.created_at || new Date().toISOString(),
+        surveyCompleted: data.survey_completed || true,
+        tribeAssigned: data.tribe_assigned || true
       });
-    });
+    }
 
     return users;
   } catch (error) {
-    console.log('⚠️ Error cargando desde Firebase:', error);
+    console.log('⚠️ Error cargando desde Supabase:', error);
     return [];
   }
 };
 
-// Sincronizar usuarios desde Firebase (nuevos registros de otros dispositivos)
+// Sincronizar usuarios desde Supabase (nuevos registros de otros dispositivos)
+// NOTA: forceReloadRealUsers ya hace esto, esta funcion es legacy
 export const syncUsersFromFirebase = async (): Promise<void> => {
-  try {
-    const { getFirestoreInstance } = await import('./firebaseService');
-    const { collection, getDocs } = await import('firebase/firestore');
-    const db = getFirestoreInstance();
-
-    if (!db) {
-      console.log('⚠️ Firebase no disponible para sync de usuarios');
-      return;
-    }
-
-    const usersRef = collection(db, 'users');
-    const snapshot = await getDocs(usersRef);
-
-    if (snapshot.empty) {
-      console.log('📭 No hay usuarios en Firebase');
-      return;
-    }
-
-    const existingUsers = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-    const existingEmails = existingUsers.map((u: UserProfile) => u.email.toLowerCase());
-
-    let addedCount = 0;
-
-    snapshot.forEach(doc => {
-      const firebaseUser = doc.data();
-      const email = (firebaseUser.email || '').toLowerCase();
-
-      // Si el usuario no existe localmente, agregarlo
-      if (email && !existingEmails.includes(email)) {
-        const newUser: UserProfile & { firstLogin: boolean; password: string } = {
-          id: doc.id,
-          email: email,
-          name: firebaseUser.name || firebaseUser.companyName || 'Usuario',
-          companyName: firebaseUser.companyName || firebaseUser.name || 'Emprendimiento',
-          instagram: firebaseUser.instagram || '',
-          phone: firebaseUser.phone || '',
-          category: firebaseUser.category || 'General',
-          affinity: firebaseUser.subCategory || firebaseUser.category || 'Emprendimiento',
-          bio: firebaseUser.bio || '',
-          businessDescription: '',
-          city: firebaseUser.location || 'Chile',
-          avatarUrl: firebaseUser.avatarUrl || getAvatarUrl(firebaseUser.name || '', firebaseUser.instagram || ''),
-          companyLogoUrl: getLogoUrl(firebaseUser.companyName || ''),
-          coverUrl: firebaseUser.coverUrl || getCoverUrl('default'),
-          status: 'active',
-          followers: 500,
-          firstLogin: false,
-          password: UNIVERSAL_PASSWORD,
-          createdAt: firebaseUser.createdAt || new Date().toISOString(),
-          surveyCompleted: true,
-          tribeAssigned: true
-        };
-
-        existingUsers.push(newUser);
-        existingEmails.push(email);
-        addedCount++;
-      }
-    });
-
-    if (addedCount > 0) {
-      localStorage.setItem('tribu_users', JSON.stringify(existingUsers));
-      console.log(`☁️ ${addedCount} usuarios sincronizados desde Firebase. Total: ${existingUsers.length}`);
-    } else {
-      console.log('✅ Usuarios ya sincronizados con Firebase');
-    }
-  } catch (error) {
-    console.log('⚠️ Error sincronizando usuarios desde Firebase:', error);
-  }
+  // Redirigir a forceReloadRealUsers que ya usa Supabase
+  await forceReloadRealUsers();
 };
 
 // ===============================================

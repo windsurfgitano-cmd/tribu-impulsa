@@ -1,7 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Eye, EyeOff, Lock, CheckCircle, Gift, User as UserIcon } from 'lucide-react';
-import { getFirestoreInstance } from '../../services/firebaseService';
 import { 
   setCurrentUser, 
   syncNotificationsFromFirebase
@@ -60,31 +59,33 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   
-  // Contador dinámico de perfiles desde Firebase
+  // Contador dinámico de perfiles desde Supabase
   const [profilesCount, setProfilesCount] = useState(0);
   
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
+    let subscription: any;
     
     const setupListener = async () => {
-      const db = getFirestoreInstance();
-      if (!db) return;
+      const { subscribeToSystemStats, getSystemStats } = await import('../../services/supabaseService');
       
-      const { doc, onSnapshot } = await import('firebase/firestore');
+      // Obtener valor inicial
+      const stats = await getSystemStats();
+      if (stats) {
+        setProfilesCount(stats.profiles_completed || 0);
+      }
       
       // Suscripción en tiempo real al contador
-      unsubscribe = onSnapshot(doc(db, 'system_stats', 'global'), (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setProfilesCount(data.profilesCompleted || 0);
-        }
+      subscription = subscribeToSystemStats((stats) => {
+        setProfilesCount(stats.profiles_completed || 0);
       });
     };
     
     setupListener();
     
     return () => {
-      if (unsubscribe) unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -771,13 +772,12 @@ const LoginScreen = () => {
                     setIsLoading(true);
                     setError('');
                     try {
-                      const { getAuth, sendPasswordResetEmail } = await import('firebase/auth');
-                      const auth = getAuth();
-                      await sendPasswordResetEmail(auth, email);
+                      const { sendPasswordResetEmail } = await import('../../services/supabaseService');
+                      await sendPasswordResetEmail(email);
                       setResetSent(true);
                     } catch (err: any) {
                       console.error('Error enviando email:', err);
-                      if (err.code === 'auth/user-not-found') {
+                      if (err.message?.includes('User not found')) {
                         setError('No hay cuenta con este email. ¿Quieres registrarte?');
                       } else {
                         setError('Error enviando el email. Intenta de nuevo.');

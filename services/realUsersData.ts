@@ -354,171 +354,172 @@ export const getUserByEmail = (email: string): (UserProfile & { firstLogin?: boo
   return users.find((u: UserProfile) => u.email.toLowerCase() === email.toLowerCase()) || null;
 };
 
-// NUEVA: Obtener usuario desde Firebase y sincronizar a localStorage
+// Obtener usuario desde Supabase y sincronizar a localStorage
 export const getUserFromFirebaseByEmail = async (email: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
   try {
-    console.log(`🔍 [FIREBASE-SEARCH] Buscando usuario: ${email}`);
-    const { getFirestoreInstance } = await import('./firebaseService');
-    const { collection, getDocs } = await import('firebase/firestore');
-    const db = getFirestoreInstance();
+    console.log(`🔍 [SUPABASE-SEARCH] Buscando usuario: ${email}`);
+    const { getUserByEmail: getSupabaseUserByEmail } = await import('./supabaseService');
 
-    if (!db) {
-      console.error('❌ [FIREBASE-SEARCH] Firestore no disponible');
+    // Buscar usuario en Supabase
+    const supabaseUser = await getSupabaseUserByEmail(email);
+
+    if (!supabaseUser) {
+      console.error(`❌ [SUPABASE-SEARCH] Usuario NO encontrado: ${email}`);
       return null;
     }
 
-    // Buscar todos los usuarios y filtrar por email case-insensitive
-    // Firebase no soporta case-insensitive queries directamente
-    const emailLower = email.toLowerCase();
-    console.log(`🔍 [FIREBASE-SEARCH] Obteniendo todos los usuarios de Firestore...`);
-    const querySnapshot = await getDocs(collection(db, 'users'));
-    
-    console.log(`📊 [FIREBASE-SEARCH] Total de usuarios en Firestore: ${querySnapshot.docs.length}`);
+    console.log(`✅ [SUPABASE-SEARCH] Usuario encontrado: ${supabaseUser.email} (ID: ${supabaseUser.id})`);
 
-    if (querySnapshot.empty) {
-      console.warn('⚠️ [FIREBASE-SEARCH] Firestore /users está vacío');
-      return null;
-    }
+    // Convertir datos de Supabase a formato UserProfile
+    const categoryArray = Array.isArray(supabaseUser.category) 
+      ? supabaseUser.category 
+      : [supabaseUser.category || 'General'];
 
-    // Debug: Listar todos los emails en Firestore
-    const allEmails = querySnapshot.docs.map(doc => doc.data().email).filter(Boolean);
-    console.log(`📧 [FIREBASE-SEARCH] Emails en Firestore:`, allEmails);
-
-    // Buscar el usuario con el email correcto (case-insensitive)
-    const userDoc = querySnapshot.docs.find(doc => {
-      const data = doc.data();
-      return data.email && data.email.toLowerCase() === emailLower;
-    });
-
-    if (!userDoc) {
-      console.error(`❌ [FIREBASE-SEARCH] Usuario NO encontrado: ${email}`);
-      console.error(`❌ [FIREBASE-SEARCH] Email buscado (lowercase): ${emailLower}`);
-      console.error(`❌ [FIREBASE-SEARCH] Emails disponibles:`, allEmails);
-      return null;
-    }
-
-    const userData = userDoc.data();
-    const userId = userDoc.id;
-    console.log(`✅ [FIREBASE-SEARCH] Usuario encontrado: ${userData.email} (ID: ${userId})`);
-
-    // Convertir datos de Firebase a formato UserProfile
     const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
-      id: userId,
-      email: userData.email || email,
-      name: userData.name || '',
-      companyName: userData.companyName || '',
-      instagram: userData.instagram || '',
-      phone: userData.phone || '',
-      whatsapp: userData.whatsapp || userData.phone || '',
-      category: userData.category || 'General',
-      affinity: userData.affinity || userData.subCategory || userData.category || 'Emprendimiento',
-      bio: userData.bio || '',
-      businessDescription: userData.businessDescription || '',
-      city: userData.city || userData.location || 'Chile',
-      avatarUrl: userData.avatarUrl || '',
-      companyLogoUrl: userData.companyLogoUrl || '',
-      coverUrl: userData.coverUrl || '',
-      status: userData.status || 'active',
-      followers: userData.followers || 0,
-      createdAt: userData.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-      surveyCompleted: userData.surveyCompleted ?? true,
-      tribeAssigned: userData.tribeAssigned ?? false,
-      // Campos de matching
-      scope: userData.scope || 'NACIONAL',
-      comuna: userData.comuna || null,
-      selectedRegions: userData.selectedRegions || [],
-      revenue: userData.revenue || '',
-      // Campos adicionales
-      firstLogin: userData.firstLogin ?? false,
-      password: userData.password || UNIVERSAL_PASSWORD
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      name: supabaseUser.name,
+      companyName: supabaseUser.company_name,
+      instagram: supabaseUser.instagram || '',
+      phone: supabaseUser.phone || '',
+      whatsapp: supabaseUser.whatsapp || supabaseUser.phone || '',
+      website: supabaseUser.website || '',
+      linkedin: supabaseUser.linkedin || '',
+      tiktok: supabaseUser.tiktok || '',
+      category: categoryArray.join(', '),
+      affinity: supabaseUser.affinity || '',
+      bio: supabaseUser.bio || '',
+      businessDescription: supabaseUser.business_description || '',
+      city: supabaseUser.city || 'Chile',
+      avatarUrl: supabaseUser.avatar_url || '',
+      companyLogoUrl: supabaseUser.company_logo_url || '',
+      coverUrl: supabaseUser.cover_url || '',
+      status: supabaseUser.status,
+      followers: supabaseUser.followers,
+      createdAt: supabaseUser.created_at,
+      surveyCompleted: supabaseUser.survey_completed,
+      tribeAssigned: supabaseUser.tribe_assigned,
+      scope: supabaseUser.scope || 'NACIONAL',
+      comuna: supabaseUser.comuna || '',
+      selectedRegions: supabaseUser.selected_regions || [],
+      revenue: supabaseUser.revenue || '',
+      profileComplete: supabaseUser.profile_complete,
+      onboardingComplete: supabaseUser.onboarding_complete,
+      termsAccepted: supabaseUser.terms_accepted,
+      firstLogin: false,
+      password: UNIVERSAL_PASSWORD
     };
 
     // Sincronizar a localStorage para futuras sesiones
     const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-    const existingIndex = users.findIndex((u: UserProfile) => u.id === userId || u.email.toLowerCase() === email.toLowerCase());
+    const existingIndex = users.findIndex((u: UserProfile) => u.id === supabaseUser.id || u.email.toLowerCase() === email.toLowerCase());
 
     if (existingIndex >= 0) {
-      // Actualizar usuario existente con datos de Firebase (Firebase es la fuente de verdad)
       users[existingIndex] = { ...users[existingIndex], ...userProfile };
     } else {
-      // Agregar usuario nuevo
       users.push(userProfile);
     }
 
     localStorage.setItem('tribu_users', JSON.stringify(users));
-    console.log('☁️ Usuario cargado desde Firebase y sincronizado:', email);
+    console.log('☁️ Usuario cargado desde Supabase y sincronizado:', email);
 
     return userProfile;
   } catch (error) {
-    console.error('❌ Error cargando usuario desde Firebase:', error);
+    console.error('❌ Error cargando usuario desde Supabase:', error);
     return null;
   }
 };
 
-// Validar credenciales usando Firebase Authentication
+// Validar credenciales usando Supabase Authentication
 export const validateCredentials = async (email: string, password: string): Promise<(UserProfile & { firstLogin?: boolean }) | null> => {
   try {
-    console.log(`🔐 [VALIDATE] Validando credenciales para: ${email}`);
+    console.log(`🔐 [SUPABASE-LOGIN] Validando credenciales para: ${email}`);
     
-    // PASO 1: Intentar login con Firebase Authentication
-    const { getAuth, signInWithEmailAndPassword } = await import('firebase/auth');
-    const auth = getAuth();
+    // Importar funciones de Supabase
+    const { signInWithEmail, getUserByAuthUID } = await import('./supabaseService');
     
+    // PASO 1: Intentar login con Supabase Authentication
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log(`✅ [VALIDATE] Autenticación exitosa: ${userCredential.user.uid}`);
+      const { user: authUser, session } = await signInWithEmail(email, password);
+      console.log(`✅ [SUPABASE-LOGIN] Autenticación exitosa: ${authUser.id}`);
       
-      // PASO 2: Obtener perfil del usuario
-      let user = getUserByEmail(email);
+      // PASO 2: Obtener perfil del usuario desde Supabase
+      const supabaseUser = await getUserByAuthUID(authUser.id);
       
-      if (!user) {
-        console.log(`🔍 [VALIDATE] Usuario no encontrado localmente, buscando en Firestore...`);
-        user = await getUserFromFirebaseByEmail(email);
-      }
-      
-      if (!user) {
-        console.error(`❌ [VALIDATE] Usuario autenticado pero sin perfil en Firestore`);
+      if (!supabaseUser) {
+        console.error(`❌ [SUPABASE-LOGIN] Usuario autenticado pero sin perfil en Supabase`);
         return null;
       }
       
-      console.log(`✅ [VALIDATE] Credenciales válidas y perfil cargado`);
-      return user;
+      // Convertir a formato UserProfile para compatibilidad
+      const categoryArray = Array.isArray(supabaseUser.category) 
+        ? supabaseUser.category 
+        : [supabaseUser.category || 'General'];
+      
+      const userProfile: UserProfile & { firstLogin?: boolean; password?: string } = {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        name: supabaseUser.name,
+        companyName: supabaseUser.company_name,
+        instagram: supabaseUser.instagram || '',
+        phone: supabaseUser.phone || '',
+        whatsapp: supabaseUser.whatsapp || supabaseUser.phone || '',
+        website: supabaseUser.website || '',
+        linkedin: supabaseUser.linkedin || '',
+        tiktok: supabaseUser.tiktok || '',
+        category: categoryArray.join(', '),
+        affinity: supabaseUser.affinity || '',
+        scope: supabaseUser.scope || 'NACIONAL',
+        city: supabaseUser.city || '',
+        comuna: supabaseUser.comuna || '',
+        selectedRegions: supabaseUser.selected_regions || [],
+        bio: supabaseUser.bio || '',
+        businessDescription: supabaseUser.business_description || '',
+        revenue: supabaseUser.revenue || '',
+        termsAccepted: supabaseUser.terms_accepted,
+        avatarUrl: supabaseUser.avatar_url || '',
+        companyLogoUrl: supabaseUser.company_logo_url || '',
+        coverUrl: supabaseUser.cover_url || '',
+        status: supabaseUser.status,
+        followers: supabaseUser.followers,
+        profileComplete: supabaseUser.profile_complete,
+        onboardingComplete: supabaseUser.onboarding_complete,
+        surveyCompleted: supabaseUser.survey_completed,
+        tribeAssigned: supabaseUser.tribe_assigned,
+        createdAt: supabaseUser.created_at,
+        firstLogin: false,
+        password: password
+      };
+      
+      // Actualizar localStorage
+      const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+      const existingIndex = users.findIndex((u: UserProfile) => u.id === userProfile.id);
+      if (existingIndex >= 0) {
+        users[existingIndex] = userProfile;
+      } else {
+        users.push(userProfile);
+      }
+      localStorage.setItem('tribu_users', JSON.stringify(users));
+      
+      console.log(`✅ [SUPABASE-LOGIN] Credenciales válidas y perfil cargado`);
+      return userProfile;
       
     } catch (authError: any) {
-      console.error(`❌ [VALIDATE] Error de autenticación: ${authError.code}`);
+      console.error(`❌ [SUPABASE-LOGIN] Error de autenticación:`, authError);
       console.log('[DEBUG] Email intentado:', email);
       console.log('[DEBUG] Password length:', password?.length);
       
-      if (authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-credential') {
-        console.warn(`⚠️ [VALIDATE] Intentando con password universal como fallback...`);
-        // Intentar con password universal
-        try {
-          const fallbackCredential = await signInWithEmailAndPassword(auth, email, UNIVERSAL_PASSWORD);
-          console.log('✅ [VALIDATE] Login exitoso con password universal');
-          
-          // Buscar perfil
-          let user = getUserByEmail(email);
-          if (!user) {
-            user = await getUserFromFirebaseByEmail(email);
-          }
-          
-          if (user) {
-            return user;
-          }
-        } catch {
-          console.error(`❌ [VALIDATE] Password universal también falló`);
-        }
-        
-        console.error(`❌ [VALIDATE] Contraseña incorrecta`);
-      } else if (authError.code === 'auth/user-not-found') {
-        console.error(`❌ [VALIDATE] Usuario no encontrado en Authentication`);
+      if (authError.message?.includes('Invalid login credentials') || authError.message?.includes('Email not confirmed')) {
+        console.error(`❌ [SUPABASE-LOGIN] Credenciales inválidas`);
+      } else if (authError.message?.includes('User not found')) {
+        console.error(`❌ [SUPABASE-LOGIN] Usuario no encontrado`);
       }
       
       return null;
     }
     
   } catch (error) {
-    console.error(`❌ [VALIDATE] Error crítico validando credenciales:`, error);
+    console.error(`❌ [SUPABASE-LOGIN] Error crítico validando credenciales:`, error);
     return null;
   }
 };
@@ -814,205 +815,145 @@ export const emailExists = (email: string): boolean => {
   return users.some((u: UserProfile) => u.email.toLowerCase() === email.toLowerCase());
 };
 
-// Registrar nuevo usuario
+// Registrar nuevo usuario - MIGRADO A SUPABASE
 export const registerNewUser = async (userData: NewUserData): Promise<UserProfile | null> => {
-  // ✅ VALIDACIÓN 1: Verificar si el email ya existe LOCALMENTE
-  if (emailExists(userData.email)) {
-    console.log('⚠️ Email ya registrado localmente');
-    return null;
-  }
-
-  // ✅ VALIDACIÓN 2: Verificar si el email ya existe en FIREBASE AUTH
+  console.log('🚀 [SUPABASE-REGISTER] Iniciando registro con Supabase...');
+  
   try {
-    const { getAuth, fetchSignInMethodsForEmail } = await import('firebase/auth');
-    const auth = getAuth();
-    const signInMethods = await fetchSignInMethodsForEmail(auth, userData.email);
-    if (signInMethods.length > 0) {
-      console.error('❌ [REGISTER] Email ya existe en Firebase Authentication');
+    // Importar funciones de Supabase
+    const { 
+      signUpWithEmail, 
+      createUserProfile, 
+      incrementProfilesCompleted,
+      getUserByEmail 
+    } = await import('./supabaseService');
+
+    // ✅ VALIDACIÓN: Verificar si el email ya existe en Supabase
+    const existingUser = await getUserByEmail(userData.email);
+    if (existingUser) {
+      console.error('❌ [SUPABASE-REGISTER] Email ya existe en Supabase');
       alert('Este email ya está registrado. Por favor, inicia sesión.');
       return null;
     }
-  } catch (error: any) {
-    console.warn('⚠️ [REGISTER] No se pudo verificar email en Auth:', error.code);
-  }
 
-  const newId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Preparar datos del usuario
+    const categoryArray = Array.isArray(userData.category) 
+      ? userData.category 
+      : userData.category ? [userData.category] : ['General'];
 
-  const newUser: UserProfile & { firstLogin: boolean; password: string } = {
-    id: newId,
-    email: userData.email.toLowerCase(),
-    name: userData.name,
-    companyName: userData.companyName,
-    instagram: userData.instagram.startsWith('@') ? userData.instagram : `@${userData.instagram}`,
-    phone: userData.phone,
-    category: userData.category || 'General',
-    affinity: userData.affinity || (Array.isArray(userData.category) ? userData.category[0] : userData.category) || 'Emprendimiento',
-    // Campos de ubicación
-    scope: userData.scope || 'NACIONAL',
-    city: userData.city || 'Chile',
-    comuna: userData.comuna || '',
-    selectedRegions: userData.selectedRegions || [],
-    // Campos de perfil completo
-    bio: userData.bio || '',
-    businessDescription: userData.businessDescription || '',
-    revenue: userData.revenue || '',
-    termsAccepted: userData.termsAccepted || false,
-    // RRSS opcionales
-    website: userData.website || '',
-    linkedin: userData.linkedin || '',
-    tiktok: userData.tiktok || '',
-    // Visual
-    avatarUrl: getAvatarUrl(userData.name, userData.instagram),
-    companyLogoUrl: getLogoUrl(userData.companyName),
-    coverUrl: getCoverUrl((Array.isArray(userData.category) ? userData.category[0] : userData.category) || 'default'),
-    // Estado
-    status: userData.status || 'active',
-    profileComplete: userData.profileComplete || false,
-    onboardingComplete: userData.onboardingComplete || false,
-    followers: 500,
-    firstLogin: !userData.password,
-    password: userData.password || UNIVERSAL_PASSWORD,
-    createdAt: new Date().toISOString(),
-    surveyCompleted: true,
-    tribeAssigned: true
-  };
+    const instagramHandle = userData.instagram.startsWith('@') 
+      ? userData.instagram 
+      : `@${userData.instagram}`;
 
-  // 🔄 SINCRONIZACIÓN TRANSACCIONAL: Auth → Firestore → localStorage
-  let authUID: string | null = null;
-  let firestoreSaved = false;
-  
-  try {
-    const { getFirestoreInstance } = await import('./firebaseService');
-    const { doc, setDoc, getDoc, updateDoc, increment } = await import('firebase/firestore');
-    const { getAuth, createUserWithEmailAndPassword } = await import('firebase/auth');
-    const db = getFirestoreInstance();
-
-    if (!db) {
-      console.error('❌ [REGISTER] Firestore no disponible');
-      throw new Error('Firestore not initialized');
+    // 🔐 PASO 1: Crear usuario en Supabase Authentication
+    console.log('🔐 [SUPABASE-REGISTER] Paso 1/3: Creando en Supabase Auth...');
+    const password = userData.password || UNIVERSAL_PASSWORD;
+    const { user: authUser } = await signUpWithEmail(userData.email, password);
+    
+    if (!authUser) {
+      throw new Error('No se pudo crear usuario en Supabase Auth');
     }
+    
+    console.log(`✅ [SUPABASE-REGISTER] Creado en Auth: ${authUser.id}`);
 
-    // 🔐 PASO 1: Crear usuario en Firebase Authentication
-    console.log('🔐 [REGISTER] Paso 1/3: Creando en Firebase Authentication...');
-    console.log('[DEBUG] Password recibida (length):', userData.password?.length);
-    console.log('[DEBUG] Password a guardar (length):', newUser.password?.length);
-    console.log('[DEBUG] Password tiene espacios:', newUser.password?.includes(' '));
-    const auth = getAuth();
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth, 
-        newUser.email, 
-        newUser.password
-      );
-      authUID = userCredential.user.uid;
-      console.log(`✅ [REGISTER] Creado en Authentication: ${authUID}`);
-    } catch (authError: any) {
-      if (authError.code === 'auth/email-already-in-use') {
-        console.error('❌ [REGISTER] Email ya existe en Authentication');
-        alert('Este email ya está registrado. Por favor, inicia sesión.');
-        return null;
-      } else {
-        console.error('❌ [REGISTER] Error crítico en Authentication:', authError);
-        throw authError;
-      }
-    }
+    // 📦 PASO 2: Crear perfil completo en tabla users
+    console.log('📦 [SUPABASE-REGISTER] Paso 2/3: Creando perfil en Supabase...');
+    const supabaseUser = await createUserProfile({
+      auth_uid: authUser.id,
+      email: userData.email.toLowerCase(),
+      name: userData.name,
+      company_name: userData.companyName,
+      phone: userData.phone,
+      whatsapp: userData.phone,
+      instagram: instagramHandle,
+      website: userData.website || '',
+      linkedin: userData.linkedin || '',
+      tiktok: userData.tiktok || '',
+      category: categoryArray,
+      affinity: userData.affinity || categoryArray[0] || 'Emprendimiento',
+      sub_category: userData.affinity || categoryArray[0],
+      scope: userData.scope || 'NACIONAL',
+      city: userData.city || 'Chile',
+      comuna: userData.comuna || '',
+      selected_regions: userData.selectedRegions || [],
+      bio: userData.bio || '',
+      business_description: userData.businessDescription || '',
+      revenue: userData.revenue || '',
+      avatar_url: getAvatarUrl(userData.name, instagramHandle),
+      company_logo_url: getLogoUrl(userData.companyName),
+      cover_url: getCoverUrl(categoryArray[0] || 'default'),
+      followers: 500,
+      status: userData.status || 'active',
+      role: 'user',
+      profile_complete: userData.profileComplete || false,
+      onboarding_complete: userData.onboardingComplete || false,
+      terms_accepted: userData.termsAccepted || false,
+      survey_completed: true,
+      tribe_assigned: true
+    });
 
-    // 📦 PASO 2: Guardar usuario completo en Firestore
-    console.log('📦 [REGISTER] Paso 2/3: Guardando en Firestore...');
-    try {
-      await setDoc(doc(db, 'users', newUser.id), {
-        id: newUser.id,
-        authUID: authUID,
-        email: newUser.email,
-        name: newUser.name,
-        companyName: newUser.companyName,
-        instagram: newUser.instagram,
-        phone: newUser.phone,
-        category: newUser.category,
-        affinity: newUser.affinity,
-        subCategory: newUser.affinity,
-        // Ubicación
-        scope: newUser.scope,
-        city: newUser.city,
-        location: newUser.city,
-        comuna: newUser.comuna,
-        selectedRegions: newUser.selectedRegions,
-        // Perfil completo
-        bio: newUser.bio,
-        businessDescription: newUser.businessDescription,
-        revenue: newUser.revenue,
-        termsAccepted: newUser.termsAccepted,
-        // RRSS
-        website: newUser.website,
-        linkedin: newUser.linkedin,
-        tiktok: newUser.tiktok,
-        // Visual
-        avatarUrl: newUser.avatarUrl,
-        coverUrl: newUser.coverUrl,
-        // Estado
-        status: newUser.status,
-        profileComplete: newUser.profileComplete,
-        onboardingComplete: newUser.onboardingComplete,
-        password: newUser.password,
-        createdAt: newUser.createdAt,
-        updatedAt: new Date().toISOString(),
-        source: 'app_registration'
-      });
-      firestoreSaved = true;
-      console.log('✅ [REGISTER] Guardado en Firestore:', newUser.email);
-    } catch (firestoreError) {
-      console.error('❌ [REGISTER] Error guardando en Firestore:', firestoreError);
-      // Aquí deberíamos intentar rollback de Auth, pero es complicado
-      // Por ahora solo alertamos y dejamos la cuenta huérfana para limpiar después
-      alert('Error guardando perfil. Por favor, contacta a soporte.');
-      throw firestoreError;
-    }
+    console.log('✅ [SUPABASE-REGISTER] Perfil creado en Supabase:', supabaseUser.email);
 
     // 📊 PASO 3: Actualizar contador global
-    console.log('📊 [REGISTER] Paso 3/3: Actualizando contador...');
-    const statsRef = doc(db, 'system_stats', 'global');
-    const statsDoc = await getDoc(statsRef);
-    
-    if (statsDoc.exists()) {
-      const updateData: any = {
-        membersActive: increment(1)
-      };
-      
-      if (newUser.profileComplete === true) {
-        updateData.profilesCompleted = increment(1);
-        console.log('📊 Contador de perfiles completos +1');
-      }
-      
-      await updateDoc(statsRef, updateData);
-      console.log('📊 Contador actualizado');
-    } else {
-      await setDoc(statsRef, {
-        profilesCompleted: newUser.profileComplete === true ? 1 : 0,
-        membersActive: 1,
-        profilesTarget: 1000,
-        lastUpdated: new Date().toISOString()
-      });
-      console.log('📊 Documento system_stats creado');
+    console.log('📊 [SUPABASE-REGISTER] Paso 3/3: Actualizando contador...');
+    if (userData.profileComplete) {
+      await incrementProfilesCompleted();
+      console.log('📊 Contador de perfiles completos +1');
     }
 
-    // 💾 PASO 4: Guardar en localStorage SOLO SI FIREBASE TUVO ÉXITO
-    console.log('💾 [REGISTER] Paso 4/4: Guardando en localStorage...');
-    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
-    users.push(newUser);
-    localStorage.setItem('tribu_users', JSON.stringify(users));
-    console.log('✅ [REGISTER] Guardado en localStorage');
+    // 💾 PASO 4: Guardar en localStorage para compatibilidad
+    console.log('💾 [SUPABASE-REGISTER] Paso 4/4: Guardando en localStorage...');
+    const localUser: UserProfile & { firstLogin: boolean; password: string } = {
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      name: supabaseUser.name,
+      companyName: supabaseUser.company_name,
+      instagram: supabaseUser.instagram || '',
+      phone: supabaseUser.phone || '',
+      whatsapp: supabaseUser.whatsapp || supabaseUser.phone || '',
+      website: supabaseUser.website || '',
+      linkedin: supabaseUser.linkedin || '',
+      tiktok: supabaseUser.tiktok || '',
+      category: categoryArray.join(', '),
+      affinity: supabaseUser.affinity || '',
+      scope: supabaseUser.scope || 'NACIONAL',
+      city: supabaseUser.city || '',
+      comuna: supabaseUser.comuna || '',
+      selectedRegions: supabaseUser.selected_regions || [],
+      bio: supabaseUser.bio || '',
+      businessDescription: supabaseUser.business_description || '',
+      revenue: supabaseUser.revenue || '',
+      termsAccepted: supabaseUser.terms_accepted,
+      avatarUrl: supabaseUser.avatar_url || '',
+      companyLogoUrl: supabaseUser.company_logo_url || '',
+      coverUrl: supabaseUser.cover_url || '',
+      status: supabaseUser.status,
+      followers: supabaseUser.followers,
+      profileComplete: supabaseUser.profile_complete,
+      onboardingComplete: supabaseUser.onboarding_complete,
+      surveyCompleted: supabaseUser.survey_completed,
+      tribeAssigned: supabaseUser.tribe_assigned,
+      createdAt: supabaseUser.created_at,
+      firstLogin: !userData.password,
+      password: password
+    };
 
-    console.log(`✅ ✅ ✅ REGISTRO COMPLETO: ${userData.email}`);
-    return newUser;
+    const users = JSON.parse(localStorage.getItem('tribu_users') || '[]');
+    users.push(localUser);
+    localStorage.setItem('tribu_users', JSON.stringify(users));
+    console.log('✅ [SUPABASE-REGISTER] Guardado en localStorage');
+
+    console.log(`✅ ✅ ✅ REGISTRO COMPLETO CON SUPABASE: ${userData.email}`);
+    return localUser;
 
   } catch (error: any) {
-    console.error('❌ ❌ ❌ [REGISTER] ERROR CRÍTICO:', error);
+    console.error('❌ ❌ ❌ [SUPABASE-REGISTER] ERROR CRÍTICO:', error);
     
     // Informar al usuario del error
-    if (error.code === 'permission-denied') {
-      alert('Error de permisos en Firebase. Por favor, contacta a soporte.');
-    } else if (error.code === 'unavailable') {
-      alert('Firebase no está disponible. Verifica tu conexión a internet.');
+    if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+      alert('Este email ya está registrado. Por favor, inicia sesión.');
+    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      alert('Error de conexión. Verifica tu internet e intenta de nuevo.');
     } else {
       alert('Error al registrar usuario. Por favor, intenta de nuevo.');
     }

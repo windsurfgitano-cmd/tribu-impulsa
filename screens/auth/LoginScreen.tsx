@@ -231,6 +231,58 @@ const LoginScreen = () => {
     e.preventDefault();
     setError('');
 
+    // VALIDACIÓN DETALLADA CON MENSAJES ESPECÍFICOS
+    const missingFields: string[] = [];
+    
+    if (!registerData.name || registerData.name.trim().length < 2) {
+      missingFields.push('• Nombre completo (mínimo 2 caracteres)');
+    }
+    if (!registerData.companyName || registerData.companyName.trim().length < 2) {
+      missingFields.push('• Nombre del emprendimiento (mínimo 2 caracteres)');
+    }
+    if (registerData.category.length === 0) {
+      missingFields.push('• Al menos 1 categoría/giro comercial (máximo 5)');
+    }
+    if (!registerData.instagram || registerData.instagram.trim().length < 2) {
+      missingFields.push('• Instagram');
+    }
+    if (!registerData.phone) {
+      missingFields.push('• Teléfono/WhatsApp');
+    }
+    if (!registerData.scope) {
+      missingFields.push('• Alcance geográfico (Nacional, Regional o Local)');
+    }
+    if (registerData.scope === 'LOCAL' && !registerData.comuna) {
+      missingFields.push('• Comuna (requerida para alcance Local)');
+    }
+    if (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) {
+      missingFields.push('• Al menos 1 región (requerida para alcance Regional)');
+    }
+    if (!registerData.revenue) {
+      missingFields.push('• Rango de ingresos/facturación mensual');
+    }
+    if (!registerData.bio || registerData.bio.trim().length < 50) {
+      missingFields.push(`• Biografía (mínimo 50 caracteres, tienes ${registerData.bio.trim().length})`);
+    }
+    if (!registerData.businessDescription || registerData.businessDescription.trim().length < 60) {
+      missingFields.push(`• Descripción del negocio (mínimo 60 caracteres, tienes ${registerData.businessDescription.trim().length})`);
+    }
+    if (!registerData.termsAccepted) {
+      missingFields.push('• Debes aceptar los términos y condiciones');
+    }
+    if (!registerData.password || registerData.password.length < 6) {
+      missingFields.push('• Contraseña (mínimo 6 caracteres)');
+    }
+    if (registerData.password !== registerData.confirmPassword) {
+      missingFields.push('• Las contraseñas no coinciden');
+    }
+
+    // Si hay campos faltantes, mostrar alert detallado
+    if (missingFields.length > 0) {
+      alert(`⚠️ PERFIL INCOMPLETO\n\nDebe completar los siguientes campos:\n\n${missingFields.join('\n')}\n\n❌ NO se puede registrar un perfil incompleto.`);
+      return;
+    }
+
     // Verificar si el email ya existe (IMPORTANTE: emails deben ser únicos)
     const emailLower = email.toLowerCase().trim();
     let existingUser = getUserByEmail(emailLower);
@@ -242,12 +294,6 @@ const LoginScreen = () => {
     if (existingUser) {
       setError('Este email ya está registrado. Por favor inicia sesión o usa otro email.');
       setView('initial'); // Volver a la pantalla inicial
-      return;
-    }
-
-    // Validar TODOS los campos obligatorios
-    if (!registerData.name || !registerData.companyName || !registerData.instagram || !registerData.phone || registerData.category.length === 0) {
-      setError('Por favor completa TODOS los campos obligatorios');
       return;
     }
 
@@ -868,7 +914,7 @@ const LoginScreen = () => {
             {/* Rubro principal - Selección múltiple con checkboxes Y FILTRO */}
             <div>
               <label className="block text-xs font-semibold text-[#434343] mb-1.5 uppercase tracking-wide">
-                Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona hasta 5)</span>
+                Rubros principales * <span className="text-[#7C8193] font-normal">(Selecciona de 1 a 5)</span>
               </label>
               <p className="text-[0.5625rem] text-[#7C8193] mb-2">
                 {registerData.category.length === 0 ? 'Selecciona al menos 1 categoría' : `${registerData.category.length} de 5 seleccionadas`}
@@ -1264,24 +1310,7 @@ const LoginScreen = () => {
 
             <button
               type="submit"
-              disabled={
-                isLoading || 
-                !registerData.name || 
-                !registerData.companyName || 
-                registerData.category.length === 0 || 
-                !registerData.instagram || 
-                !registerData.phone || 
-                !registerData.scope ||
-                (registerData.scope === 'LOCAL' && (!registerData.selectedRegion || !registerData.comuna)) ||
-                (registerData.scope === 'REGIONAL' && registerData.selectedRegions.length === 0) ||
-                !registerData.revenue ||
-                registerData.bio.length < 50 ||
-                registerData.businessDescription.length < 60 ||
-                !registerData.termsAccepted ||
-                !registerData.password || 
-                registerData.password !== registerData.confirmPassword ||
-                registerData.password.length < 6
-              }
+              disabled={isLoading}
               className="w-full bg-gradient-to-r from-[#00CA72] to-[#4AE698] text-white py-3.5 rounded-xl font-bold text-lg hover:shadow-[0_8px_20px_rgba(0,202,114,0.35)] transition-all shadow-md flex items-center justify-center gap-3 group disabled:opacity-50 mt-2"
             >
               {isLoading ? 'Registrando...' : '¡Unirme a la Tribu GRATIS!'}

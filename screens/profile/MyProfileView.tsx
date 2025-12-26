@@ -265,6 +265,15 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     }
   };
 
+  // Agregar etiqueta
+  const handleAddTag = () => {
+    if (newTag.trim() && !profile.tags.includes(newTag.trim())) {
+      setProfile({ ...profile, tags: [...profile.tags, newTag.trim()] });
+      setNewTag('');
+      setShowTagInput(false);
+    }
+  };
+
   // Eliminar etiqueta
   const handleRemoveTag = (tagToRemove: string) => {
     setProfile({ ...profile, tags: profile.tags.filter(t => t !== tagToRemove) });

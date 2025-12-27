@@ -20,6 +20,7 @@ import { useConfetti } from '../../components/Confetti';
 import { getTribeStatsSnapshot } from '../../services/tribeStorage';
 import { ProgressBanner } from '../../components/ProgressBanner';
 import { ProfileReminderBanner } from '../../components/common/ProfileReminderBanner';
+import { useProfilesProgress } from '../../hooks/useProfilesProgress';
 
 // Helper para verificar si el onboarding está completo
 const isOnboardingComplete = (userId: string): boolean => {
@@ -39,6 +40,8 @@ const Dashboard = () => {
   // Generar matches usando usuarios REALES
   const matches = generateMockMatches(myProfile.category, myProfile.id);
   const tribeStats = getTribeStatsSnapshot(myProfile.category, myProfile.id);
+  // Obtener progreso de perfiles para condicionar el banner
+  const { current } = useProfilesProgress();
 
   // 🎉 Confeti para nuevos registros
   const { triggerConfetti, ConfettiComponent } = useConfetti();
@@ -146,8 +149,8 @@ const Dashboard = () => {
         </button>
       </header>
 
-      {/* Progreso global hacia 1.000 perfiles */}
-      <ProgressBanner tone="light" />
+      {/* Progreso global hacia 1.000 perfiles - Solo mostrar si hay 500+ usuarios */}
+      {current >= 500 && <ProgressBanner tone="light" />}
 
       {/* Banner de recordatorio si perfil incompleto */}
       <ProfileReminderBanner />

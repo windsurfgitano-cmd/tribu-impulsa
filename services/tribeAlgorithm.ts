@@ -49,12 +49,16 @@ const COMPLEMENTARY_AFFINITIES: Record<string, string[]> = {
 
 // Verificar si dos usuarios son competencia directa
 const areCompetitors = (user1: UserProfile, user2: UserProfile): boolean => {
+  // ✅ Manejar category como array o string
+  const cat1Str = Array.isArray(user1.category) ? user1.category.join(' ') : (user1.category || '');
+  const cat2Str = Array.isArray(user2.category) ? user2.category.join(' ') : (user2.category || '');
+  
   for (const group of COMPETITION_GROUPS) {
     const cat1InGroup = group.some(cat => 
-      user1.category?.toLowerCase().includes(cat.toLowerCase())
+      cat1Str.toLowerCase().includes(cat.toLowerCase())
     );
     const cat2InGroup = group.some(cat => 
-      user2.category?.toLowerCase().includes(cat.toLowerCase())
+      cat2Str.toLowerCase().includes(cat.toLowerCase())
     );
     if (cat1InGroup && cat2InGroup) return true;
   }
@@ -73,7 +77,8 @@ const calculateCompatibilityScore = (user1: UserProfile, user2: UserProfile): nu
   
   // Bonus por afinidad complementaria
   const user1Affinity = user1.affinity || '';
-  const user2Category = user2.category || '';
+  // ✅ Manejar category como array o string
+  const user2Category = Array.isArray(user2.category) ? user2.category.join(' ') : (user2.category || '');
   const complementary = COMPLEMENTARY_AFFINITIES[user1Affinity] || [];
   if (complementary.some(c => user2Category.toLowerCase().includes(c.toLowerCase()))) {
     score += 30;

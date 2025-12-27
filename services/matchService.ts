@@ -11,8 +11,16 @@ import { REGIONS } from '../constants/geography';
 // Extraer grupo principal de una categoría del formulario
 // Ej: "Moda Mujer Ropa  Jeans" → "Moda Mujer"
 // Ej: "Belleza, Estética y Bienestar Peluquería" → "Belleza, Estética y Bienestar"
-const extractCategoryGroup = (categoryString: string): string => {
-  if (!categoryString) return 'Otro';
+// ✅ Maneja tanto string como array (Supabase)
+const extractCategoryGroup = (categoryInput: string | string[]): string => {
+  if (!categoryInput) return 'Otro';
+  
+  // Si es array, usar el primer elemento
+  const categoryString = Array.isArray(categoryInput) 
+    ? (categoryInput[0] || '') 
+    : categoryInput;
+  
+  if (!categoryString || typeof categoryString !== 'string') return 'Otro';
   
   // Buscar coincidencia con grupos conocidos
   for (const group of CATEGORY_GROUPS) {
@@ -474,10 +482,20 @@ const DUMMY_DATABASE: MatchProfile[] = [];
 const userToMatchProfile = (user: UserProfile): MatchProfile => {
   const slug = user.companyName.toLowerCase().replace(/\s+/g, '');
   
-  // Extraer categoría principal y subcategoría del campo category
-  // Formato esperado: "Grupo Principal  Subcategoría" o solo "Grupo Principal"
-  const categoryParts = (user.category || 'General').split('  ').filter(Boolean);
-  const mainCategory = categoryParts[0] || 'General';
+  // ✅ Manejar category como array (Supabase) o string (legacy)
+  let mainCategory = 'General';
+  let categoryParts: string[] = [];
+  
+  if (Array.isArray(user.category)) {
+    // category es un array en Supabase
+    mainCategory = user.category[0] || 'General';
+    categoryParts = user.category;
+  } else if (typeof user.category === 'string') {
+    // category es un string (legacy) - formato: "Grupo Principal  Subcategoría"
+    categoryParts = (user.category || 'General').split('  ').filter(Boolean);
+    mainCategory = categoryParts[0] || 'General';
+  }
+  
   // subCategory: usar segunda parte de category, o sector, o extraer de affinity
   const subCategory = categoryParts.length > 1 
     ? categoryParts.slice(1).join(' / ') 
@@ -577,10 +595,13 @@ export const generateTribeAssignments = (userCategory: string, currentUserId?: s
         city: otherUser.city  // Para inferir ubicación si faltan datos
       } : undefined;
       
+      // ✅ Convertir category a string si es array para calculateCompatibilityScore
+      const myCategoryStr = Array.isArray(myCategory) ? myCategory[0] || 'General' : myCategory;
+      const otherCategoryStr = Array.isArray(otherCategory) ? otherCategory[0] || 'General' : otherCategory;
       const { score, reason } = calculateCompatibilityScore(
-        myCategory,
+        myCategoryStr,
         myAffinity,
-        otherCategory,
+        otherCategoryStr,
         otherAffinity,
         myGeo,
         otherGeo,
@@ -715,49 +736,44 @@ export const getMyProfile = (): MatchProfile => {
 };
 
 export const generateMockMatches = (userCategory: string, currentUserId?: string, userAffinity?: string): Match[] => {
-  // Primero intentar con usuarios REALES
-  const realUsers = getAllUsers();
-  const currentUser = realUsers.find(u => u.id === currentUserId);
-  const myCategory = currentUser?.category || userCategory;
-  const myAffinity = currentUser?.affinity || userAffinity || '';
+  // ✅ MATCHES FIJOS: Siempre mostrar los 4 usuarios del equipo (preview del sistema 10+10)
+  const FIXED_USER_EMAILS = [
+    'doraluz@terraflorpaisajismo.cl',      // Doraluz - Terraflor Paisajismo
+    'dafnafinkelstein@gmail.com',          // Dafna - ByTurquia
+    'guille@elevatecreativo.com',          // Guillermo - Elevate Creativo
+    'rincondeoz@gmail.com'                 // Oscar
+  ];
+
+  // Buscar los 4 usuarios fijos por email usando getAllUsers
+  const allUsers = getAllUsers();
+  const fixedUsers = FIXED_USER_EMAILS
+    .map(email => allUsers.find(u => u.email.toLowerCase() === email.toLowerCase()))
+    .filter((user): user is UserProfile => user !== undefined);
   
-  if (realUsers.length >= 5) {
-    // Usar usuarios reales - excluir al usuario actual
-    const pool = realUsers.filter(u => u.id !== currentUserId);
-    
-    // Calcular compatibilidad REAL para cada usuario
-    const matchesWithScores = pool.map(user => {
-      const profile = userToMatchProfile(user);
-      const { score, reason } = calculateCompatibilityScore(
-        myCategory,
-        myAffinity,
-        user.category || '',
-        user.affinity || ''
-      );
-      
-      return { profile, score, reason };
-    });
-    
-    // Filtrar incompatibles y ordenar por score
-    const compatible = matchesWithScores
-      .filter(m => m.score >= 40)
-      .sort((a, b) => b.score - a.score);
-    
-    // Tomar los mejores 8
-    const selectedMatches = compatible.slice(0, Math.min(8, compatible.length));
-    
-    return selectedMatches.map(({ profile, score, reason }) => ({
-      id: `match-${profile.id}`,
-      targetProfile: profile,
-      affinityScore: score,
-      reason: reason,
-      status: 'New' as const
-    }));
+  // Excluir al usuario actual si es uno de los 4
+  const filteredUsers = currentUserId 
+    ? fixedUsers.filter(u => u.id !== currentUserId)
+    : fixedUsers;
+  
+  if (filteredUsers.length === 0) {
+    console.log('⚠️ No se encontraron usuarios fijos para matches');
+    return [];
   }
   
-  // Sin usuarios reales suficientes - retornar vacío
-  console.log('⚠️ No hay suficientes usuarios reales para generar matches');
-  return [];
+  // Convertir a MatchProfile y crear Match objects
+  const matches = filteredUsers.map(user => {
+    const profile = userToMatchProfile(user);
+    return {
+      id: `match-${profile.id}`,
+      targetProfile: profile,
+      affinityScore: 85, // Score fijo alto para estos usuarios
+      reason: 'Miembro del equipo Tribu Impulsa',
+      status: 'New' as const
+    };
+  });
+  
+  console.log(`✅ ${matches.length} matches fijos generados (preview del sistema 10+10)`);
+  return matches;
 };
 
 export const getMockActivity = (userId?: string): ActivityItem[] => {

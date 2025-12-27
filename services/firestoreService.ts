@@ -484,10 +484,13 @@ const calculateCompatibility = (user1: CloudUser, user2: CloudUser): number => {
   }
   
   // Bonus si la afinidad de uno coincide con categoría del otro
-  if (user1.affinity && user2.category.includes(user1.affinity.split(' ')[0])) {
+  // ✅ Manejar category como array o string
+  const user1CatStr = Array.isArray(user1.category) ? user1.category.join(' ') : (user1.category || '');
+  const user2CatStr = Array.isArray(user2.category) ? user2.category.join(' ') : (user2.category || '');
+  if (user1.affinity && user2CatStr.includes(user1.affinity.split(' ')[0])) {
     score += 30;
   }
-  if (user2.affinity && user1.category.includes(user2.affinity.split(' ')[0])) {
+  if (user2.affinity && user1CatStr.includes(user2.affinity.split(' ')[0])) {
     score += 30;
   }
   

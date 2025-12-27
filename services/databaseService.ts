@@ -129,24 +129,16 @@ export const createUser = (userData: Omit<UserProfile, 'id' | 'createdAt' | 'upd
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
   setCurrentUser(newUser.id);
   
-  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE (Auth + Firestore)
-  console.log('🚀 Iniciando sincronización automática a Firebase...');
-  syncUserToFirebaseAuto(newUser).catch(err => {
-    console.error('❌ ERROR CRÍTICO sincronizando usuario a Firebase:', err);
-    console.error('❌ Stack:', err.stack);
-    // Intentar de nuevo después de 2 segundos
-    setTimeout(() => {
-      console.log('🔄 Reintentando sincronización...');
-      syncUserToFirebaseAuto(newUser).catch(err2 => {
-        console.error('❌ SEGUNDO INTENTO FALLÓ:', err2);
-      });
-    }, 2000);
-  });
+  // ⚠️ ELIMINADO: syncUserToFirebaseAuto - Ya no usamos Firebase, solo Supabase
+  // La sincronización a Supabase se hace desde MyProfileView.tsx y realUsersData.ts
   
   return newUser;
 };
 
-// 🔥 Función para sincronizar usuario completo a Firebase (Authentication + Firestore)
+// ⚠️ ELIMINADA: syncUserToFirebaseAuto - Ya no usamos Firebase
+// Esta función causaba llamadas innecesarias a Firebase cuando deberíamos usar solo Supabase.
+// La sincronización a Supabase se maneja desde MyProfileView.tsx y realUsersData.ts
+/*
 const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
   console.log('📤 [SYNC] Iniciando sincronización para:', user.email);
   
@@ -218,6 +210,7 @@ const syncUserToFirebaseAuto = async (user: UserProfile): Promise<void> => {
     throw error;
   }
 };
+*/
 
 export const updateUser = (id: string, updates: Partial<UserProfile>): UserProfile | null => {
   const users = getAllUsers();
@@ -233,10 +226,8 @@ export const updateUser = (id: string, updates: Partial<UserProfile>): UserProfi
   };
   localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users));
   
-  // 🔥 SINCRONIZAR AUTOMÁTICAMENTE A FIREBASE
-  syncUserToFirebaseAuto(users[index]).catch(err => 
-    console.error('⚠️ Error sincronizando actualización a Firebase:', err)
-  );
+  // ⚠️ ELIMINADO: syncUserToFirebaseAuto - Ya no usamos Firebase, solo Supabase
+  // La sincronización a Supabase se hace desde MyProfileView.tsx
   
   return users[index];
 };

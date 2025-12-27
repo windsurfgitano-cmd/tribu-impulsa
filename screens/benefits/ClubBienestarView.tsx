@@ -14,7 +14,7 @@ export const ClubBienestarView = () => {
   // Imágenes stock para cada alianza
   const alianzaImages: Record<string, string> = {
     'santander': 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600&q=80',
-    'lovework': 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=80',
+    'lofwork': 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600&q=80',
     'soledad-mulati': 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80',
     'restaurantes': 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80',
     'cowork': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80',

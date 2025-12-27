@@ -12,14 +12,14 @@ export const ALIANZAS_BENEFICIOS = [
     oculto: true
   },
   {
-    id: 'lovework',
-    nombre: 'Lovework',
+    id: 'lofwork',
+    nombre: 'Lofwork',
     descripcion: 'Formalización y regularización empresarial. Asesoría para emprendedores.',
     tipo: 'Legal / Empresarial',
     descuento: '20% OFF',
     color: 'from-[#E91E63] to-[#C2185B]',
     logo: '💼',
-    url: 'https://lovework.cl/',
+    url: 'https://www.lofwork.cl/',
     destacado: true
   },
   {

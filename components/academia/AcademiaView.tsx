@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, BookOpen, Trophy, Flame, Clock, Target, Award, TrendingUp, Filter, Search, Grid, List } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, BookOpen, Trophy, Flame, Clock, Target, Award, TrendingUp, Filter, Search, Grid, List, ExternalLink } from 'lucide-react';
 // Card con estilo Santander
 const SantanderCard: React.FC<{children: React.ReactNode; className?: string}> = ({children, className = ''}) => (
   <div className={`bg-white rounded-xl shadow-lg border border-[#E4E7EF] ${className}`}>
@@ -8,6 +8,8 @@ const SantanderCard: React.FC<{children: React.ReactNode; className?: string}> =
 );
 import { AcademiaDashboard } from './AcademiaDashboard';
 import { getCurrentUser } from '../../services/databaseService';
+import { getAllCourses, searchCourses, SantanderCourse } from '../../services/santanderCoursesService';
+import { ExitAppModal } from '../common/ExitAppModal';
 
 interface AcademiaViewProps {
   onNavigateBack: () => void;
@@ -68,32 +70,17 @@ export const AcademiaView: React.FC<AcademiaViewProps> = ({ onNavigateBack }) =>
       </div>
 
       {/* Barra de búsqueda y filtros */}
-      {(vistaActual === 'capsulas' || vistaActual === 'rutas') && (
+      {vistaActual === 'capsulas' && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#666]" />
             <input
               type="text"
-              placeholder="Buscar cápsulas de la academia..."
+              placeholder="Buscar cursos de la academia..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-[#E4E7EF] rounded-lg focus:outline-none focus:border-[#ec0000] text-[#181B34] placeholder-gray-400 shadow-sm"
             />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-[#666]" />
-            <select
-              value={filtroCategoria}
-              onChange={(e) => setFiltroCategoria(e.target.value)}
-              className="px-3 py-2 bg-white border border-[#E4E7EF] rounded-lg focus:outline-none focus:border-[#ec0000] text-[#181B34] text-sm shadow-sm"
-            >
-              {categorias.map(cat => (
-                <option key={cat} value={cat} className="bg-gray-800">
-                  {cat === 'todas' ? 'Todas las categorías' : cat}
-                </option>
-              ))}
-            </select>
           </div>
         </div>
       )}
@@ -133,19 +120,127 @@ export const AcademiaView: React.FC<AcademiaViewProps> = ({ onNavigateBack }) =>
 const CapsulasView: React.FC<{ userId: string; searchTerm: string; filtroCategoria: string; modo: 'grid' | 'list' }> = ({ 
   userId, searchTerm, filtroCategoria, modo 
 }) => {
+  const [courses, setCourses] = useState<SantanderCourse[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<SantanderCourse | null>(null);
+  const [showExitModal, setShowExitModal] = useState(false);
+
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setCourses(getAllCourses());
+    } else {
+      setCourses(searchCourses(searchTerm));
+    }
+  }, [searchTerm]);
+
+  const handleCourseClick = (course: SantanderCourse) => {
+    setSelectedCourse(course);
+    setShowExitModal(true);
+  };
+
+  const handleConfirmExit = () => {
+    if (selectedCourse) {
+      window.open(selectedCourse.url, '_blank');
+      setShowExitModal(false);
+      setSelectedCourse(null);
+    }
+  };
+
+  const handleCancelExit = () => {
+    setShowExitModal(false);
+    setSelectedCourse(null);
+  };
+
+  // Imágenes stock para cursos
+  const stockImages = [
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&q=80',
+    'https://images.unsplash.com/photo-1553028826-f4804a6dba3b?w=600&q=80',
+    'https://images.unsplash.com/photo-1551434678-e076c223a692?w=600&q=80',
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&q=80',
+    'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600&q=80',
+    'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=600&q=80',
+    'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=600&q=80',
+    'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=600&q=80',
+    'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=600&q=80',
+    'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=600&q=80',
+  ];
+
+  const getImageForCourse = (courseId: string) => {
+    const index = courseId.length % stockImages.length;
+    return stockImages[index];
+  };
+
   return (
-    <SantanderCard className="p-6">
-      <h3 className="text-lg font-semibold mb-1">Catálogo de cápsulas</h3>
-      <p className="text-sm text-[#666] mb-4">
-        Explora las cápsulas disponibles de Santander Academia. Pronto podrás filtrar por
-        temática, nivel y programa oficial.
-      </p>
-      <div className="text-center py-8 text-[#666]">
-        <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p className="text-sm">La vista detallada de catálogo está en desarrollo.</p>
-        <p className="text-xs mt-2 text-[#888]">Mientras tanto, revisa el resumen en la pestaña "Inicio".</p>
+    <>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-[#181B34] flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-[#ec0000]" />
+            Catálogo de Cursos
+          </h3>
+          <span className="text-sm text-[#666] bg-gray-100 px-3 py-1 rounded-full">
+            {courses.length} cursos
+          </span>
+        </div>
+
+        {courses.length === 0 ? (
+          <SantanderCard className="p-6">
+            <div className="text-center py-8 text-[#666]">
+              <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No se encontraron cursos con ese criterio de búsqueda.</p>
+            </div>
+          </SantanderCard>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {courses.map((course) => (
+              <div
+                key={course.id}
+                className="group relative overflow-hidden rounded-2xl bg-white shadow-lg border border-gray-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
+              >
+                {/* Thumbnail */}
+                <div className="relative h-40 overflow-hidden">
+                  <img 
+                    src={getImageForCourse(course.id)} 
+                    alt={course.nombre}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                  <div className="absolute top-3 left-3">
+                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-[#ec0000] text-white">
+                      Gratis
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Contenido */}
+                <div className="p-4">
+                  <h4 className="font-bold text-[#181B34] mb-2 line-clamp-2 group-hover:text-[#ec0000] transition-colors min-h-[3rem]">
+                    {course.nombre}
+                  </h4>
+                  
+                  {/* Botón de acción */}
+                  <button 
+                    onClick={() => handleCourseClick(course)}
+                    className="w-full bg-gradient-to-r from-[#ec0000] to-[#cc0000] text-white py-2.5 px-4 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-red-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Ver curso
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </SantanderCard>
+
+      {/* Modal de confirmación */}
+      <ExitAppModal
+        isOpen={showExitModal}
+        onConfirm={handleConfirmExit}
+        onCancel={handleCancelExit}
+        courseName={selectedCourse?.nombre}
+        destinationName="Santander Open Academy"
+      />
+    </>
   );
 };
 

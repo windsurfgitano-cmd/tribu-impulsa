@@ -213,15 +213,9 @@ const MatchAnalysisSection = ({ profileId, profileData }: { profileId: string; p
   // 🎨 MOSTRAR ANIMACIÓN DE HEXÁGONOS MIENTRAS ANALIZA
   if (isLoading) {
     return (
-      <div className="bg-gradient-to-br from-[#6161FF]/5 to-[#00CA72]/5 rounded-2xl p-6 border border-[#E4E7EF]">
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="mb-4">
-            <TribalLoadingAnimation size="small" />
-          </div>
-          <h3 className="font-bold text-[#181B34] mb-2">Analizando sinergia con IA...</h3>
-          <p className="text-[#7C8193] text-sm text-center max-w-md">
-            Nuestro algoritmo está evaluando las oportunidades de colaboración entre ambos negocios
-          </p>
+      <div className="rounded-2xl overflow-hidden border border-[#E4E7EF]">
+        <div className="h-[300px]">
+          <TribalLoadingAnimation isLoading={true} duration={4500} />
         </div>
       </div>
     );

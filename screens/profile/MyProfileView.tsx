@@ -425,6 +425,17 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         
         if (!updated) {
           console.warn('No se pudo actualizar localStorage, pero Supabase se guardó correctamente');
+        } else {
+          // 3. Sincronizar el estado profile con los datos guardados
+          const refreshedUser = getCurrentUser();
+          if (refreshedUser) {
+            setProfile(prev => ({
+              ...prev,
+              businessDescription: (refreshedUser as any)?.businessDescription || prev.businessDescription || '',
+              revenue: (refreshedUser as any)?.revenue || prev.revenue || '',
+              affinity: (refreshedUser as any)?.affinity || prev.affinity || '',
+            }));
+          }
         }
 
         supabaseSaved = true;

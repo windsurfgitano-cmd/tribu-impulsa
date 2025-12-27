@@ -44,12 +44,21 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   const navigate = useNavigate();
   useSurveyGuard();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState(getMyProfile());
+  
+  // Inicializar profile con datos de getMyProfile() + campos adicionales de currentUser (businessDescription, revenue, etc.)
+  const currentUser = getCurrentUser();
+  const initialProfile = getMyProfile();
+  const [profile, setProfile] = useState(() => ({
+    ...initialProfile,
+    businessDescription: (currentUser as any)?.businessDescription || '',
+    revenue: (currentUser as any)?.revenue || '',
+    affinity: (currentUser as any)?.affinity || '',
+  }));
+  
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [newTag, setNewTag] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
-  const currentUser = getCurrentUser();
 
   // Estados para selectores de matching (categoría, afinidad, geografía)
   const [editScope, setEditScope] = useState<'LOCAL' | 'REGIONAL' | 'NACIONAL'>(currentUser?.scope || 'NACIONAL');
@@ -406,7 +415,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         }
 
         supabaseSaved = true;
-        setSaveMessage('Perfil guardado en Supabase');
+        setSaveMessage('Perfil guardado en línea');
         console.log(`✅ Perfil actualizado en Supabase con auth.uid(): ${authUserId}`);
       } catch (error) {
         retries--;

@@ -99,6 +99,19 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   // Estado para tamaño de letra (accesibilidad)
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
 
+  // Sincronizar profile con currentUser cuando cambie (especialmente businessDescription)
+  useEffect(() => {
+    const updatedCurrentUser = getCurrentUser();
+    if (updatedCurrentUser) {
+      setProfile(prev => ({
+        ...prev,
+        businessDescription: (updatedCurrentUser as any)?.businessDescription || prev.businessDescription || '',
+        revenue: (updatedCurrentUser as any)?.revenue || prev.revenue || '',
+        affinity: (updatedCurrentUser as any)?.affinity || prev.affinity || '',
+      }));
+    }
+  }, [currentUser?.id]); // Sincronizar cuando cambie el ID del usuario
+
   const handleSecretAccess = () => {
     if (secretCode === 'TRIBU2026') {
       navigate('/directory');

@@ -317,11 +317,11 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Tus Matches Recomendados - Diseño Original Restaurado */}
+      {/* Prueba nuestra tecnología de Matches con IA avanzada */}
       <div className="px-4 mb-8">
         <h2 className="text-lg font-semibold mb-5 flex items-center gap-2 text-[#181B34]">
           <Sparkles size={18} className="text-[#FFCC00]" />
-          Tus Matches Recomendados
+          Prueba nuestra tecnología de Matches con IA avanzada
         </h2>
 
         {matches.length === 0 ? (

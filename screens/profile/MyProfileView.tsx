@@ -410,9 +410,13 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
             business_description: profileData.businessDescription,
             phone: profileData.phone,
             whatsapp: profileData.whatsapp,
+            // Redes sociales (TODAS deben estar en Supabase)
             instagram: profileData.instagram,
             tiktok: profileData.tiktok,
             website: profileData.website,
+            linkedin: (profileData as any).linkedin || '',
+            facebook: profileData.facebook || '',
+            twitter: profileData.twitter || '',
             city: profileData.city,
             avatar_url: profileData.avatarUrl,
             cover_url: profileData.coverUrl,

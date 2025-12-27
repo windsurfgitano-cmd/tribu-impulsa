@@ -6,6 +6,7 @@ import { getStoredSession } from '../../utils/storage';
 import { fetchMembershipFromCloud, syncMembershipToLocalCache } from '../../services/membershipCache';
 import { activateTrialMembership } from '../../services/membershipService';
 import { ProgressBanner } from '../../components/ProgressBanner';
+import { useProfilesProgress } from '../../hooks/useProfilesProgress';
 
 export const MembershipScreen = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ export const MembershipScreen = () => {
   const [selectedPlan, setSelectedPlan] = useState<'mensual' | 'semestral' | 'anual'>('mensual');
   const currentUser = getCurrentUser();
   const session = getStoredSession();
+  // Obtener progreso de perfiles para condicionar el banner
+  const { current } = useProfilesProgress();
 
   // Fecha límite para promoción $1: 31 de diciembre 2025 a las 23:59:59
   const BETA_END_DATE = new Date('2025-12-31T23:59:59');
@@ -83,7 +86,8 @@ export const MembershipScreen = () => {
   return isBetaActive ? (
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
-        <ProgressBanner tone="dark" />
+        {/* Progreso global hacia 1.000 perfiles - Solo mostrar si hay 500+ usuarios */}
+        {current >= 500 && <ProgressBanner tone="dark" />}
         <div className="bg-white rounded-3xl p-6 w-full shadow-2xl">
         {/* Header */}
         <div className="text-center mb-6">
@@ -170,7 +174,8 @@ export const MembershipScreen = () => {
     // Vista cuando la Beta ya terminó (después del 31 dic 2025)
     <div className="min-h-screen bg-gradient-to-br from-[#6161FF] via-[#8B5CF6] to-[#C026D3] flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
-        <ProgressBanner tone="dark" />
+        {/* Progreso global hacia 1.000 perfiles - Solo mostrar si hay 500+ usuarios */}
+        {current >= 500 && <ProgressBanner tone="dark" />}
         <div className="bg-white rounded-3xl p-8 w-full text-center shadow-2xl">
         <div className="w-20 h-20 bg-gradient-to-br from-[#6161FF] to-[#8B5CF6] rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
           <Crown size={40} className="text-white" />

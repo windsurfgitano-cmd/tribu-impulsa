@@ -255,9 +255,9 @@ const checkGeographicCompatibility = (
 
 // Calcular score de compatibilidad entre dos usuarios
 const calculateCompatibilityScore = (
-  user1Category: string,
+  user1Category: string | string[],  // ✅ Puede ser string o array
   user1Affinity: string,
-  user2Category: string,
+  user2Category: string | string[],  // ✅ Puede ser string o array
   user2Affinity: string,
   // Parámetros de geografía opcionales (incluye city para inferencia)
   user1Geo?: { scope?: string; comuna?: string; regions?: string[]; city?: string },
@@ -269,8 +269,12 @@ const calculateCompatibilityScore = (
   let score = 50; // Base score
   let reasons: string[] = [];
   
-  const group1 = extractCategoryGroup(user1Category);
-  const group2 = extractCategoryGroup(user2Category);
+  // ✅ Convertir category a string si es array (para extractCategoryGroup que ya maneja ambos)
+  const user1CatStr = Array.isArray(user1Category) ? user1Category[0] || 'General' : user1Category;
+  const user2CatStr = Array.isArray(user2Category) ? user2Category[0] || 'General' : user2Category;
+  
+  const group1 = extractCategoryGroup(user1Category); // extractCategoryGroup ya maneja arrays
+  const group2 = extractCategoryGroup(user2Category); // extractCategoryGroup ya maneja arrays
   const affGroup1 = extractAffinityGroup(user1Affinity);
   const affGroup2 = extractAffinityGroup(user2Affinity);
   
@@ -294,8 +298,8 @@ const calculateCompatibilityScore = (
   }
   
   // 0.5 Si alguno no tiene categoría, ser permisivo pero no penalizar
-  const hasCategory1 = user1Category && user1Category !== 'General' && user1Category.trim() !== '';
-  const hasCategory2 = user2Category && user2Category !== 'General' && user2Category.trim() !== '';
+  const hasCategory1 = user1CatStr && user1CatStr !== 'General' && user1CatStr.trim() !== '';
+  const hasCategory2 = user2CatStr && user2CatStr !== 'General' && user2CatStr.trim() !== '';
   
   if (!hasCategory1 || !hasCategory2) {
     // Usuario sin categoría definida: matchear por afinidad si existe
@@ -309,7 +313,7 @@ const calculateCompatibilityScore = (
     // No penalizar, dejar score base
   }
   // 1. Misma categoría exacta = EXCLUIR (competencia directa - NO MATCHEAN)
-  else if (user1Category === user2Category) {
+  else if (user1CatStr === user2CatStr) {
     // Competencia directa = EXCLUIR COMPLETAMENTE
     return { score: 15, reason: 'Competencia directa - No compatible' };
   }

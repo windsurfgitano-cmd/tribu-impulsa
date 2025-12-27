@@ -99,7 +99,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   // Estado para tamaño de letra (accesibilidad)
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
 
-  // Sincronizar profile con currentUser cuando cambie (especialmente businessDescription)
+  // Sincronizar profile con currentUser cuando el componente se monta (especialmente businessDescription)
   useEffect(() => {
     const updatedCurrentUser = getCurrentUser();
     if (updatedCurrentUser) {
@@ -110,7 +110,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         affinity: (updatedCurrentUser as any)?.affinity || prev.affinity || '',
       }));
     }
-  }, [currentUser?.id]); // Sincronizar cuando cambie el ID del usuario
+  }, []); // Ejecutar solo en el mount inicial
 
   const handleSecretAccess = () => {
     if (secretCode === 'TRIBU2026') {

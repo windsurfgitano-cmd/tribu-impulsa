@@ -1,6 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Eye, EyeOff, Lock, CheckCircle, Gift, User as UserIcon } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Lock, CheckCircle, Gift, User as UserIcon, HelpCircle, ChevronRight } from 'lucide-react';
 import { 
   setCurrentUser, 
   syncNotificationsFromFirebase
@@ -22,6 +22,7 @@ import { SearchableSelect } from '../../components/SearchableSelect';
 import { CATEGORY_SELECT_OPTIONS, AFFINITY_SELECT_OPTIONS_WITH_GROUP } from '../../utils/selectOptions';
 import { REGIONS } from '../../constants/geography';
 import { SURVEY_AFFINITY_OPTIONS } from '../../constants';
+import TermsModal from '../../components/TermsAndConditions';
 
 // Funciones helper para autoformateo de campos
 const autoFormatInstagram = (value: string): string => {
@@ -58,6 +59,8 @@ const LoginScreen = () => {
   const [devPassword, setDevPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   
   // Contador dinámico de perfiles desde Supabase
   const [profilesCount, setProfilesCount] = useState(0);
@@ -558,7 +561,7 @@ const LoginScreen = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
-                <span className="relative">🚀 RALLY 1000 - ¡Últimos cupos!</span>
+                <span className="relative">🚀 1000 cupos de regalo</span>
               </div>
             </div>
 
@@ -570,46 +573,48 @@ const LoginScreen = () => {
               <p className="text-sm text-gray-500">El sistema de crecimiento colaborativo #1 en Chile</p>
             </div>
             
-            {/* Contador de progreso MEJORADO */}
-            <div className="relative bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-4 border border-indigo-100 overflow-hidden">
-              {/* Efecto brillo */}
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-pulse" style={{ animationDuration: '3s' }} />
-              
-              <div className="relative">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Rally Activo</span>
-                  </div>
-                  <span className="text-xs text-red-500 font-semibold animate-pulse">⏰ Cierra pronto</span>
-                </div>
+            {/* Contador de progreso MEJORADO - Oculto hasta 500 usuarios */}
+            {profilesCount >= 500 && (
+              <div className="relative bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 rounded-2xl p-4 border border-indigo-100 overflow-hidden">
+                {/* Efecto brillo */}
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/40 to-transparent -skew-x-12 animate-pulse" style={{ animationDuration: '3s' }} />
                 
-                {/* Barra de progreso animada */}
-                <div className="h-4 bg-white/80 rounded-full overflow-hidden shadow-inner mb-2">
-                  <div 
-                    className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-1000 relative"
-                    style={{ width: `${Math.max((profilesCount / 1000) * 100, 0.5)}%` }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 animate-shimmer" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-xs font-bold text-indigo-700 uppercase tracking-wide">Ya es momento de colaborar</span>
+                    </div>
+                    <span className="text-xs text-red-500 font-semibold animate-pulse">⏰ Cierra pronto</span>
                   </div>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-gray-700">
-                    <span className="font-black text-xl text-indigo-600">{profilesCount}</span>
-                    <span className="text-gray-400 mx-1">/</span>
-                    <span className="font-bold">1000</span>
-                    <span className="text-gray-500 ml-1">inscritos</span>
-                  </p>
-                  <div className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">
-                    {1000 - profilesCount} cupos 🔥
+                  
+                  {/* Barra de progreso animada */}
+                  <div className="h-4 bg-white/80 rounded-full overflow-hidden shadow-inner mb-2">
+                    <div 
+                      className="h-full bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 rounded-full transition-all duration-1000 relative"
+                      style={{ width: `${Math.max((profilesCount / 1000) * 100, 0.5)}%` }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/40 to-white/0 animate-shimmer" />
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-black text-xl text-indigo-600">{profilesCount}</span>
+                      <span className="text-gray-400 mx-1">/</span>
+                      <span className="font-bold">1000</span>
+                      <span className="text-gray-500 ml-1">inscritos</span>
+                    </p>
+                    <div className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full">
+                      {1000 - profilesCount} cupos 🔥
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Beneficios compactos MEJORADOS */}
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-2 gap-2 text-center">
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-3 border border-indigo-100">
                 <div className="text-2xl mb-1">🎯</div>
                 <p className="text-[10px] font-bold text-indigo-700">10+10</p>
@@ -620,11 +625,69 @@ const LoginScreen = () => {
                 <p className="text-[10px] font-bold text-violet-700">2x</p>
                 <p className="text-[9px] text-gray-500">Más alcance</p>
               </div>
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-3 border border-emerald-100">
-                <div className="text-2xl mb-1">🤝</div>
-                <p className="text-[10px] font-bold text-emerald-700">100%</p>
-                <p className="text-[9px] text-gray-500">Garantizado</p>
+            </div>
+
+            {/* Botón "¿Cómo funciona?" - Según reunión 26/12 */}
+            <button
+              onClick={() => setShowHowItWorks(!showHowItWorks)}
+              className="w-full py-3 px-4 bg-gradient-to-r from-[#F5F7FB] to-[#EEF2F7] border border-[#E4E7EF] rounded-xl text-[#6161FF] font-semibold text-sm hover:bg-[#EEF2F7] transition-all flex items-center justify-center gap-2"
+            >
+              <HelpCircle size={18} />
+              ¿Cómo funciona Tribu Impulsa?
+              <ChevronRight size={16} className={`transition-transform ${showHowItWorks ? 'rotate-90' : ''}`} />
+            </button>
+
+            {/* Contenido expandible "¿Cómo funciona?" */}
+            {showHowItWorks && (
+              <div className="bg-[#F5F7FB] rounded-xl p-4 space-y-4 border border-[#E4E7EF] animate-slideDown">
+                <div>
+                  <h3 className="font-bold text-[#181B34] mb-2 text-sm">Es simple: dar y recibir</h3>
+                  <div className="space-y-2 text-xs text-[#434343]">
+                    <p><strong>📤 YO DOY:</strong> Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)</p>
+                    <p><strong>📥 YO RECIBO:</strong> 10 emprendedores diferentes comparten TU contenido en sus redes</p>
+                    <p className="text-[#6161FF] font-semibold">¡Así todos ganamos exposición!</p>
+                  </div>
+                </div>
+                
+                <div className="border-t border-[#E4E7EF] pt-3">
+                  <h3 className="font-bold text-[#181B34] mb-2 text-sm">Matching Inteligente</h3>
+                  <div className="space-y-1 text-xs text-[#434343]">
+                    <p>🧠 Nuestro algoritmo te conecta con emprendedores:</p>
+                    <ul className="list-disc list-inside space-y-0.5 ml-2">
+                      <li>Complementarios a tu negocio (no competencia)</li>
+                      <li>De la zona geográfica que tú hayas elegido</li>
+                      <li>Con intereses y afinidades similares</li>
+                    </ul>
+                    <p className="mt-2 text-[#6161FF] font-semibold">El 1° de cada mes recibes una NUEVA Tribu.</p>
+                  </div>
+                </div>
+
+                <div className="border-t border-[#E4E7EF] pt-3">
+                  <p className="text-xs text-[#7C8193]">
+                    Si alguien no cumple, puedes <strong>pedirnos ayuda</strong>.
+                  </p>
+                </div>
               </div>
+            )}
+
+            {/* Botones Legales/FAQ - Según reunión 26/12 */}
+            <div className="flex gap-2 text-xs">
+              <button
+                onClick={() => setShowTermsModal(true)}
+                className="flex-1 py-2 px-3 text-[#6161FF] hover:text-[#8B5CF6] font-medium hover:underline transition text-center"
+              >
+                Legales
+              </button>
+              <span className="text-[#E4E7EF]">|</span>
+              <button
+                onClick={() => {
+                  // TODO: Implementar FAQ cuando Guillermo envíe el texto
+                  alert('FAQ próximamente disponible');
+                }}
+                className="flex-1 py-2 px-3 text-[#6161FF] hover:text-[#8B5CF6] font-medium hover:underline transition text-center"
+              >
+                FAQ
+              </button>
             </div>
 
             {/* Botones de acción */}
@@ -1206,7 +1269,10 @@ const LoginScreen = () => {
                 <option value="1M-3M">$1.000.000 - $3.000.000</option>
                 <option value="3M-5M">$3.000.000 - $5.000.000</option>
                 <option value="5M-10M">$5.000.000 - $10.000.000</option>
-                <option value="10M+">Más de $10.000.000</option>
+                <option value="10M-25M">$10.000.000 - $25.000.000</option>
+                <option value="25M-50M">$25.000.000 - $50.000.000</option>
+                <option value="50M-100M">$50.000.000 - $100.000.000</option>
+                <option value="100M+">Más de $100.000.000</option>
               </select>
               <p className="text-[0.5rem] text-[#9CA3B3] mt-0.5">🔒 Esta información es privada y ayuda al matching</p>
             </div>
@@ -1416,6 +1482,12 @@ const LoginScreen = () => {
           )
         )}
       </div>
+
+      {/* Modal de Términos y Condiciones */}
+      <TermsModal 
+        isOpen={showTermsModal} 
+        onClose={() => setShowTermsModal(false)}
+      />
     </div>
   );
 };

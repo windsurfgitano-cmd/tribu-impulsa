@@ -62,7 +62,8 @@ export const MembershipScreen = () => {
     if (!currentUser) return;
     setIsProcessing(true);
     try {
-      const membership = await activateTrialMembership(currentUser.id, currentUser.email, selectedPlan);
+      // Siempre usar plan mensual según reunión 26/12
+      const membership = await activateTrialMembership(currentUser.id, currentUser.email, 'mensual');
       setIsProcessing(false);
       if (membership) {
         syncMembershipToLocalCache(currentUser.id, membership);
@@ -108,41 +109,19 @@ export const MembershipScreen = () => {
           </p>
         </div>
 
-        {/* Selección de plan futuro */}
+        {/* Plan único mensual - Simplificado según reunión 26/12 */}
         <div className="mb-5">
-          <p className="text-xs font-bold uppercase text-[#7C8193] mb-3 tracking-wide">
-            Elige tu plan después del mes de prueba:
-          </p>
-          <div className="space-y-2">
-            {(Object.entries(PLANS) as [keyof typeof PLANS, typeof PLANS[keyof typeof PLANS]][]).map(([id, plan]) => (
-              <button
-                key={id}
-                onClick={() => setSelectedPlan(id)}
-                className={`w-full p-3 rounded-xl border text-left transition-all relative ${selectedPlan === id
-                  ? 'border-[#6161FF] bg-[#6161FF]/5 ring-2 ring-[#6161FF]/20'
-                  : 'border-[#E4E7EF] hover:border-[#6161FF]/50'
-                  }`}
-              >
-                {plan.badge && (
-                  <span className="absolute -top-2 right-3 bg-[#6161FF] text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                    {plan.badge}
-                  </span>
-                )}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedPlan === id ? 'border-[#6161FF] bg-[#6161FF]' : 'border-[#B3B8C6]'
-                      }`}>
-                      {selectedPlan === id && <CheckCircle size={12} className="text-white" />}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-[#181B34] text-sm">{plan.name}</p>
-                      <p className="text-xs text-[#7C8193]">{plan.desc}</p>
-                    </div>
-                  </div>
-                  <p className="font-bold text-[#181B34]">${plan.price.toLocaleString('es-CL')}<span className="text-xs text-[#7C8193] font-normal">/{plan.period}</span></p>
-                </div>
-              </button>
-            ))}
+          <div className="bg-gradient-to-r from-[#6161FF]/10 to-[#8B5CF6]/10 rounded-2xl p-4 border border-[#6161FF]/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-[#181B34] text-sm">Plan Mensual</p>
+                <p className="text-xs text-[#7C8193]">Renovación automática</p>
+              </div>
+              <p className="font-bold text-[#181B34]">$19.990<span className="text-xs text-[#7C8193] font-normal">/mes</span></p>
+            </div>
+            <p className="text-xs text-[#7C8193] mt-2 text-center">
+              El cobro se ejecutará al finalizar tu mes de prueba gratuito
+            </p>
           </div>
         </div>
 
@@ -182,7 +161,7 @@ export const MembershipScreen = () => {
         </button>
 
           <p className="text-[10px] text-[#7C8193] mt-3 text-center leading-relaxed">
-            Te avisaremos antes de que termine el periodo gratuito. Después eliges si quieres pagar el plan <strong>{PLANS[selectedPlan].name}</strong> (${PLANS[selectedPlan].price.toLocaleString('es-CL')}/{PLANS[selectedPlan].period}).
+            Te avisaremos antes de que termine el periodo gratuito. Después se cobrará automáticamente el plan <strong>Mensual</strong> ($19.990/mes).
           </p>
         </div>
       </div>

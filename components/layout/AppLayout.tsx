@@ -11,7 +11,8 @@ import {
   X,
   CheckCircle,
   Lock,
-  ChevronRight
+  ChevronRight,
+  HelpCircle
 } from 'lucide-react';
 import { getCurrentUser } from '../../services/databaseService';
 import { getMyProfile } from '../../services/matchService';
@@ -50,6 +51,7 @@ const AppLayout = () => {
   const myProfile = useMemo(() => getMyProfile(), [location.pathname]);
   
   const [showMenu, setShowMenu] = useState(false);
+  const [showHowItWorksModal, setShowHowItWorksModal] = useState(false);
   const [navGlobalProgress, setNavGlobalProgress] = useState({ current: 0, target: 1000 });
 
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(() => {
@@ -194,20 +196,20 @@ const AppLayout = () => {
               <p className="text-xs font-bold text-[#7C8193] uppercase tracking-wide px-3 mb-2">Alianzas</p>
 
               <button
-                onClick={() => {}}
-                disabled
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-100 cursor-not-allowed opacity-60"
+                onClick={() => { setShowMenu(false); navigate('/academia'); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
               >
-                <div className="w-10 h-10 rounded-lg bg-gray-400 flex items-center justify-center">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                <div className="w-10 h-10 rounded-lg bg-[#ec0000]/10 flex items-center justify-center">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#ec0000]">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-gray-500">Santander Academia</p>
-                  <p className="text-xs text-gray-400">Próximamente</p>
+                  <p className="font-semibold text-[#181B34]">Santander Academia</p>
+                  <p className="text-xs text-[#7C8193]">Cursos gratuitos para tu desarrollo</p>
                 </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
               </button>
 
               <div className="border-t border-[#E4E7EF] my-3" />
@@ -222,6 +224,20 @@ const AppLayout = () => {
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-[#181B34]">Club de Bienestar</p>
                   <p className="text-xs text-[#7C8193]">Descuentos y beneficios exclusivos</p>
+                </div>
+                <ChevronRight size={16} className="text-[#7C8193]" />
+              </button>
+
+              <button
+                onClick={() => { setShowMenu(false); setShowHowItWorksModal(true); }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-[#F5F7FB] transition"
+              >
+                <div className="w-10 h-10 rounded-lg bg-[#6161FF]/10 flex items-center justify-center">
+                  <HelpCircle size={20} className="text-[#6161FF]" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-[#181B34]">¿Cómo funciona?</p>
+                  <p className="text-xs text-[#7C8193]">Conoce el sistema 10+10</p>
                 </div>
                 <ChevronRight size={16} className="text-[#7C8193]" />
               </button>
@@ -333,6 +349,60 @@ const AppLayout = () => {
       )}
 
       {showNav && <WhatsAppFloat />}
+
+      {/* Modal "¿Cómo funciona?" */}
+      {showHowItWorksModal && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4"
+          onClick={() => setShowHowItWorksModal(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] p-4 flex justify-between items-center">
+              <h2 className="text-white font-bold text-lg">¿Cómo funciona Tribu Impulsa?</h2>
+              <button 
+                onClick={() => setShowHowItWorksModal(false)}
+                className="text-white hover:text-white/80 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div>
+                <h3 className="font-bold text-[#181B34] mb-2 text-sm">Es simple: dar y recibir</h3>
+                <div className="space-y-2 text-xs text-[#434343]">
+                  <p><strong>📤 YO DOY:</strong> Compartes el contenido de 10 emprendedores en tus redes sociales (historias, posts, etc.)</p>
+                  <p><strong>📥 YO RECIBO:</strong> 10 emprendedores diferentes comparten TU contenido en sus redes</p>
+                  <p className="text-[#6161FF] font-semibold">¡Así todos ganamos exposición!</p>
+                </div>
+              </div>
+              <div className="border-t border-[#E4E7EF] pt-3">
+                <h3 className="font-bold text-[#181B34] mb-2 text-sm">Matching Inteligente</h3>
+                <div className="space-y-1 text-xs text-[#434343]">
+                  <p>🧠 Nuestro algoritmo te conecta con emprendedores:</p>
+                  <ul className="list-disc list-inside space-y-0.5 ml-2">
+                    <li>Complementarios a tu negocio (no competencia)</li>
+                    <li>De la zona geográfica que tú hayas elegido</li>
+                    <li>Con intereses y afinidades similares</li>
+                  </ul>
+                  <p className="mt-2 text-[#6161FF] font-semibold">El 1° de cada mes recibes una NUEVA Tribu.</p>
+                </div>
+              </div>
+              <div className="border-t border-[#E4E7EF] pt-3">
+                <p className="text-xs text-[#7C8193]">Si alguien no cumple, puedes <strong>pedirnos ayuda</strong>.</p>
+              </div>
+              <button 
+                onClick={() => setShowHowItWorksModal(false)}
+                className="w-full py-3 bg-gradient-to-r from-[#6161FF] to-[#8B5CF6] text-white rounded-xl font-semibold hover:opacity-90 transition mt-4"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

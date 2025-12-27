@@ -45,7 +45,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   useSurveyGuard();
   const [isEditing, setIsEditing] = useState(false);
   
-  // Inicializar profile con datos de getMyProfile() + campos adicionales de currentUser (businessDescription, revenue, etc.)
+  // Inicializar profile con datos de getMyProfile() + campos adicionales de currentUser (businessDescription, revenue, redes sociales, etc.)
   const currentUser = getCurrentUser();
   const initialProfile = getMyProfile();
   const [profile, setProfile] = useState(() => ({
@@ -53,6 +53,10 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
     businessDescription: (currentUser as any)?.businessDescription || '',
     revenue: (currentUser as any)?.revenue || '',
     affinity: (currentUser as any)?.affinity || '',
+    tiktok: (currentUser as any)?.tiktok || '',
+    facebook: (currentUser as any)?.facebook || '',
+    twitter: (currentUser as any)?.twitter || '',
+    linkedin: (currentUser as any)?.linkedin || '',
   }));
   
   const [isSaving, setIsSaving] = useState(false);
@@ -99,7 +103,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
   // Estado para tamaño de letra (accesibilidad)
   const [showFontSizeModal, setShowFontSizeModal] = useState(false);
 
-  // Sincronizar profile con currentUser cuando el componente se monta (especialmente businessDescription)
+  // Sincronizar profile con currentUser cuando el componente se monta (especialmente businessDescription y redes sociales)
   useEffect(() => {
     const updatedCurrentUser = getCurrentUser();
     if (updatedCurrentUser) {
@@ -108,6 +112,10 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         businessDescription: (updatedCurrentUser as any)?.businessDescription || prev.businessDescription || '',
         revenue: (updatedCurrentUser as any)?.revenue || prev.revenue || '',
         affinity: (updatedCurrentUser as any)?.affinity || prev.affinity || '',
+        tiktok: (updatedCurrentUser as any)?.tiktok || prev.tiktok || '',
+        facebook: (updatedCurrentUser as any)?.facebook || prev.facebook || '',
+        twitter: (updatedCurrentUser as any)?.twitter || prev.twitter || '',
+        linkedin: (updatedCurrentUser as any)?.linkedin || prev.linkedin || '',
       }));
     }
   }, []); // Ejecutar solo en el mount inicial
@@ -426,7 +434,7 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
         if (!updated) {
           console.warn('No se pudo actualizar localStorage, pero Supabase se guardó correctamente');
         } else {
-          // 3. Sincronizar el estado profile con los datos guardados
+          // 3. Sincronizar el estado profile con los datos guardados (incluyendo redes sociales)
           const refreshedUser = getCurrentUser();
           if (refreshedUser) {
             setProfile(prev => ({
@@ -434,6 +442,10 @@ const MyProfileView = ({ fontSize, setFontSize }: { fontSize: 'small' | 'medium'
               businessDescription: (refreshedUser as any)?.businessDescription || prev.businessDescription || '',
               revenue: (refreshedUser as any)?.revenue || prev.revenue || '',
               affinity: (refreshedUser as any)?.affinity || prev.affinity || '',
+              tiktok: (refreshedUser as any)?.tiktok || prev.tiktok || '',
+              facebook: (refreshedUser as any)?.facebook || prev.facebook || '',
+              twitter: (refreshedUser as any)?.twitter || prev.twitter || '',
+              linkedin: (refreshedUser as any)?.linkedin || prev.linkedin || '',
             }));
           }
         }
